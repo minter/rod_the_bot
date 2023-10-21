@@ -1,0 +1,24 @@
+name: Verify
+on: pull_request
+
+jobs:
+  verify:
+    name: Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v1
+      - name: Set up Ruby
+        uses: actions/setup-ruby@v1
+        with:
+          ruby-version: 3.2.2
+      - name: Install dependencies
+        run: |
+          sudo apt-get -yqq install libpq-dev
+          gem install bundler --version=2.4.21
+          bundle install
+
+      - name: Run Standard
+        run: bundle exec standardrb
+      - name: Run Bundler Audit
+        run: bundle exec bundler-audit --update

@@ -1,0 +1,35 @@
+version: "3.8"
+services:
+  redis:
+    image: "redis:7-alpine"
+    command: redis-server
+    volumes:
+      - "redis:/data"
+
+  # website:
+  #   depends_on:
+  #     - "redis"
+  #   build: 
+  #   command: bin/rails server
+  #   ports:
+  #     - "${WEB_PORT}:3000"
+  #   volumes:
+  #     - ./:/app
+  #   environment:
+  #     REDIS_URL: redis://redis:6379/0
+  #     RAILS_ENV: production
+
+  sidekiq:
+    depends_on:
+      - "redis"
+    build: .
+    command: bundle exec sidekiq
+    environment:
+      REDIS_URL: redis://redis:6379/0
+      RAILS_ENV: production
+    volumes:
+      - ./:/app
+
+volumes:
+  redis:
+
