@@ -23,10 +23,11 @@ services:
     depends_on:
       - "redis"
     build: .
+    env_file: .env
     command: bundle exec sidekiq
     environment:
       REDIS_URL: redis://redis:6379/0
-      RAILS_ENV: production
+      RAILS_ENV: development
     volumes:
       - ./:/app
 
