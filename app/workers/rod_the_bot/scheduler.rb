@@ -15,10 +15,10 @@ module RodTheBot
 
       game_id = @game["games"].first["gamePk"]
 
-      your_team = @game["games"].first["teams"].each do |team|
-        if team["id"].to_i == ENV["NHL_TEAM_ID"].to_i
-          break team
-        end
+      your_team = if home["team"]["id"].to_i == ENV["NHL_TEAM_ID"].to_i
+        home
+      else
+        away
       end
 
       if away["team"]["id"].to_i == ENV["NHL_TEAM_ID"].to_i || home["team"]["id"].to_i == ENV["NHL_TEAM_ID"].to_i
