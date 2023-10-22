@@ -12,6 +12,8 @@ module RodTheBot
         end
       end
 
+      home = @game["games"].first["teams"]["home"]
+      away = @game["games"].first["teams"]["away"]
       @your_team = if home["team"]["id"].to_i == ENV["NHL_TEAM_ID"].to_i
         home
       else
