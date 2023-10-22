@@ -34,7 +34,7 @@ module RodTheBot
       end
 
       goal = @play["players"].shift
-      post += "🚨 # #{goal["player"]["fullName"]} (#{goal["seasonTotal"]})\n"
+      post += "🚨 #{goal["player"]["fullName"]} (#{goal["seasonTotal"]})\n"
 
       if @play["players"].empty?
         post += "🍎 Unassisted\n"
