@@ -12,10 +12,10 @@ module RodTheBot
         end
       end
 
-      @your_team = @feed["gameData"]["teams"].each do |team|
-        if team["id"].to_i == ENV["NHL_TEAM_ID"].to_i
-          break team
-        end
+      @your_team = if home["team"]["id"].to_i == ENV["NHL_TEAM_ID"].to_i
+        home
+      else
+        away
       end
 
       home = @feed["gameData"]["teams"]["home"]
