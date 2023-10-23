@@ -13,7 +13,7 @@ module RodTheBot
       end
 
       # If nothing has changed on this scoring play, exit
-      return if @play == original_play
+      # return if @play == original_play
 
       post = <<~POST
         🔔 Scoring Change 🔔
@@ -33,7 +33,10 @@ module RodTheBot
           post += "🍎 #{assist["player"]["fullName"]} (#{assist["seasonTotal"]})\n"
         end
       end
-      RodTheBot::Post.perform_async(post)
+      # RodTheBot::Post.perform_async(post)
+      Rails.logger.info "ORIGINAL PLAY: #{original_play}"
+      Rails.logger.info "NEW PLAY: #{@play}"
+      Rails.logger.info "POST: #{post}"
     end
   end
 end
