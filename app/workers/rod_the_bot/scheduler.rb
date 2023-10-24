@@ -1,4 +1,6 @@
 module RodTheBot
+  require "sidekiq-scheduler"
+
   class Scheduler
     include Sidekiq::Worker
 
