@@ -6,7 +6,7 @@ module RodTheBot
       @feed = HTTParty.get("https://statsapi.web.nhl.com/api/v1/game/#{game_id}/feed/live")
       @home = @feed["liveData"]["linescore"]["teams"]["home"]
       @visitor = @feed["liveData"]["linescore"]["teams"]["away"]
-      @your_team = (home["id"].to_i == ENV["NHL_TEAM_ID"].to_i) ? home : visitor
+      @your_team = (@home["id"].to_i == ENV["NHL_TEAM_ID"].to_i) ? @home : @visitor
       @your_team_status = (@your_team["team"]["id"] == @home["team"]["id"]) ? "home" : "away"
 
       end_of_period_post = <<~POST
@@ -30,7 +30,7 @@ module RodTheBot
       shots_on_goal_post = <<~POST
         🗣️ Shots on goal leaders for the #{@your_team["team"]["name"]} after the #{period_number} period 🗣️
 
-        #{shots_on_goal_leaders.map { |player| "#{player[1][:name]} - #{player[1][:toi]}" }.join("\n")}
+        #{shots_on_goal_leaders.map { |player| "#{player[1][:name]} - #{player[1][:shots]}" }.join("\n")}
       POST
 
       RodTheBot::Post.perform_async(end_of_period_post) unless @feed["gameData"]["status"]["detailedState"] == "Final"
