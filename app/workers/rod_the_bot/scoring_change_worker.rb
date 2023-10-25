@@ -36,6 +36,7 @@ module RodTheBot
       # RodTheBot::Post.perform_async(post)
       Rails.logger.info "ORIGINAL PLAY: #{original_play}"
       Rails.logger.info "NEW PLAY: #{@play}"
+      return if original_play["players"] == @play["players"]
       Rails.logger.info "POST: #{post}"
     end
   end

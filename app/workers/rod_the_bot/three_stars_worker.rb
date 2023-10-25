@@ -33,20 +33,18 @@ module RodTheBot
 
     def player_stats(players, id)
       player = players[id]
-      player_info = ""
       if player["position"]["abbreviation"] == "G"
         decision = player["stats"]["goalieStats"]["decision"]
         shots = player["stats"]["goalieStats"]["shots"]
         saves = player["stats"]["goalieStats"]["saves"]
-        player_info = "#{player["team"]} ##{player["jerseyNumber"]} #{player["person"]["fullName"]} (#{decision}, #{saves} saves on #{shots} shots)\n"
+        stats = [decision, "#{saves} saves on #{shots} shots"].join(", ")
       else
         goals = player["stats"]["skaterStats"]["goals"]
         assists = player["stats"]["skaterStats"]["assists"]
         points = goals + assists
         stats = "#{goals}G #{assists}A, #{points}PTS"
-        player_info = "#{player["team"]} ##{player["jerseyNumber"]} #{player["person"]["fullName"]} (#{stats})\n"
       end
-      player_info
+      "#{player["team"]} ##{player["jerseyNumber"]} #{player["person"]["fullName"]} (#{stats})\n"
     end
   end
 end
