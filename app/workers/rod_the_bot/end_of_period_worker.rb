@@ -22,13 +22,13 @@ module RodTheBot
       POST
 
       period_toi_post = <<~POST
-        🗣️ Time on ice leaders for the #{@your_team["team"]["name"]} after the #{period_number} period 🗣️
+        ⏱️ Time on ice leaders for the #{@your_team["team"]["name"]} after the #{period_number} period ⏱️
 
         #{time_on_ice_leaders.map { |player| "#{player[1][:name]} - #{player[1][:toi]}" }.join("\n")}
       POST
 
       shots_on_goal_post = <<~POST
-        🗣️ Shots on goal leaders for the #{@your_team["team"]["name"]} after the #{period_number} period 🗣️
+        🏒 Shots on goal leaders for the #{@your_team["team"]["name"]} after the #{period_number} period 🏒
 
         #{shots_on_goal_leaders.map { |player| "#{player[1][:name]} - #{player[1][:shots]}" }.join("\n")}
       POST

@@ -41,19 +41,19 @@ module RodTheBot
         POST
 
         goalie_post = <<~POST
-          🗣️ Season goaltending stats for the #{your_team["team"]["name"]} 🗣️
+          🥅 Season goaltending stats for the #{your_team["team"]["name"]} 🥅
 
           #{goalie_stats.sort_by { |k, v| v[:wins] }.reverse.map { |player| "#{player[1][:name]}: #{player[1][:wins]}-#{player[1][:losses]}, #{player[1][:save_percentage]} save pct, #{player[1][:goals_against_average]} GAA" }.join("\n")}
         POST
 
         skater_points_leader_post = <<~POST
-          🗣️ Season points leaders for the #{your_team["team"]["name"]} 🗣️
+          🏒 Season points leaders for the #{your_team["team"]["name"]} 🏒
           
           #{skater_stats.sort_by { |k, v| v[:points] }.last(5).reverse.map { |player| "#{player[1][:name]}: #{player[1][:points]} points, (#{pluralize player[1][:goals], "goal"}, #{pluralize player[1][:assists], "assist"})" }.join("\n")}
         POST
 
         time_on_ice_leader_post = <<~POST
-          🗣️ Season time on ice leaders for the #{your_team["team"]["name"]} 🗣️
+          ⏱️ Season time on ice leaders for the #{your_team["team"]["name"]} ⏱️
 
           #{skater_stats.sort_by { |k, v| v[:time_on_ice] }.last(5).reverse.map { |player| "#{player[1][:name]}: #{player[1][:time_on_ice]}" }.join("\n")}
         POST
