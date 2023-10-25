@@ -14,11 +14,17 @@ You can install and run raw source code, or use the Docker image.
 
 ### Raw source code
 
+This method requires you to be running on a system with Ruby 3+ and enough dev tools to build native extensions. You will also need a Redis instance to store state.
+
 1. Clone the repo from GitHub: [minter/rod_the_bot](https://github.com/minter/rod_the_bot)
-2. Install dependencies: `bundle install`
+2. Install Ruby dependencies: `bundle install`
 3. Create a `.env` file (see below)
 4. Run the background job processor: `bundle exec sidekiq`
 5. Optional - Run the web UI to monitor Sidekiq: `bin/rails s`
+
+### Docker image
+
+This method requires you to have Docker and Docker Compose installed.
 
 ## Configuration using .env
 
@@ -39,7 +45,7 @@ WEB_PORT=3000
 
 ### NHL_TEAM_ID
 
-Every NHL franchise has an ID in the stats system. This is used to identify the team that you want to follow. IDs for all active NHL teams can be found in this table:
+Every NHL franchise has an ID in the stats system. This is used to identify the team that you want to follow, and unlocks happy posts when something good happens to your team. IDs for all active NHL teams can be found in this table:
 
 | Team Name             | Team ID |
 | --------------------- | ------- |
@@ -119,8 +125,11 @@ Key system components and dependencies:
 
 ## TODO
 * Get docker-compose working for production
+* Fix issues with web UI in Docker
 
 ## Contributing
+
+Bug reports and pull requests are welcome on GitHub at https://github.com/minter/rod_the_bot
 
 ## Licensing
 
