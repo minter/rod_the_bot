@@ -30,9 +30,7 @@ Key system components and dependencies:
 * HTTParty: NHL API client
 
 ## TODO
-* Enable auto-run via Sidekiq Scheduler
 * Get docker-compose working for production
-* Add additional game events (Time On Ice, period starts, etc)
 
 ## Contributing
 
