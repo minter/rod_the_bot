@@ -28,7 +28,7 @@ module RodTheBot
           end
         elsif play["result"]["eventTypeId"] == "PERIOD_OFFICIAL"
           if REDIS.get("#{@game_id}:#{play["about"]["eventId"]}").nil?
-            RodTheBot::EndOfPeriodWorker.perform_async(@game_id, play["about"]["ordinalNum"])
+            RodTheBot::EndOfPeriodWorker.perform_async(@game_id, play["about"]["ordinalNum"]) unless play["about"]["periodType"] == "SHOOTOUT"
             REDIS.set("#{game_id}:#{play["about"]["eventId"]}", "true", ex: 172800)
           end
         end
