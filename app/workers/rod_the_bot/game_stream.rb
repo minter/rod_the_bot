@@ -26,8 +26,11 @@ module RodTheBot
             RodTheBot::GameStartWorker.perform_async(@game_id)
             REDIS.set("#{game_id}:#{play["about"]["eventId"]}", "true", ex: 172800)
           end
-        elsif play["result"]["event"] == "Period Start" || play["result"]["event"] == "Period End"
-          # TODO: Implement period start worker
+        elsif play["result"]["eventTypeId"] == "PERIOD_OFFICIAL"
+          if REDIS.get("#{@game_id}:#{play["about"]["eventId"]}").nil?
+            RodTheBot::EndOfPeriodWorker.perform_async(@game_id, play["about"]["ordinalNum"])
+            REDIS.set("#{game_id}:#{play["about"]["eventId"]}", "true", ex: 172800)
+          end
         end
       end
 
