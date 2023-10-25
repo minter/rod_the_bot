@@ -1,0 +1,7 @@
+# config/sidekiq.yml
+
+:scheduler:
+  :schedule:
+    rod_the_bot_scheduler:
+      cron: "0 0 10 * * * <%= ENV['TIME_ZONE'] %>" # Runs daily at 10am local time
+      class: RodTheBot::Scheduler
