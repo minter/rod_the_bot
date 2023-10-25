@@ -35,7 +35,7 @@ module RodTheBot
       end
 
       if @game_final
-        RodTheBot::FinalScoreWorker.perform_in(60, @game_id)
+        RodTheBot::FinalScoreWorker.perform_async(@game_id)
         RodTheBot::ThreeStarsWorker.perform_in(90, @game_id)
       else
         RodTheBot::GameStream.perform_in(60, @game_id)
