@@ -19,7 +19,7 @@ module RodTheBot
         away
       end
 
-      return if @play["about"]["periodType"] == "SHOOTOUT"
+      return if @play.nil? || @play["about"]["periodType"] == "SHOOTOUT"
 
       home = @feed["gameData"]["teams"]["home"]
       away = @feed["gameData"]["teams"]["away"]

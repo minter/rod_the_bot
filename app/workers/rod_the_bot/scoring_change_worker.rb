@@ -13,12 +13,12 @@ module RodTheBot
       end
 
       # If nothing has changed on this scoring play, exit
-      # return if @play == original_play
+      return if @play["players"] == original_play["players"]
 
       post = <<~POST
         🔔 Scoring Change 🔔
 
-        #{@play["team"]["name"]} goal at #{@play["about"]["periodTime"]} of the #{@play["about"]["ordinalNum"]} period now reads:
+        The #{@play["team"]["name"]} goal at #{@play["about"]["periodTime"]} of the #{@play["about"]["ordinalNum"]} period now reads:
 
       POST
       goal = @play["players"].shift
@@ -33,11 +33,7 @@ module RodTheBot
           post += "🍎 #{assist["player"]["fullName"]} (#{assist["seasonTotal"]})\n"
         end
       end
-      # RodTheBot::Post.perform_async(post)
-      Rails.logger.info "ORIGINAL PLAY: #{original_play}"
-      Rails.logger.info "NEW PLAY: #{@play}"
-      return if original_play["players"] == @play["players"]
-      Rails.logger.info "POST: #{post}"
+      RodTheBot::Post.perform_async(post)
     end
   end
 end
