@@ -6,25 +6,31 @@ A Bluesky bot to post in-game updates for NHL games
 
 Now that my primary social media home is [Bluesky](https://bsky.app), I wanted to bring in some in-game NHL updates into the timeline. This bot leverages the [NHL StatsWeb API](https://gitlab.com/dword4/nhlapi) to pull live game data, and post updates to Bluesky.
 
-The project leverages my previous work with a Twitter bot to post automated goal calls to Twitter. It was written to power the Bluesky account [canesgameday@bsky.social](https://bsky.app/profile/canesgameday.bsky.social), but should be configurable for accounts following any NHL team.
+The project leverages my previous work with a Twitter bot to post automated goal calls to Twitter. It was written to power the Carolina Hurricanes Bluesky account [@canesgameday.bsky.social](https://bsky.app/profile/canesgameday.bsky.social), but should be configurable for accounts following any NHL team.
 
 ## Installation
 
-You can install and run raw source code, or use the Docker image.
+You can install and run raw source code on your server, or use the Docker image.
+
+By default, the scheduler will run at 10am in your time zone every day. If there is no game that day, it will silently exit. If there is a game, it will enqueue the game feed job to run every minute until the game is marked as a final. Once the game is final, it will enqueue the post-game job to run once.
 
 ### Raw source code
 
-This method requires you to be running on a system with Ruby 3+ and enough dev tools to build native extensions. You will also need a Redis instance to store state.
+This method requires you to be running on a system with Ruby 3+ and enough dev tools to build native extensions. You will also need a Redis instance running to store state.
 
 1. Clone the repo from GitHub: [minter/rod_the_bot](https://github.com/minter/rod_the_bot)
 2. Install Ruby dependencies: `bundle install`
 3. Create a `.env` file (see below)
-4. Run the background job processor: `bundle exec sidekiq`
+4. Run the background job processor: `bundle exec dotenv sidekiq`
 5. Optional - Run the web UI to monitor Sidekiq: `bin/rails s`
 
 ### Docker image
 
 This method requires you to have Docker and Docker Compose installed.
+
+1. Clone the repo from GitHub: [minter/rod_the_bot](https://github.com/minter/rod_the_bot)
+2. Create a `.env` file (see below)
+3. Run the software: `docker-compose up --build -d`
 
 ## Configuration using .env
 
@@ -42,6 +48,7 @@ DEBUG_POSTS=false
 TEAM_HASHTAGS="#LetsGoCanes #CauseChaos"
 WEB_PORT=3000
 ```
+You can, in theory, pass the environment variables to the system in other ways, but those methods are not covered here.
 
 ### NHL_TEAM_ID
 
@@ -90,13 +97,20 @@ Rod The Bot uses Redis to keep track of plays that it has already seen. This is 
 
 The NHL Stats API returns all times in UTC. This setting is used to convert those times to your local time zone. The time zone must be specified in the Rails-style format like `America/New_York`, not `EDT` or other formats. You can find a list of valid time zone names [here](https://api.rubyonrails.org/classes/ActiveSupport/TimeZone.html).
 
+Common time zones:
+* Eastern Time: `America/New_York`
+* Central Time: `America/Chicago`
+* Mountain Time: `America/Denver`
+* Pacific Time: `America/Los_Angeles`
+* Arizona Time: `America/Phoenix`
+
 ### BLUESKY_USERNAME and BLUESKY_APP_PASSWORD
 
 These are the credentials for the Bluesky account that you want to post to. You can find your app password in the [Bluesky settings](https://bsky.social/settings/apps). Note that when you create an app password, you will only be shown the password once. If you lose it, you will need to create a new one.
 
 ### BLUESKY_URL
 
-This is the URL of the Bluesky instance that you want to post to. The default is the main Bluesky instance at https://bsky.social. If you are running your own instance, you can use that URL instead.
+This is the URL of the Bluesky instance that you want to post to. The recommended value is the main Bluesky instance at https://bsky.social. If you are running your own instance, you can use that URL instead.
 
 ### BLUESKY_ENABLED
 
@@ -108,7 +122,7 @@ This setting controls whether Rod The Bot will print the post text to the consol
 
 ### TEAM_HASHTAGS
 
-This setting controls the hashtags that will be added to each post. You can add as many as you want, but they must be separated by spaces. You can use this if your team has official hashtags that you would like to include.
+This setting controls the hashtags that will be added to each post. You can add as many as you want, but they must be separated by spaces. You can use this if your team has official hashtags that you would like to include on every post.
 
 ### WEB_PORT
 

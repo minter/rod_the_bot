@@ -42,7 +42,6 @@ module RodTheBot
       team = @feed["liveData"]["boxscore"]["teams"][@your_team_status]
       @players = {}
       team["players"].each do |id, player|
-        print "Player is #{player.inspect}\n}"
         if player["position"]["code"] != "G" && player["stats"].present?
           @players[player["person"]["id"]] = {
             name: player["person"]["fullName"],

@@ -24,7 +24,7 @@ services:
       - "redis"
     build: .
     env_file: .env
-    command: bundle exec sidekiq
+    command: bundle exec dotenv sidekiq
     environment:
       REDIS_URL: redis://redis:6379/0
       RAILS_ENV: development
