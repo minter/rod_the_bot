@@ -34,10 +34,9 @@ module RodTheBot
     def player_stats(players, id)
       player = players[id]
       if player["position"]["abbreviation"] == "G"
-        decision = player["stats"]["goalieStats"]["decision"]
         shots = player["stats"]["goalieStats"]["shots"]
         saves = player["stats"]["goalieStats"]["saves"]
-        stats = [decision, "#{saves} saves on #{shots} shots"].join(", ")
+        stats = "#{saves} saves on #{shots} shots"
       else
         goals = player["stats"]["skaterStats"]["goals"]
         assists = player["stats"]["skaterStats"]["assists"]
