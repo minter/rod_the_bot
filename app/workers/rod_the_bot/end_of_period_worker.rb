@@ -8,6 +8,8 @@ module RodTheBot
       @visitor = @feed["liveData"]["linescore"]["teams"]["away"]
       @your_team = (@home["team"]["id"].to_i == ENV["NHL_TEAM_ID"].to_i) ? @home : @visitor
       @your_team_status = (@your_team["team"]["id"] == @home["team"]["id"]) ? "home" : "away"
+      @home_code = @feed["gameData"]["teams"]["home"]["abbreviation"]
+      @visitor_code = @feed["gameData"]["teams"]["away"]["abbreviation"]
 
       end_of_period_post = <<~POST
         🛑 That's the end of the #{period_number}
@@ -33,9 +35,23 @@ module RodTheBot
         #{shots_on_goal_leaders.map { |player| "#{player[1][:name]} - #{player[1][:shots]}" }.join("\n")}
       POST
 
+      game_splits_stats = get_game_splits_stats
+      game_split_stats_post = <<~POST
+        📄 Game comparison after the #{period_number} period
+
+        Faceoff %: #{@visitor_code} - #{game_splits_stats[:faceOffWinPercentage][:away]}% | #{@home_code} - #{game_splits_stats[:faceOffWinPercentage][:home]}%
+        PIM: #{@visitor_code} - #{game_splits_stats[:pim][:away]} | #{@home_code} - #{game_splits_stats[:pim][:home]}
+        Blocks: #{@visitor_code} - #{game_splits_stats[:blocks][:away]} | #{@home_code} - #{game_splits_stats[:blocks][:home]}
+        Takeaways: #{@visitor_code} - #{game_splits_stats[:takeaways][:away]} | #{@home_code} - #{game_splits_stats[:takeaways][:home]}
+        Giveaways: #{@visitor_code} - #{game_splits_stats[:giveaways][:away]} | #{@home_code} - #{game_splits_stats[:giveaways][:home]}
+        Hits: #{@visitor_code} - #{game_splits_stats[:hits][:away]} | #{@home_code} - #{game_splits_stats[:hits][:home]}
+        Power Play %: #{@visitor_code} - #{game_splits_stats[:powerPlayPercentage][:away]}% | #{@home_code} - #{game_splits_stats[:powerPlayPercentage][:home]}%
+      POST
+
       RodTheBot::Post.perform_async(end_of_period_post) unless @feed["gameData"]["status"]["detailedState"] == "Final"
       RodTheBot::Post.perform_in(10, period_toi_post)
       RodTheBot::Post.perform_in(20, shots_on_goal_post)
+      RodTheBot::Post.perform_in(30, game_split_stats_post)
     end
 
     def time_on_ice_leaders
@@ -71,6 +87,19 @@ module RodTheBot
       @players = @players.sort_by do |k, v|
         v[:shots]
       end.last(5).reverse
+    end
+
+    def get_game_splits_stats
+      game_splits = @feed["liveData"]["boxscore"]["teams"]
+      {
+        pim: {home: game_splits["home"]["teamStats"]["teamSkaterStats"]["pim"], away: game_splits["away"]["teamStats"]["teamSkaterStats"]["pim"]},
+        faceOffWinPercentage: {home: game_splits["home"]["teamStats"]["teamSkaterStats"]["faceOffWinPercentage"], away: game_splits["away"]["teamStats"]["teamSkaterStats"]["faceOffWinPercentage"]},
+        blocks: {home: game_splits["home"]["teamStats"]["teamSkaterStats"]["blocked"], away: game_splits["away"]["teamStats"]["teamSkaterStats"]["blocked"]},
+        takeaways: {home: game_splits["home"]["teamStats"]["teamSkaterStats"]["takeaways"], away: game_splits["away"]["teamStats"]["teamSkaterStats"]["takeaways"]},
+        giveaways: {home: game_splits["home"]["teamStats"]["teamSkaterStats"]["giveaways"], away: game_splits["away"]["teamStats"]["teamSkaterStats"]["giveaways"]},
+        hits: {home: game_splits["home"]["teamStats"]["teamSkaterStats"]["hits"], away: game_splits["away"]["teamStats"]["teamSkaterStats"]["hits"]},
+        powerPlayPercentage: {home: game_splits["home"]["teamStats"]["teamSkaterStats"]["powerPlayPercentage"], away: game_splits["away"]["teamStats"]["teamSkaterStats"]["powerPlayPercentage"]}
+      }
     end
   end
 end
