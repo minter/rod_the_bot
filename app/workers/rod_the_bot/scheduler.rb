@@ -4,6 +4,7 @@ module RodTheBot
   class Scheduler
     include Sidekiq::Worker
     include ActionView::Helpers::TextHelper
+    include ActiveSupport::Inflector
 
     def perform
       @time_zone = TZInfo::Timezone.get(ENV["TIME_ZONE"])
@@ -31,10 +32,12 @@ module RodTheBot
           🗣️ It's a #{your_team["team"]["name"]} Gameday! 🗣️
 
           #{away["team"]["name"]}
-          (#{record(away)}) 
+          #{record(away)}
+
           at 
+
           #{home["team"]["name"]}
-          (#{record(home)})
+          #{record(home)}
           
           ⏰ #{time}
           📍 #{venue["name"]}
@@ -48,8 +51,7 @@ module RodTheBot
 
         skater_points_leader_post = <<~POST
           🏒 Season points leaders for the #{your_team["team"]["name"]} 🏒
-          
-          #{skater_stats.sort_by { |k, v| v[:points] }.last(5).reverse.map { |player| "#{player[1][:name]}: #{player[1][:points]} points, (#{pluralize player[1][:goals], "goal"}, #{pluralize player[1][:assists], "assist"})" }.join("\n")}
+          #{skater_stats.sort_by { |k, v| v[:points] }.last(5).reverse.map { |player| "#{player[1][:name]}: #{player[1][:points]} #{"point".pluralize(player[1][:points])}, (#{player[1][:goals]} #{"goal".pluralize(player[1][:goals])}, #{player[1][:assists]} #{"assist".pluralize(player[1][:assists])})" }.join("\n")}
         POST
 
         time_on_ice_leader_post = <<~POST
@@ -68,7 +70,10 @@ module RodTheBot
 
     def record(team)
       points = team["leagueRecord"]["wins"] * 2 + team["leagueRecord"]["ot"]
-      "#{team["leagueRecord"]["wins"]}-#{team["leagueRecord"]["losses"]}-#{team["leagueRecord"]["ot"]}, #{points} points"
+      rank = fetch_division_info(team["team"]["id"])
+      record = "(#{team["leagueRecord"]["wins"]}-#{team["leagueRecord"]["losses"]}-#{team["leagueRecord"]["ot"]}, #{points} points)\n"
+      record += "#{ordinalize rank[:division_rank]} in the #{rank[:division_name]}" unless rank[:division_name] == "Unknown"
+      record
     end
 
     def collect_roster_stats
@@ -106,6 +111,27 @@ module RodTheBot
         end
       end
       [skater_stats, goalie_stats]
+    end
+
+    def fetch_division_info(team_id)
+      response = HTTParty.get("https://statsapi.web.nhl.com/api/v1/standings")
+      standings = response["records"]
+
+      standings.each do |division|
+        division["teamRecords"].each do |team|
+          if team["team"]["id"].to_i == team_id.to_i
+            return {
+              division_name: division["division"]["name"],
+              division_rank: team["divisionRank"]
+            }
+          end
+        end
+      end
+
+      {
+        division_name: "Unknown",
+        division_rank: "Unknown"
+      }
     end
   end
 end
