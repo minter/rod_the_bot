@@ -10,7 +10,7 @@ module RodTheBot
       @your_team_status = (@your_team["team"]["id"] == @home["team"]["id"]) ? "home" : "away"
 
       end_of_period_post = <<~POST
-        🗣️ That's the end of the #{period_number} period 🗣️
+        🗣️ That's the end of the #{period_number} 🗣️
 
         #{@visitor["team"]["name"]} - #{@visitor["goals"]} 
         #{@home["team"]["name"]} - #{@home["goals"]}
