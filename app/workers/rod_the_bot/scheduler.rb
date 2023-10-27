@@ -51,7 +51,7 @@ module RodTheBot
     def record(team)
       points = team["leagueRecord"]["wins"] * 2 + team["leagueRecord"]["ot"]
       rank = fetch_division_info(team["team"]["id"])
-      record = "(#{team["leagueRecord"]["wins"]}-#{team["leagueRecord"]["losses"]}-#{team["leagueRecord"]["ot"]}, #{points} #{"points".pluralize(points)})\n"
+      record = "(#{team["leagueRecord"]["wins"]}-#{team["leagueRecord"]["losses"]}-#{team["leagueRecord"]["ot"]}, #{points} #{"point".pluralize(points)})\n"
       record += "#{ordinalize rank[:division_rank]} in the #{rank[:division_name]}" unless rank[:division_name] == "Unknown"
       record
     end
