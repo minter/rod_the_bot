@@ -24,9 +24,9 @@ module RodTheBot
       away = @feed["gameData"]["teams"]["away"]
 
       post = if @play["team"]["id"] == ENV["NHL_TEAM_ID"].to_i
-        "🙃 #{@your_team["name"]} Penalty 🙃\n\n"
+        "🙃 #{@your_team["name"]} Penalty\n\n"
       else
-        "🤩 #{@play["team"]["name"]} Penalty! 🤩\n\n"
+        "🤩 #{@play["team"]["name"]} Penalty!\n\n"
       end
 
       post += <<~POST

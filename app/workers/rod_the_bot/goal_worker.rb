@@ -28,9 +28,9 @@ module RodTheBot
       type += "Empty Net " if @play["result"]["emptyNet"]
 
       post = if @play["team"]["id"] == ENV["NHL_TEAM_ID"].to_i
-        "🎉 #{@your_team["name"]} #{type}GOOOOOOOAL! 🎉\n\n"
+        "🎉 #{@your_team["name"]} #{type}GOOOOOOOAL!\n\n"
       else
-        "👎 #{@play["team"]["name"]} #{type}Goal 👎\n\n"
+        "👎 #{@play["team"]["name"]} #{type}Goal\n\n"
       end
 
       goal = @play["players"].shift

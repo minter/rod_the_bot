@@ -17,7 +17,7 @@ module RodTheBot
       end
 
       post = <<~POST
-        We're ready for puck drop at #{@feed["gameData"]["venue"]["name"]}!
+        🚦 We're ready for puck drop at #{@feed["gameData"]["venue"]["name"]}!
         
         #{visitor["name"]} at #{home["name"]} is about to begin!
 

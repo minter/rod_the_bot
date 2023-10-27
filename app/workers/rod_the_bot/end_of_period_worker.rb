@@ -10,7 +10,7 @@ module RodTheBot
       @your_team_status = (@your_team["team"]["id"] == @home["team"]["id"]) ? "home" : "away"
 
       end_of_period_post = <<~POST
-        🗣️ That's the end of the #{period_number} 🗣️
+        🛑 That's the end of the #{period_number}
 
         #{@visitor["team"]["name"]} - #{@visitor["goals"]} 
         #{@home["team"]["name"]} - #{@home["goals"]}
@@ -22,13 +22,13 @@ module RodTheBot
       POST
 
       period_toi_post = <<~POST
-        ⏱️ Time on ice leaders for the #{@your_team["team"]["name"]} after the #{period_number} period ⏱️
+        ⏱️ Time on ice leaders for the #{@your_team["team"]["name"]} after the #{period_number} period
 
         #{time_on_ice_leaders.map { |player| "#{player[1][:name]} - #{player[1][:toi]}" }.join("\n")}
       POST
 
       shots_on_goal_post = <<~POST
-        🏒 Shots on goal leaders for the #{@your_team["team"]["name"]} after the #{period_number} period 🏒
+        🏒 Shots on goal leaders for the #{@your_team["team"]["name"]} after the #{period_number} period
 
         #{shots_on_goal_leaders.map { |player| "#{player[1][:name]} - #{player[1][:shots]}" }.join("\n")}
       POST

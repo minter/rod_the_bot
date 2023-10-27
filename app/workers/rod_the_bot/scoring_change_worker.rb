@@ -16,7 +16,7 @@ module RodTheBot
       return if @play["players"] == original_play["players"]
 
       post = <<~POST
-        🔔 Scoring Change 🔔
+        🔔 Scoring Change
 
         The #{@play["team"]["name"]} goal at #{@play["about"]["periodTime"]} of the #{@play["about"]["ordinalNum"]} period now reads:
 
