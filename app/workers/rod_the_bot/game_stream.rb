@@ -26,6 +26,11 @@ module RodTheBot
             RodTheBot::GameStartWorker.perform_async(@game_id)
             REDIS.set("#{game_id}:#{play["about"]["eventId"]}", "true", ex: 172800)
           end
+        elsif play["result"]["eventTypeId"] == "PERIOD_READY"
+          if REDIS.get("#{@game_id}:#{play["about"]["eventId"]}").nil?
+            RodTheBot::PeriodStartWorker.perform_async(@game_id, play["about"]["period"])
+            REDIS.set("#{game_id}:#{play["about"]["eventId"]}", "true", ex: 172800)
+          end
         elsif play["result"]["eventTypeId"] == "PERIOD_END"
           if REDIS.get("#{@game_id}:#{play["about"]["eventId"]}").nil?
             RodTheBot::EndOfPeriodWorker.perform_async(@game_id, play["about"]["ordinalNum"]) unless play["about"]["periodType"] == "SHOOTOUT"
@@ -38,7 +43,7 @@ module RodTheBot
         RodTheBot::FinalScoreWorker.perform_async(@game_id)
         RodTheBot::ThreeStarsWorker.perform_in(90, @game_id)
       else
-        RodTheBot::GameStream.perform_in(60, @game_id)
+        RodTheBot::GameStream.perform_in(30, @game_id)
       end
     end
   end
