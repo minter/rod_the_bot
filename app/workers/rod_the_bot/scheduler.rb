@@ -12,7 +12,8 @@ module RodTheBot
       @game = HTTParty.get("https://statsapi.web.nhl.com/api/v1/schedule?teamId=#{ENV["NHL_TEAM_ID"]}&date=#{today}")["dates"].first
       return if @game.nil?
 
-      time = @time_zone.to_local(Time.parse(@game["games"].first["gameDate"])).strftime("%l:%M %p") + " " + @time_zone.abbreviation
+      time = @time_zone.to_local(Time.parse(@game["games"].first["gameDate"]))
+      time_string = time.strftime("%l:%M %p") + " " + @time_zone.abbreviation
       home = @game["games"].first["teams"]["home"]
       away = @game["games"].first["teams"]["away"]
       venue = @game["games"].first["venue"]
@@ -37,11 +38,11 @@ module RodTheBot
           #{home["team"]["name"]}
           #{record(home)}
           
-          ⏰ #{time}
+          ⏰ #{time_string}
           📍 #{venue["name"]}
         POST
 
-        RodTheBot::GameStream.perform_async(game_id)
+        RodTheBot::GameStream.perform_at(time - 15.minutes, game_id)
         RodTheBot::Post.perform_async(gameday_post)
         RodTheBot::SeasonStatsWorker.perform_async(your_team)
       end
@@ -50,7 +51,7 @@ module RodTheBot
     def record(team)
       points = team["leagueRecord"]["wins"] * 2 + team["leagueRecord"]["ot"]
       rank = fetch_division_info(team["team"]["id"])
-      record = "(#{team["leagueRecord"]["wins"]}-#{team["leagueRecord"]["losses"]}-#{team["leagueRecord"]["ot"]}, #{points} points)\n"
+      record = "(#{team["leagueRecord"]["wins"]}-#{team["leagueRecord"]["losses"]}-#{team["leagueRecord"]["ot"]}, #{points} #{"points".pluralize(points)})\n"
       record += "#{ordinalize rank[:division_rank]} in the #{rank[:division_name]}" unless rank[:division_name] == "Unknown"
       record
     end
