@@ -25,7 +25,7 @@ module RodTheBot
         #{home["team"]["name"]}: #{home["shotsOnGoal"]}
       POST
 
-      post = "🎉 CAAAAAAAAANES WIIIIIIIIIN!\n\n #{post}" if (home_team_is_yours && home["goals"] > visitor["goals"]) || (!home_team_is_yours && home["goals"] < visitor["goals"])
+      post = "#{ENV["WIN_CELEBRATION"]}\n\n#{post}" if ENV["WIN_CELEBRATION"].present? && (home_team_is_yours && home["goals"] > visitor["goals"]) || (!home_team_is_yours && home["goals"] < visitor["goals"])
 
       RodTheBot::Post.perform_async(post)
     end
