@@ -27,7 +27,7 @@ services:
     command: bundle exec sidekiq
     environment:
       REDIS_URL: redis://redis:6379/0
-      RAILS_ENV: development
+      RAILS_ENV: production
     volumes:
       - ./:/app
 

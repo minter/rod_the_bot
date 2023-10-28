@@ -44,6 +44,7 @@ BLUESKY_USERNAME=YOUR_USERNAME.bsky.social
 DEBUG_POSTS=false
 NHL_TEAM_ID=12
 REDIS_URL=redis://localhost:6379/9
+SECRET_KEY_BASE=69782b185cf994696b846e43b8e26a6c9f724905c74bf7556162c5a18cd17edc68a702ffbd0df7e855e2f4c6cf71bf68c794741c9234841f45446c3679bd8e6d 
 TEAM_HASHTAGS="#LetsGoCanes #CauseChaos"
 TIME_ZONE=America/New_York
 WEB_PORT=3000
@@ -110,6 +111,10 @@ Every NHL franchise has an ID in the stats system. This is used to identify the 
 
 Rod The Bot uses Redis to keep track of plays that it has already seen. This is used to prevent duplicate posts. You can use any Redis instance that you want, but the default is to use a local instance on port 6379, database 9. If you are using the docker-compose method, this will be overridden in the `docker-compose.yml` file.
 
+### SECRET_KEY_BASE
+
+Rod The Bot is a Ruby on Rails app, and this is needed to run. You can use this one if you want, but it is recommended that you generate your own. You can do this by generating a 128-character random alphanumeric string and setting it as the value of this variable. To generate a string, you can use a tool like [this online random string generator](https://www.hjkeen.net/htoys/generate.htm).
+
 ### TEAM_HASHTAGS
 
 This setting controls the hashtags that will be added to each post. You can add as many as you want, but they must be separated by spaces. You can use this if your team has official hashtags that you would like to include on every post.
@@ -124,7 +129,6 @@ Common time zones:
 * Mountain Time: `America/Denver`
 * Pacific Time: `America/Los_Angeles`
 * Arizona Time: `America/Phoenix`
-
 
 ### WEB_PORT
 
