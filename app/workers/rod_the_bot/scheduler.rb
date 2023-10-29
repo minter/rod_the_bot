@@ -10,6 +10,10 @@ module RodTheBot
       @time_zone = TZInfo::Timezone.get(ENV["TIME_ZONE"])
       today = @time_zone.to_local(Time.now).strftime("%Y-%m-%d")
       @game = HTTParty.get("https://statsapi.web.nhl.com/api/v1/schedule?teamId=#{ENV["NHL_TEAM_ID"]}&date=#{today}")["dates"].first
+
+      RodTheBot::YesterdaysScoresWorker.perform_async
+      RodTheBot::DivisionStandingsWorker.perform_async(ENV["NHL_TEAM_ID"])
+
       return if @game.nil?
 
       time = @time_zone.to_local(Time.parse(@game["games"].first["gameDate"]))
