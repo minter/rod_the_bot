@@ -12,7 +12,7 @@ The project leverages my previous work with a Twitter bot to post automated goal
 
 You can install and run raw source code on your server, or use the Docker image.
 
-By default, the scheduler will run at 10am in your time zone every day. If there is no game that day, it will silently exit. If there is a game, it will enqueue the game feed job to run every minute until the game is marked as a final. Once the game is final, it will enqueue the post-game job to run once.
+The scheduler will run at 10am in your time zone every day. If there is no game that day, it will silently exit. If there is a game, it will enqueue the game feed job to start checking the feed approximately 15 minutes before the game start time, and will run every minute until the game is marked as a final. Once the game is final, it will enqueue the post-game jobs to run once and quit until tomorrow.
 
 ### Raw source code
 
@@ -24,13 +24,14 @@ This method requires you to be running on a system with Ruby 3+ and enough dev t
 4. Run the background job processor: `bundle exec dotenv sidekiq`
 5. Optional - Run the web UI to monitor Sidekiq: `bin/rails s`
 
-### Docker image
+### Docker Compose - Full Repo
 
 This method requires you to have Docker and Docker Compose installed.
 
 1. Clone the repo from GitHub: [minter/rod_the_bot](https://github.com/minter/rod_the_bot)
 2. Create a `.env` file (see below)
 3. Run the software: `docker-compose up --build -d`
+4. Check logs by running `docker-compose logs -f`
 
 ## Configuration using .env
 
@@ -47,7 +48,6 @@ REDIS_URL=redis://localhost:6379/9
 SECRET_KEY_BASE=69782b185cf994696b846e43b8e26a6c9f724905c74bf7556162c5a18cd17edc68a702ffbd0df7e855e2f4c6cf71bf68c794741c9234841f45446c3679bd8e6d 
 TEAM_HASHTAGS="#LetsGoCanes #CauseChaos"
 TIME_ZONE=America/New_York
-WEB_PORT=3000
 WIN_CELEBRATION=Canes Win!
 ```
 You can, in theory, pass the environment variables to the system in other ways, but those methods are not covered here.
@@ -109,15 +109,15 @@ Every NHL franchise has an ID in the stats system. This is used to identify the 
 
 ### REDIS_URL
 
-Rod The Bot uses Redis to keep track of plays that it has already seen. This is used to prevent duplicate posts. You can use any Redis instance that you want, but the default is to use a local instance on port 6379, database 9. If you are using the docker-compose method, this will be overridden in the `docker-compose.yml` file.
+Rod The Bot uses Redis to keep track of plays that it has already seen. This is used to prevent duplicate posts. You can use any Redis instance that you want, but the default is to use a local instance on port 6379, database 9. This Redis instance must be accessible by your local system if you are running in raw source code mode. If you are using the docker-compose method, this will be overridden in the `docker-compose.yml` file.
 
 ### SECRET_KEY_BASE
 
-Rod The Bot is a Ruby on Rails app, and this is needed to run. You can use this one if you want, but it is recommended that you generate your own. You can do this by generating a 128-character random alphanumeric string and setting it as the value of this variable. To generate a string, you can use a tool like [this online random string generator](https://www.hjkeen.net/htoys/generate.htm).
+Rod The Bot is a Ruby on Rails app, and this is needed to run Rails. You can use the example one if you want, but it is recommended that you generate your own. You can do this by generating a 128-character random alphanumeric string and setting it as the value of this variable. To generate a string, you can use a tool like [this online random string generator](https://www.hjkeen.net/htoys/generate.htm).
 
 ### TEAM_HASHTAGS
 
-This setting controls the hashtags that will be added to each post. You can add as many as you want, but they must be separated by spaces. You can use this if your team has official hashtags that you would like to include on every post.
+This setting controls the hashtags that will be added to each post. You can add as many as you want, but they must be separated by spaces. You can use this if your team has official hashtags that you would like to include on every post. Leave it blank if you do not want to add them.
 
 ### TIME_ZONE
 
@@ -130,13 +130,9 @@ Common time zones:
 * Pacific Time: `America/Los_Angeles`
 * Arizona Time: `America/Phoenix`
 
-### WEB_PORT
-
-This setting controls the port that the web UI will listen on. This is only used if you are running the web UI.
-
 ### WIN_CELEBRATION
 
-If this is set, the value provided will be put at the top of your final score post if your team wins!
+If this is set, the value provided will be put at the top of your final score post if your team wins! Leave it blank if you do not want this.
   
 ## Technical Architecture
 
@@ -148,7 +144,6 @@ Key system components and dependencies:
 * HTTParty: NHL API client
 
 ## TODO
-* Get docker-compose working for production
 * Fix issues with web UI in Docker
 
 ## Contributing
