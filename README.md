@@ -18,7 +18,7 @@ This method requires you to have [Docker](https://docs.docker.com/get-docker/) a
 
 1. Create a `.env` file ([see below](#configuration-using-the-env-file)) in the same directory as the `docker-compose.yml` file
 2. Download or copy the [`docker-compose-images.yml`](https://github.com/minter/rod_the_bot/blob/main/docker-compose-images.yml) file from the source code, save it to a local file named `docker-compose.yml` in the same directory as the `.env` file
-3. Run the software: `docker compose up -d`
+3. Run the software: `docker compose up --build -d`
 4. Check logs by running `docker compose logs -f`
 5. Stop the software by running `docker compose down`
 
