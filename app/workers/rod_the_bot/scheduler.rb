@@ -11,8 +11,8 @@ module RodTheBot
       today = @time_zone.to_local(Time.now).strftime("%Y-%m-%d")
       @game = HTTParty.get("https://statsapi.web.nhl.com/api/v1/schedule?teamId=#{ENV["NHL_TEAM_ID"]}&date=#{today}")["dates"].first
 
-      RodTheBot::YesterdaysScoresWorker.perform_async
-      RodTheBot::DivisionStandingsWorker.perform_async(ENV["NHL_TEAM_ID"])
+      RodTheBot::YesterdaysScoresWorker.perform_in(15.minutes)
+      RodTheBot::DivisionStandingsWorker.perform_in(16.minutes, ENV["NHL_TEAM_ID"])
 
       return if @game.nil?
 

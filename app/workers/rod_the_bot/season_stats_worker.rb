@@ -66,15 +66,15 @@ module RodTheBot
         Shooting Percentage: #{season_stats_with_rank[:shooting_percentage][:value]} (Rank: #{season_stats_with_rank[:shooting_percentage][:rank]})
       POST
 
-      RodTheBot::Post.perform_in(10, goalie_post)
-      RodTheBot::Post.perform_in(20, time_on_ice_leader_post)
-      RodTheBot::Post.perform_in(30, skater_points_leader_post)
-      RodTheBot::Post.perform_in(40, goal_leader_post)
-      RodTheBot::Post.perform_in(50, assist_leader_post)
-      RodTheBot::Post.perform_in(60, pim_leader_post)
-      RodTheBot::Post.perform_in(70, team_season_stats_post_1)
-      RodTheBot::Post.perform_in(80, team_season_stats_post_2)
-      RodTheBot::Post.perform_in(90, team_season_stats_post_3)
+      RodTheBot::Post.perform_in(30.minutes, goalie_post)
+      RodTheBot::Post.perform_in(45.minutes, time_on_ice_leader_post)
+      RodTheBot::Post.perform_in(46.minutes, pim_leader_post)
+      RodTheBot::Post.perform_in(60.minutes, skater_points_leader_post)
+      RodTheBot::Post.perform_in(61.minutes, goal_leader_post)
+      RodTheBot::Post.perform_in(62.minutes, assist_leader_post)
+      RodTheBot::Post.perform_in(75.minutes, team_season_stats_post_1)
+      RodTheBot::Post.perform_in(76.minutes, team_season_stats_post_2)
+      RodTheBot::Post.perform_in(77.minutes, team_season_stats_post_3)
     end
 
     def collect_roster_stats
