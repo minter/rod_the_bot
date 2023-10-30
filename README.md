@@ -151,6 +151,8 @@ The scheduler will run at 10am in your time zone every day. It will post some sc
 
 If there is a game, it will post some team preview information (scoring, goaltending, etc) over the next 90 minutes. It will also enqueue the game feed job to start checking the data feed approximately 15 minutes before the game start time, and will run every 30 seconds until the game is marked as a final. Once the game is final, it will enqueue the post-game jobs (final score, three stars) to run once and quit until tomorrow.
 
+To check logs from the bot, run `docker compose logs -f sidekiq` (to see the background job processor logs scroll by in real time) or `docker compose logs -f redis` (to see the Redis logs). The first one will be more useful, especially if you have `DEBUG_POSTS` set to `true`.
+
 ## Technical Architecture
 
 Key system components and dependencies:
