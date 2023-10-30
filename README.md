@@ -28,15 +28,18 @@ This method requires you to have [Docker](https://docs.docker.com/get-docker/) a
 This method requires you to have [Docker](https://docs.docker.com/get-docker/) and Docker Compose installed, and will build the docker image on your local system.
 
 1. Clone the repo from GitHub: [minter/rod_the_bot](https://github.com/minter/rod_the_bot)
-2. Create a `.env` file ([see below](#configuration-using-the-env-file))
-3. Run the software: `docker compose up --build -d`
-4. Stop the software by running `docker compose down`
+2. Change into the `rod_the_bot` directory
+3. Create a `.env` file ([see below](#configuration-using-the-env-file)) that will live in the root of the `rod_the_bot` directory
+4. Run the software: `docker compose up --build -d`
+5. Stop the software by running `docker compose down`
 
 [Check the logs](#checking-the-logs) to make sure that the software is running correctly.
 
 ### Raw source code (Hardest)
 
-This method requires you to be running on a system with Ruby 3+ and enough dev tools to build native extensions. You will also need a Redis instance running to store state.
+This method requires you to be running on a system with Ruby 3+ and enough dev tools to build native extensions. You will also need a Redis instance running to store state. This has been tested on both Ubuntu 22.04 and OS X Sonoma, but does require a number of dependencies to be installed.
+
+**You will likely only want to use this method if you are planning on actively changing/contributing to the codebase.**
 
 1. Clone the repo from GitHub: [minter/rod_the_bot](https://github.com/minter/rod_the_bot)
 2. Install Ruby dependencies: `bundle install` *(address any errors that pop up until this completes)*
