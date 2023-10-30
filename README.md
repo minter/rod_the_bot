@@ -16,7 +16,7 @@ You can install and run raw source code on your server, or use the Docker images
 
 This method requires you to have [Docker](https://docs.docker.com/get-docker/) and Docker Compose installed, but does not require any of the source code to be located on your system.
 
-1. Create a `.env` file (see below) in the same directory as the `docker-compose.yml` file
+1. Create a `.env` file ([see below](#configuration-using-the-env-file)) in the same directory as the `docker-compose.yml` file
 2. Download or copy the [`docker-compose-images.yml`](https://github.com/minter/rod_the_bot/blob/main/docker-compose-images.yml) file from the source code, save it to a local file named `docker-compose.yml` in the same directory as the `.env` file
 3. Run the software: `docker compose up -d`
 4. Check logs by running `docker compose logs -f`
@@ -27,7 +27,7 @@ This method requires you to have [Docker](https://docs.docker.com/get-docker/) a
 This method requires you to have [Docker](https://docs.docker.com/get-docker/) and Docker Compose installed, and will build the docker image on your local system.
 
 1. Clone the repo from GitHub: [minter/rod_the_bot](https://github.com/minter/rod_the_bot)
-2. Create a `.env` file (see below)
+2. Create a `.env` file ([see below](#configuration-using-the-env-file))
 3. Run the software: `docker compose up --build -d`
 4. Check logs by running `docker compose logs -f`
 5. Stop the software by running `docker compose down`
@@ -38,7 +38,7 @@ This method requires you to be running on a system with Ruby 3+ and enough dev t
 
 1. Clone the repo from GitHub: [minter/rod_the_bot](https://github.com/minter/rod_the_bot)
 2. Install Ruby dependencies: `bundle install`
-3. Create a `.env` file (see below)
+3. Create a `.env` file ([see below](#configuration-using-the-env-file))
 4. Run the background job processor: `bundle exec dotenv sidekiq`
 5. Optional - Run the web UI to monitor Sidekiq: `bin/rails s`
 
