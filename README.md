@@ -19,8 +19,9 @@ This method requires you to have [Docker](https://docs.docker.com/get-docker/) a
 1. Create a `.env` file ([see below](#configuration-using-the-env-file)) in the same directory as the `docker-compose.yml` file
 2. Download or copy the [`docker-compose-images.yml`](https://github.com/minter/rod_the_bot/blob/main/docker-compose-images.yml) file from the source code, save it to a local file named `docker-compose.yml` in the same directory as the `.env` file
 3. Run the software: `docker compose up --build -d`
-4. Check logs by running `docker compose logs -f`
-5. Stop the software by running `docker compose down`
+4. Stop the software by running `docker compose down`
+
+[Check the logs](#checking-the-logs) to make sure that the software is running correctly.
 
 ### Docker Compose - Local Build (Intermediate)
 
@@ -29,18 +30,21 @@ This method requires you to have [Docker](https://docs.docker.com/get-docker/) a
 1. Clone the repo from GitHub: [minter/rod_the_bot](https://github.com/minter/rod_the_bot)
 2. Create a `.env` file ([see below](#configuration-using-the-env-file))
 3. Run the software: `docker compose up --build -d`
-4. Check logs by running `docker compose logs -f`
-5. Stop the software by running `docker compose down`
+4. Stop the software by running `docker compose down`
+
+[Check the logs](#checking-the-logs) to make sure that the software is running correctly.
 
 ### Raw source code (Hardest)
 
 This method requires you to be running on a system with Ruby 3+ and enough dev tools to build native extensions. You will also need a Redis instance running to store state.
 
 1. Clone the repo from GitHub: [minter/rod_the_bot](https://github.com/minter/rod_the_bot)
-2. Install Ruby dependencies: `bundle install`
+2. Install Ruby dependencies: `bundle install` *(address any errors that pop up until this completes)*
 3. Create a `.env` file ([see below](#configuration-using-the-env-file))
 4. Run the background job processor: `bundle exec dotenv sidekiq`
-5. Optional - Run the web UI to monitor Sidekiq: `bin/rails s`
+5. Stop the software by pressing `Ctrl-C`
+
+Logs should be output to the console where you are running Sidekiq.
 
 ## Configuration using the .env file
 
@@ -151,7 +155,9 @@ The scheduler will run at 10am in your time zone every day. It will post some sc
 
 If there is a game, it will post some team preview information (scoring, goaltending, etc) over the next 90 minutes. It will also enqueue the game feed job to start checking the data feed approximately 15 minutes before the game start time, and will run every 30 seconds until the game is marked as a final. Once the game is final, it will enqueue the post-game jobs (final score, three stars) to run once and quit until tomorrow.
 
-To check logs from the bot, run `docker compose logs -f sidekiq` (to see the background job processor logs scroll by in real time) or `docker compose logs -f redis` (to see the Redis logs). The first one will be more useful, especially if you have `DEBUG_POSTS` set to `true`.
+### Checking the logs
+
+To check logs from the bot when it's running under Docker, go to the directory with your `docker-compose.yml` file and run `docker compose logs -f sidekiq` (to see the background job processor logs scroll by in real time) or `docker compose logs -f redis` (to see the Redis logs). The first one will be more useful, especially if you have `DEBUG_POSTS` set to `true`. You can stop the logs by pressing `Ctrl-C`.
 
 ## Technical Architecture
 
