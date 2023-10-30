@@ -6,19 +6,6 @@ services:
     volumes:
       - "redis:/data"
 
-  # website:
-  #   depends_on:
-  #     - "redis"
-  #   build: 
-  #   command: bin/rails server
-  #   ports:
-  #     - "${WEB_PORT}:3000"
-  #   volumes:
-  #     - ./:/app
-  #   environment:
-  #     REDIS_URL: redis://redis:6379/0
-  #     RAILS_ENV: production
-
   sidekiq:
     depends_on:
       - "redis"
