@@ -19,7 +19,7 @@ module RodTheBot
       # Print the team abbreviation, position, and points for each team in the standings
       standings.each_with_index do |team, index|
         team_data = HTTParty.get("https://statsapi.web.nhl.com/api/v1/teams/#{team["team"]["id"]}").parsed_response["teams"][0]
-        post += "#{index + 1}. #{team_data["abbreviation"]}: #{team["points"]} points\n"
+        post += "#{index + 1}. #{team_data["abbreviation"]}: #{team["points"]} pts (#{team["gamesPlayed"]} GP)\n"
       end
 
       RodTheBot::Post.perform_async(post)
