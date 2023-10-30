@@ -70,7 +70,7 @@ You can, in theory, pass the environment variables to the system in other ways, 
 
 ### BLUESKY_USERNAME and BLUESKY_APP_PASSWORD
 
-These are the credentials for the Bluesky account that you want to post to. You can create an app password in the [Bluesky settings](https://bsky.social/settings/apps) for the user that you want to post as. The Bluesky username will likely either be in the form of `USER.bsky.social`, or `YOUR-CUSTOM-DOMAIN.COM`, depending on whether you have set up a custom domain for this account.
+These are the credentials for the Bluesky account that you want to post to. You can create an app password in the [Bluesky settings](https://bsky.app/settings/app-passwords) for the user that you want to post as. The Bluesky username will likely either be in the form of `USER.bsky.social`, or `YOUR-CUSTOM-DOMAIN.COM`, depending on whether you have set up a custom domain for this account.
 
 **Note** that when you create an app password, you will only be shown the password once. If you lose it, you will need to create a new one.
 
