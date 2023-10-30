@@ -21,6 +21,10 @@ FROM base as build
 RUN apt-get update -qq && \
     apt-get install --no-install-recommends -y build-essential git pkg-config
 
+# Install specific version of bundler
+ARG BUNDLER_VERSION=2.4.21
+RUN gem install bundler --no-document -v "${BUNDLER_VERSION}"
+
 # Install application gems
 COPY Gemfile Gemfile.lock ./
 RUN bundle install && \
