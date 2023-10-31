@@ -162,6 +162,18 @@ If there is a game, it will post some team preview information (scoring, goalten
 
 To check logs from the bot when it's running under Docker, go to the directory with your `docker-compose.yml` file and run `docker compose logs -f sidekiq` (to see the background job processor logs scroll by in real time) or `docker compose logs -f redis` (to see the Redis logs). The first one will be more useful, especially if you have `DEBUG_POSTS` set to `true`. You can stop the logs by pressing `Ctrl-C`.
 
+## Ubuntu Systemd Service
+
+If you are running on Ubuntu or other Systemd-compatible Linux, you can use the following systemd service file to run the bot as a service. This will allow it to start automatically on boot, and will restart it if it crashes. This service uses the [Docker Compose - Remote Images](#docker-compose---remote-images-easiest) method to run the bot.
+
+1. Create a file named `/etc/systemd/system/rod_the_bot.service`, and use the contents of the [`rod_the_bot.service-example`](https://github.com/minter/rod_the_bot/blob/main/rod_the_bot.service-example) file in the root of this repository. You will need to modify the `WorkingDirectory`, `User`, and `Group` values to match your setup. The `WorkingDirectory` must contain the `.env` file and the `docker-compose.yml` file.
+2. Run `sudo systemctl daemon-reload` to reload the systemd configuration
+3. Run `sudo systemctl enable rod_the_bot` to enable the service
+4. Run `sudo systemctl start rod_the_bot` to start the service
+5. Run `sudo systemctl status rod_the_bot` to check the status of the service
+6. Run `sudo systemctl stop rod_the_bot` to stop the service
+7. Run `sudo systemctl disable rod_the_bot` to disable the service
+
 ## Technical Architecture
 
 Key system components and dependencies:
