@@ -21,7 +21,7 @@ module RodTheBot
 
       return if @play.nil? || @play["about"]["periodType"] == "SHOOTOUT"
 
-      original_play = @play["players"].deep_dup
+      original_play = @play.deep_dup
       home = @feed["gameData"]["teams"]["home"]
       away = @feed["gameData"]["teams"]["away"]
 
