@@ -12,7 +12,7 @@ module RodTheBot
       @visitor_code = @feed["gameData"]["teams"]["away"]["abbreviation"]
 
       end_of_period_post = <<~POST
-        🛑 That's the end of the #{period_number}
+        🛑 That's the end of the #{period_number} period!
 
         #{@visitor["team"]["name"]} - #{@visitor["goals"]} 
         #{@home["team"]["name"]} - #{@home["goals"]}
@@ -24,20 +24,20 @@ module RodTheBot
       POST
 
       period_toi_post = <<~POST
-        ⏱️ Time on ice leaders for the #{@your_team["team"]["name"]} after the #{period_number} period
+        ⏱️ Time on ice leaders for the #{@your_team["team"]["name"]} after the #{period_number}
 
         #{time_on_ice_leaders.map { |player| "#{player[1][:name]} - #{player[1][:toi]}" }.join("\n")}
       POST
 
       shots_on_goal_post = <<~POST
-        🏒 Shots on goal leaders for the #{@your_team["team"]["name"]} after the #{period_number} period
+        🏒 Shots on goal leaders for the #{@your_team["team"]["name"]} after the #{period_number}
 
         #{shots_on_goal_leaders.map { |player| "#{player[1][:name]} - #{player[1][:shots]}" }.join("\n")}
       POST
 
       game_splits_stats = get_game_splits_stats
       game_split_stats_post = <<~POST
-        📄 Game comparison after the #{period_number} period
+        📄 Game comparison after the #{period_number}
 
         Faceoff %: #{@visitor_code} - #{game_splits_stats[:faceOffWinPercentage][:away]}% | #{@home_code} - #{game_splits_stats[:faceOffWinPercentage][:home]}%
         PIM: #{@visitor_code} - #{game_splits_stats[:pim][:away]} | #{@home_code} - #{game_splits_stats[:pim][:home]}
@@ -49,9 +49,9 @@ module RodTheBot
       POST
 
       RodTheBot::Post.perform_async(end_of_period_post) unless @feed["gameData"]["status"]["detailedState"] == "Final"
-      RodTheBot::Post.perform_in(10, period_toi_post)
-      RodTheBot::Post.perform_in(20, shots_on_goal_post)
-      RodTheBot::Post.perform_in(30, game_split_stats_post)
+      RodTheBot::Post.perform_in(60, period_toi_post)
+      RodTheBot::Post.perform_in(120, shots_on_goal_post)
+      RodTheBot::Post.perform_in(180, game_split_stats_post)
     end
 
     def time_on_ice_leaders

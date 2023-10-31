@@ -15,11 +15,6 @@ module RodTheBot
       # If nothing has changed on this scoring play, exit
       return if @play["players"] == original_play["players"]
 
-      print "DEBUG: SCORING CHANGE DETECTED\n"
-      print "DEBUG: NEW SCORING: #{@play["players"]}\n"
-      print "DEBUG: OLD SCORING: #{original_play["players"]}\n"
-      print "DEBUG: DIFF: #{@play["players"] - original_play["players"]}\n}"
-
       post = <<~POST
         🔔 Scoring Change
 
@@ -38,8 +33,7 @@ module RodTheBot
           post += "🍎 #{assist["player"]["fullName"]} (#{assist["seasonTotal"]})\n"
         end
       end
-      print "DEBUG: POST: #{post}\n"
-      # RodTheBot::Post.perform_async(post)
+      RodTheBot::Post.perform_async(post)
     end
   end
 end

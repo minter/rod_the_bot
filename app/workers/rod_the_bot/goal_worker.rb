@@ -21,7 +21,7 @@ module RodTheBot
 
       return if @play.nil? || @play["about"]["periodType"] == "SHOOTOUT"
 
-      original_play = @play.dup
+      original_play = @play["players"].deep_dup
       home = @feed["gameData"]["teams"]["home"]
       away = @feed["gameData"]["teams"]["away"]
 
@@ -46,8 +46,8 @@ module RodTheBot
           post += "🍎 #{assist["player"]["fullName"]} (#{assist["seasonTotal"]})\n"
         end
       end
-      post += "⏱️  #{@play["about"]["periodTime"]} #{@play["about"]["ordinalNum"]} Period\n\n"
-      post += "#{away["abbreviation"]} #{@play["about"]["goals"]["away"]} - #{home["abbreviation"]} #{@play["about"]["goals"]["home"]}"
+      post += "⏱️ #{@play["about"]["periodTime"]} #{@play["about"]["ordinalNum"]} Period\n\n"
+      post += "#{away["abbreviation"]} #{@play["about"]["goals"]["away"]} - #{home["abbreviation"]} #{@play["about"]["goals"]["home"]}\n"
       RodTheBot::Post.perform_async(post)
       RodTheBot::ScoringChangeWorker.perform_in(600, game_id, play_id, original_play)
     end

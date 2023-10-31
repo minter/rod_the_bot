@@ -13,7 +13,7 @@ module RodTheBot
         play_count += 1
         if play["result"]["event"] == "Goal"
           if REDIS.get("#{@game_id}:#{play["about"]["eventId"]}").nil?
-            RodTheBot::GoalWorker.perform_in(120, @game_id, play["about"]["eventId"])
+            RodTheBot::GoalWorker.perform_in(60, @game_id, play["about"]["eventId"])
             REDIS.set("#{game_id}:#{play["about"]["eventId"]}", "true", ex: 172800)
           end
         elsif play["result"]["event"] == "Penalty"
