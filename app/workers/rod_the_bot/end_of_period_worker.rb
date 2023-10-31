@@ -1,5 +1,5 @@
 module RodTheBot
-  class EndOfPeriodStatsWorker
+  class EndOfPeriodWorker
     include Sidekiq::Worker
 
     def perform(game_id, period_number)
