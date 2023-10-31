@@ -28,6 +28,7 @@ module RodTheBot
       post = "#{ENV["WIN_CELEBRATION"]}\n\n#{post}" if ENV["WIN_CELEBRATION"].present? && (home_team_is_yours && home["goals"] > visitor["goals"]) || (!home_team_is_yours && home["goals"] < visitor["goals"])
 
       RodTheBot::Post.perform_async(post)
+      RodTheBot::EndOfPeriodStatsWorker.perform_async(game_id, "")
     end
   end
 end
