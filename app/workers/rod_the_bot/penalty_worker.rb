@@ -12,6 +12,8 @@ module RodTheBot
         end
       end
 
+      return if @play.nil?
+
       home = @feed["gameData"]["teams"]["home"]
       away = @feed["gameData"]["teams"]["away"]
       @your_team = if home["id"].to_i == ENV["NHL_TEAM_ID"].to_i
