@@ -8,9 +8,7 @@ module RodTheBot
       @game_final = @feed["gameData"]["status"]["detailedState"] == "Final"
       @players = {}
 
-      play_count = 0
       @feed["liveData"]["plays"]["allPlays"].each do |play|
-        play_count += 1
         if play["result"]["event"] == "Goal"
           if REDIS.get("#{@game_id}:#{play["about"]["eventId"]}").nil?
             RodTheBot::GoalWorker.perform_in(60, @game_id, play["about"]["eventId"])
