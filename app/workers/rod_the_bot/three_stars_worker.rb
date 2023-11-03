@@ -41,7 +41,7 @@ module RodTheBot
         goals = player["stats"]["skaterStats"]["goals"]
         assists = player["stats"]["skaterStats"]["assists"]
         points = goals + assists
-        stats = "#{goals}G #{assists}A, #{points}#{"PT".pluralize(points).upcase}}"
+        stats = "#{goals}G #{assists}A, #{points}#{"PT".pluralize(points).upcase}"
       end
       "#{player["team"]} ##{player["jerseyNumber"]} #{player["person"]["fullName"]} (#{stats})\n"
     end
