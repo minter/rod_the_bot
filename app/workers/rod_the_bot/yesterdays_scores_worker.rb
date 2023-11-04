@@ -15,7 +15,7 @@ module RodTheBot
           home_score = game["teams"]["home"]["score"]
           visitor_team = HTTParty.get("https://statsapi.web.nhl.com#{game["teams"]["away"]["team"]["link"]}").parsed_response["teams"][0]["abbreviation"]
           visitor_score = game["teams"]["away"]["score"]
-          score = "#{visitor_score} #{visitor_team} : #{home_team} #{home_score}"
+          score = "#{visitor_team} #{visitor_score} : #{home_score} #{home_team}"
           score += " (SO)" if game["linescore"]["currentPeriodOrdinal"] == "SO"
           score += " (OT)" if game["linescore"]["currentPeriodOrdinal"] == "OT"
           score
