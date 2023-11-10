@@ -4,7 +4,7 @@ A Bluesky bot to post in-game updates for NHL games
 
 ## About This Project
 
-Now that my primary social media home is [Bluesky](https://bsky.app), I wanted to bring in some in-game NHL updates into the timeline. This bot leverages the [NHL StatsWeb API](https://gitlab.com/dword4/nhlapi) to pull live game data, and post updates to Bluesky.
+Now that my primary social media home is [Bluesky](https://bsky.app), I wanted to bring in some in-game NHL updates into the timeline. This bot leverages the new [NHL API](https://gitlab.com/dword4/nhlapi/-/blob/master/new-api.md) to pull live game data, and post updates to Bluesky. [Here's a video](https://www.youtube.com/watch?v=wjo68W2qkqw) about reverse-engineering the API.
 
 The project leverages my previous work with a Twitter bot to post automated goal calls to Twitter. It was written to power the Carolina Hurricanes Bluesky account [@canesgameday.bsky.social](https://bsky.app/profile/canesgameday.bsky.social), but should be configurable for accounts following any NHL team.
 
