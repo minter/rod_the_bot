@@ -3,37 +3,49 @@ module RodTheBot
     include Sidekiq::Worker
 
     def perform(game_id, play_id, original_play)
-      @feed = HTTParty.get("https://statsapi.web.nhl.com/api/v1/game/#{game_id}/feed/live")
-      @play = nil
-      @feed["liveData"]["plays"]["allPlays"].each do |live_play|
-        if live_play["about"]["eventId"].to_i == play_id.to_i
-          @play = live_play
-          break
-        end
-      end
+      @feed = HTTParty.get("https://api-web.nhle.com/v1/gamecenter/#{game_id}/play-by-play")
+      @play = @feed["plays"].find { |play| play["eventId"].to_i == play_id.to_i }
+      home = @feed["homeTeam"]
+      away = @feed["awayTeam"]
 
       # If nothing has changed on this scoring play, exit
-      return if @play["players"] == original_play["players"]
+      original_scorers = [original_play["details"]["scoringPlayerId"], original_play["details"]["assist1PlayerId"], original_play["details"]["assist2PlayerId"]]
+      new_scorers = [@play["details"]["scoringPlayerId"], @play["details"]["assist1PlayerId"], @play["details"]["assist2PlayerId"]]
+      return if new_scorers == original_scorers
+
+      players = build_players(@feed)
+
+      scoring_team_id = players[@play["details"]["scoringPlayerId"]][:team_id]
+      scoring_team = (home["id"] == scoring_team_id) ? home : away
 
       post = <<~POST
         🔔 Scoring Change
 
-        The #{@play["team"]["name"]} goal at #{@play["about"]["periodTime"]} of the #{@play["about"]["ordinalNum"]} period now reads:
+        The #{scoring_team["name"]["default"]} goal at #{@play["timeInPeriod"]} of the #{ordinalize(@play["period"])} period now reads:
 
       POST
-      goal = @play["players"].shift
-      post += "🚨 #{goal["player"]["fullName"]} (#{goal["seasonTotal"]})\n"
+      post += "🚨 #{players[@play["details"]["scoringPlayerId"]][:name]} (#{@play["details"]["scoringPlayerTotal"]})\n"
 
-      if @play["players"].empty?
-        post += "🍎 Unassisted\n"
+      post += if @play["details"]["assist1PlayerId"].present?
+        "🍎 #{players[@play["details"]["assist1PlayerId"]][:name]} (#{@play["details"]["assist1PlayerTotal"]})\n"
       else
-        while (assist = @play["players"].shift)
-          next unless assist["playerType"] == "Assist"
-
-          post += "🍎 #{assist["player"]["fullName"]} (#{assist["seasonTotal"]})\n"
-        end
+        "🍎 Unassisted\n"
       end
+      post += "🍎🍎 #{players[@play["details"]["assist2PlayerId"]][:name]} (#{@play["details"]["assist2PlayerTotal"]})\n" if @play["details"]["assist2PlayerId"].present?
+
       RodTheBot::Post.perform_async(post)
+    end
+
+    def build_players(feed)
+      players = {}
+      feed["rosterSpots"].each do |player|
+        players[player["playerId"]] = {
+          team_id: player["teamId"],
+          number: player["sweaterNumber"],
+          name: player["firstName"]["default"] + " " + player["lastName"]["default"]
+        }
+      end
+      players
     end
   end
 end
