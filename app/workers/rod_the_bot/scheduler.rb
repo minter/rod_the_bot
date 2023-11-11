@@ -57,8 +57,6 @@ module RodTheBot
           📍 #{venue["default"]}
         POST
 
-        print "POST IS #{gameday_post}"
-
         RodTheBot::GameStream.perform_at(time - 15.minutes, game_id)
         RodTheBot::Post.perform_async(gameday_post)
         RodTheBot::SeasonStatsWorker.perform_async(your_team)
