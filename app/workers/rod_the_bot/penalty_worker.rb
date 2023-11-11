@@ -1,45 +1,59 @@
 module RodTheBot
   class PenaltyWorker
     include Sidekiq::Worker
+    include ActiveSupport::Inflector
 
     def perform(game_id, play_id)
-      @feed = HTTParty.get("https://statsapi.web.nhl.com/api/v1/game/#{game_id}/feed/live")
-      @play = nil
-      @feed["liveData"]["plays"]["allPlays"].each do |live_play|
-        if live_play["about"]["eventId"].to_i == play_id.to_i
-          @play = live_play
-          break
-        end
-      end
-
+      @feed = HTTParty.get("https://api-web.nhle.com/v1/gamecenter/#{game_id}/play-by-play")
+      @play = @feed["plays"].find { |play| play["eventId"].to_i == play_id.to_i }
       return if @play.nil?
 
-      home = @feed["gameData"]["teams"]["home"]
-      away = @feed["gameData"]["teams"]["away"]
-      @your_team = if home["id"].to_i == ENV["NHL_TEAM_ID"].to_i
-        home
+      home = @feed["homeTeam"]
+      away = @feed["awayTeam"]
+
+      severity = {
+        "MIN" => "Minor",
+        "MAJ" => "Major",
+        "MIS" => "Misconduct",
+        "GMIS" => "Game Misconduct",
+        "MATCH" => "Match"
+      }
+
+      if home["id"].to_i == ENV["NHL_TEAM_ID"].to_i
+        @your_team = home
+        @their_team = away
       else
-        away
+        @your_team = away
+        @their_team = home
       end
 
-      home = @feed["gameData"]["teams"]["home"]
-      away = @feed["gameData"]["teams"]["away"]
+      players = build_players(@feed)
 
-      post = if @play["team"]["id"] == ENV["NHL_TEAM_ID"].to_i
-        "🙃 #{@your_team["name"]} Penalty\n\n"
+      post = if players[@play["details"]["committedByPlayerId"]][:team_id] == ENV["NHL_TEAM_ID"].to_i
+        "🙃 #{@your_team["name"]["default"]} Penalty\n\n"
       else
-        "🤩 #{@play["team"]["name"]} Penalty!\n\n"
+        "🤩 #{@their_team["name"]["default"]} Penalty!\n\n"
       end
 
       post += <<~POST
-        #{@play["result"]["description"]}
+        #{players[@play["details"]["committedByPlayerId"]][:name]} - #{@play["details"]["descKey"].tr("-", " ").titlecase}
         
-        That's a #{@play["result"]["penaltyMinutes"]} minute #{@play["result"]["penaltySeverity"].downcase} penalty at #{@play["about"]["periodTime"]} of the #{@play["about"]["ordinalNum"]} Period
-
-        #{away["abbreviation"]} #{@play["about"]["goals"]["away"]} - #{home["abbreviation"]} #{@play["about"]["goals"]["home"]}
+        That's a #{@play["details"]["duration"]} minute #{severity[@play["details"]["typeCode"]]} penalty at #{@play["timeInPeriod"]} of the #{ordinalize(@play["period"])} Period
       POST
 
       RodTheBot::Post.perform_async(post)
+    end
+
+    def build_players(feed)
+      players = {}
+      feed["rosterSpots"].each do |player|
+        players[player["playerId"]] = {
+          team_id: player["teamId"],
+          number: player["sweaterNumber"],
+          name: player["firstName"]["default"] + " " + player["lastName"]["default"]
+        }
+      end
+      players
     end
   end
 end
