@@ -60,6 +60,7 @@ BLUESKY_URL=https://bsky.social
 BLUESKY_USERNAME=YOUR_USERNAME.bsky.social
 DEBUG_POSTS=false
 NHL_TEAM_ID=12
+NHL_TEAM_ABBREVIATION=CAR
 REDIS_URL=redis://localhost:6379/0
 SECRET_KEY_BASE=69782b185cf994696b846e43b8e26a6c9f724905c74bf7556162c5a18cd17edc68a702ffbd0df7e855e2f4c6cf71bf68c794741c9234841f45446c3679bd8e6d 
 TEAM_HASHTAGS="#LetsGoCanes #CauseChaos"
@@ -86,44 +87,44 @@ This is the URL of the Bluesky instance that you want to post to. The recommende
 
 This setting controls whether Rod The Bot will print the post text to the console. This is useful for testing and verifying that posts are being generated, but can be set to `false` in production (unless you need to inspect posts for errors).
 
-### NHL_TEAM_ID
+### NHL_TEAM_ID and NHL_TEAM_ABBREVIATION
 
-Every NHL franchise has an ID in the stats system. This is used to identify the team that you want to follow, and unlocks happy posts when something good happens to your team. IDs for all active NHL teams can be found in this table:
+Every NHL franchise has an ID and official three-letter abbreviation in the stats system. This is used to identify the team that you want to follow, and unlocks happy posts when something good happens to your team. IDs and abbreviations for all active NHL teams can be found in this table:
 
-| Team Name             | Team ID |
-| --------------------- | ------- |
-| Anaheim Ducks         | 24      |
-| Arizona Coyotes       | 53      |
-| Boston Bruins         | 6       |
-| Buffalo Sabres        | 7       |
-| Calgary Flames        | 20      |
-| Carolina Hurricanes   | 12      |
-| Chicago Blackhawks    | 16      |
-| Colorado Avalanche    | 21      |
-| Columbus Blue Jackets | 29      |
-| Dallas Stars          | 25      |
-| Detroit Red Wings     | 17      |
-| Edmonton Oilers       | 22      |
-| Florida Panthers      | 13      |
-| Los Angeles Kings     | 26      |
-| Minnesota Wild        | 30      |
-| Montréal Canadiens    | 8       |
-| Nashville Predators   | 18      |
-| New Jersey Devils     | 1       |
-| New York Islanders    | 2       |
-| New York Rangers      | 3       |
-| Ottawa Senators       | 9       |
-| Philadelphia Flyers   | 4       |
-| Pittsburgh Penguins   | 5       |
-| St. Louis Blues       | 19      |
-| San Jose Sharks       | 28      |
-| Seattle Kraken        | 55      |
-| Tampa Bay Lightning   | 14      |
-| Toronto Maple Leafs   | 10      |
-| Vancouver Canucks     | 23      |
-| Vegas Golden Knights  | 54      |
-| Washington Capitals   | 15      |
-| Winnipeg Jets         | 52      |
+| Team Name             | Team ID | Abbrev. |
+| --------------------- | ------- | ------- |
+| Anaheim Ducks         | 24      | ANA     |
+| Arizona Coyotes       | 53      | ARI     |
+| Boston Bruins         | 6       | BOS     |
+| Buffalo Sabres        | 7       | BUF     |
+| Calgary Flames        | 20      | CGY     |
+| Carolina Hurricanes   | 12      | CAR     |
+| Chicago Blackhawks    | 16      | CHI     |
+| Colorado Avalanche    | 21      | COL     |
+| Columbus Blue Jackets | 29      | CBJ     |
+| Dallas Stars          | 25      | DAL     |
+| Detroit Red Wings     | 17      | DET     |
+| Edmonton Oilers       | 22      | EDM     |
+| Florida Panthers      | 13      | FLA     |
+| Los Angeles Kings     | 26      | LAK     |
+| Minnesota Wild        | 30      | MIN     |
+| Montréal Canadiens    | 8       | MTL     |
+| Nashville Predators   | 18      | NSH     |
+| New Jersey Devils     | 1       | NJD     |
+| New York Islanders    | 2       | NYI     |
+| New York Rangers      | 3       | NYR     |
+| Ottawa Senators       | 9       | OTT     |
+| Philadelphia Flyers   | 4       | PHI     |
+| Pittsburgh Penguins   | 5       | PIT     |
+| St. Louis Blues       | 19      | STL     |
+| San Jose Sharks       | 28      | SJS     |
+| Seattle Kraken        | 55      | SEA     |
+| Tampa Bay Lightning   | 14      | TBL     |
+| Toronto Maple Leafs   | 10      | TOR     |
+| Vancouver Canucks     | 23      | VAN     |
+| Vegas Golden Knights  | 54      | VGK     |
+| Washington Capitals   | 15      | WSH     |
+| Winnipeg Jets         | 52      | WPG     |
 
 ### REDIS_URL
 
