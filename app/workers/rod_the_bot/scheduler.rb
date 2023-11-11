@@ -12,7 +12,7 @@ module RodTheBot
       @week = HTTParty.get("https://api-web.nhle.com/v1/club-schedule/#{ENV["NHL_TEAM_ABBREVIATION"]}/week/now")
 
       RodTheBot::YesterdaysScoresWorker.perform_in(15.minutes)
-      RodTheBot::DivisionStandingsWorker.perform_in(16.minutes, ENV["NHL_TEAM_ID"])
+      RodTheBot::DivisionStandingsWorker.perform_in(16.minutes)
 
       @game = @week["games"].find { |game| game["gameDate"] == today }
 
