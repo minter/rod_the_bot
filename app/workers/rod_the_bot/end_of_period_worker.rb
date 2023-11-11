@@ -1,28 +1,26 @@
 module RodTheBot
   class EndOfPeriodWorker
     include Sidekiq::Worker
+    include ActiveSupport::Inflector
 
     def perform(game_id, period_number)
-      @feed = HTTParty.get("https://statsapi.web.nhl.com/api/v1/game/#{game_id}/feed/live")
-      return if @feed["gameData"]["status"]["detailedState"] == "Final"
+      @feed = HTTParty.get("https://api-web.nhle.com/v1/gamecenter/#{game_id}/play-by-play")
+      @game_final = @feed["plays"].find { |play| play["typeDescKey"] == "game-end" }.present?
+      return if @game_final
 
-      @home = @feed["liveData"]["linescore"]["teams"]["home"]
-      @visitor = @feed["liveData"]["linescore"]["teams"]["away"]
-      @your_team = (@home["team"]["id"].to_i == ENV["NHL_TEAM_ID"].to_i) ? @home : @visitor
-      @your_team_status = (@your_team["team"]["id"] == @home["team"]["id"]) ? "home" : "away"
-      @home_code = @feed["gameData"]["teams"]["home"]["abbreviation"]
-      @visitor_code = @feed["gameData"]["teams"]["away"]["abbreviation"]
+      home = @feed["homeTeam"]
+      away = @feed["awayTeam"]
 
       end_of_period_post = <<~POST
-        🛑 That's the end of the #{period_number} period!
+        🛑 That's the end of the #{ordinalize(period_number)} period!
 
-        #{@visitor["team"]["name"]} - #{@visitor["goals"]} 
-        #{@home["team"]["name"]} - #{@home["goals"]}
+        #{away["name"]["default"]} - #{away["score"]} 
+        #{home["name"]["default"]} - #{home["score"]}
 
-        Shots on goal after the #{period_number} period:
+        Shots on goal after the #{ordinalize(period_number)} period:
 
-        #{@visitor["team"]["name"]}: #{@visitor["shotsOnGoal"]}
-        #{@home["team"]["name"]}: #{@home["shotsOnGoal"]}
+        #{away["name"]["default"]}: #{away["sog"]}
+        #{home["name"]["default"]}: #{home["shotsOnGoal"]}
       POST
 
       RodTheBot::Post.perform_async(end_of_period_post)

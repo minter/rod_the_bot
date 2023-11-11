@@ -1,6 +1,7 @@
 module RodTheBot
   class ScoringChangeWorker
     include Sidekiq::Worker
+    include ActiveSupport::Inflector
 
     def perform(game_id, play_id, original_play)
       @feed = HTTParty.get("https://api-web.nhle.com/v1/gamecenter/#{game_id}/play-by-play")
