@@ -6,7 +6,6 @@ module RodTheBot
       @game_id = game_id
       @feed = HTTParty.get("https://api-web.nhle.com/v1/gamecenter/#{game_id}/play-by-play")
       @game_final = @feed["plays"].find { |play| play["typeDescKey"] == "game-end" }.present?
-      @players = {}
 
       @feed["plays"].each do |play|
         if play["typeDescKey"] == "goal"
