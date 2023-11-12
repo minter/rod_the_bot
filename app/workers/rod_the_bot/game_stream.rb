@@ -14,9 +14,9 @@ module RodTheBot
             REDIS.set("#{game_id}:#{play["eventId"]}", "true", ex: 172800)
           end
         elsif play["typeDescKey"] == "penalty"
-          if REDIS.get("#{@game_id}:#{play["about"]["eventId"]}").nil?
+          if REDIS.get("#{@game_id}:#{play["eventId"]}").nil?
             RodTheBot::PenaltyWorker.perform_in(60, @game_id, play["eventId"])
-            REDIS.set("#{game_id}:#{play["about"]["eventId"]}", "true", ex: 172800)
+            REDIS.set("#{game_id}:#{play["eventId"]}", "true", ex: 172800)
           end
         elsif play["typeDescKey"] == "period-start" && play["period"] == 1
           if REDIS.get("#{@game_id}:#{play["eventId"]}").nil?
@@ -30,7 +30,7 @@ module RodTheBot
           end
         elsif play["typeDescKey"] == "period-end"
           if REDIS.get("#{@game_id}:#{play["eventId"]}").nil?
-            RodTheBot::EndOfPeriodWorker.perform_async(@game_id, play["about"]["ordinalNum"]) unless play["about"]["periodType"] == "SHOOTOUT"
+            RodTheBot::EndOfPeriodWorker.perform_async(@game_id, play[period])
             REDIS.set("#{game_id}:#{play["eventId"]}", "true", ex: 172800)
           end
         end
