@@ -20,7 +20,7 @@ module RodTheBot
         Shots on goal after the #{ordinalize(period_number)} period:
 
         #{away["name"]["default"]}: #{away["sog"]}
-        #{home["name"]["default"]}: #{home["shotsOnGoal"]}
+        #{home["name"]["default"]}: #{home["sog"]}
       POST
 
       RodTheBot::Post.perform_async(end_of_period_post)
