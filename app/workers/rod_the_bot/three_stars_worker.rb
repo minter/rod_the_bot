@@ -3,7 +3,6 @@ module RodTheBot
     include Sidekiq::Worker
 
     def perform(game_id)
-      # https://statsapi.web.nhl.com/api/v1/game/2023020034/feed/live
       @feed = HTTParty.get("https://statsapi.web.nhl.com/api/v1/game/#{game_id}/feed/live")
 
       RodTheBot::ThreeStarsWorker.perform_in(60, game_id) and return unless @feed["liveData"]["decisions"]["firstStar"].present?
