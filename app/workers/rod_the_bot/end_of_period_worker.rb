@@ -24,7 +24,7 @@ module RodTheBot
       POST
 
       RodTheBot::Post.perform_async(end_of_period_post)
-      RodTheBot::EndOfPeriodStatsWorker.perform_async(game_id, period_number)
+      RodTheBot::EndOfPeriodStatsWorker.perform_async(game_id, ordinalize(period_number))
     end
   end
 end
