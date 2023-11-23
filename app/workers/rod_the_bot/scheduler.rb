@@ -9,7 +9,7 @@ module RodTheBot
     def perform
       @time_zone = TZInfo::Timezone.get(ENV["TIME_ZONE"])
       today = @time_zone.to_local(Time.now).strftime("%Y-%m-%d")
-      @week = HTTParty.get("https://api-web.nhle.com/v1/club-schedule/#{ENV["NHL_TEAM_ABBREVIATION"]}/week/now")
+      @week = HTTParty.get("https://api-web.nhle.com/v1/club-schedule/#{ENV["NHL_TEAM_ABBREVIATION"]}/week/#{today}")
 
       RodTheBot::YesterdaysScoresWorker.perform_in(15.minutes)
       RodTheBot::DivisionStandingsWorker.perform_in(16.minutes)
@@ -59,7 +59,7 @@ module RodTheBot
 
         RodTheBot::GameStream.perform_at(time - 15.minutes, game_id)
         RodTheBot::Post.perform_async(gameday_post)
-        RodTheBot::SeasonStatsWorker.perform_async(your_team)
+        RodTheBot::SeasonStatsWorker.perform_async(your_standings[:team_name])
       end
     end
 
