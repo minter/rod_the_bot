@@ -9,6 +9,8 @@ module RodTheBot
       home = @feed["homeTeam"]
       away = @feed["awayTeam"]
 
+      return if @play.blank?
+
       # If nothing has changed on this scoring play, exit
       original_scorers = [original_play["details"]["scoringPlayerId"], original_play["details"]["assist1PlayerId"], original_play["details"]["assist2PlayerId"]]
       new_scorers = [@play["details"]["scoringPlayerId"], @play["details"]["assist1PlayerId"], @play["details"]["assist2PlayerId"]]

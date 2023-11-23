@@ -11,7 +11,7 @@ module RodTheBot
       @home_code = @home["abbrev"]
       @visitor_code = @visitor["abbrev"]
 
-      period_state = if @feed["gameState"] == "OFF"
+      period_state = if @feed["gameState"] == "OFF" || period_number.blank?
         "at the end of the game"
       else
         "after the #{period_number} period"
