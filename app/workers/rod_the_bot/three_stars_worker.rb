@@ -3,46 +3,37 @@ module RodTheBot
     include Sidekiq::Worker
 
     def perform(game_id)
-      @feed = HTTParty.get("https://statsapi.web.nhl.com/api/v1/game/#{game_id}/feed/live")
+      @feed = HTTParty.get("https://api-web.nhle.com/v1/gamecenter/#{game_id}/landing")
 
-      RodTheBot::ThreeStarsWorker.perform_in(60, game_id) and return unless @feed["liveData"]["decisions"]["firstStar"].present?
-
-      @players = {}
-      %w[home away].each do |team_type|
-        @feed["liveData"]["boxscore"]["teams"][team_type]["players"].each do |id, player|
-          @players[id] = player
-          @players[id]["team"] = @feed["gameData"]["players"][id]["currentTeam"]["triCode"]
-        end
-      end
-
-      first_star_id = "ID" + @feed["liveData"]["decisions"]["firstStar"]["id"].to_s
-      second_star_id = "ID" + @feed["liveData"]["decisions"]["secondStar"]["id"].to_s
-      third_star_id = "ID" + @feed["liveData"]["decisions"]["thirdStar"]["id"].to_s
+      RodTheBot::ThreeStarsWorker.perform_in(60, game_id) and return unless @feed["summary"]["threeStars"].present?
 
       post = <<~POST
         Three Stars Of The Game:
 
-        ⭐️⭐️⭐️ #{player_stats(@players, third_star_id)}
-        ⭐️⭐️ #{player_stats(@players, second_star_id)}
-        ⭐️ #{player_stats(@players, first_star_id)}
+        ⭐️⭐️⭐️ #{player_stats(@feed["summary"]["threeStars"][2])}
+        ⭐️⭐️ #{player_stats(@feed["summary"]["threeStars"][1])}
+        ⭐️ #{player_stats(@feed["summary"]["threeStars"][0])}
       POST
 
       RodTheBot::Post.perform_async(post)
     end
 
-    def player_stats(players, id)
-      player = players[id]
-      if player["position"]["abbreviation"] == "G"
-        shots = player["stats"]["goalieStats"]["shots"]
-        saves = player["stats"]["goalieStats"]["saves"]
-        stats = "#{saves} saves on #{shots} shots"
+    def player_stats(player)
+      if player["position"] == "G"
+        gaa = player["goalsAgainstAverage"]
+        sv_pct = player["savePctg"].round(3)
+        stats = if gaa.to_i == 0 && sv_pct.to_i == 1
+          "Shutout"
+        else
+          "#{gaa} GAA, #{sv_pct} SV%"
+        end
       else
-        goals = player["stats"]["skaterStats"]["goals"]
-        assists = player["stats"]["skaterStats"]["assists"]
-        points = goals + assists
+        goals = player["goals"]
+        assists = player["assists"]
+        points = player["points"]
         stats = "#{goals}G #{assists}A, #{points}#{"PT".pluralize(points).upcase}"
       end
-      "#{player["team"]} ##{player["jerseyNumber"]} #{player["person"]["fullName"]} (#{stats})\n"
+      "#{player["teamAbbrev"]} ##{player["sweaterNo"]} #{player["firstName"]} #{player["lastName"]} (#{stats})\n"
     end
   end
 end
