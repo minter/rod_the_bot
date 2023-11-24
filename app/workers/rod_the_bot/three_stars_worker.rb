@@ -3,37 +3,66 @@ module RodTheBot
     include Sidekiq::Worker
 
     def perform(game_id)
-      @feed = HTTParty.get("https://api-web.nhle.com/v1/gamecenter/#{game_id}/landing")
+      @feed = fetch_game_data(game_id)
 
-      RodTheBot::ThreeStarsWorker.perform_in(60, game_id) and return unless @feed["summary"]["threeStars"].present?
+      if @feed["summary"]["threeStars"].present?
+        post = format_three_stars(@feed["summary"]["threeStars"])
+        post_three_stars(post)
+      else
+        RodTheBot::ThreeStarsWorker.perform_in(60, game_id)
+      end
+    end
 
-      post = <<~POST
+    private
+
+    def fetch_game_data(game_id)
+      HTTParty.get("https://api-web.nhle.com/v1/gamecenter/#{game_id}/landing")
+    end
+
+    def format_three_stars(three_stars)
+      <<~POST
         Three Stars Of The Game:
 
-        ⭐️⭐️⭐️ #{player_stats(@feed["summary"]["threeStars"][2])}
-        ⭐️⭐️ #{player_stats(@feed["summary"]["threeStars"][1])}
-        ⭐️ #{player_stats(@feed["summary"]["threeStars"][0])}
+        ⭐️⭐️⭐️ #{player_stats(three_stars[2])}
+        ⭐️⭐️ #{player_stats(three_stars[1])}
+        ⭐️ #{player_stats(three_stars[0])}
       POST
-
-      RodTheBot::Post.perform_async(post)
     end
 
     def player_stats(player)
       if player["position"] == "G"
-        gaa = player["goalsAgainstAverage"]
-        sv_pct = player["savePctg"].round(3)
-        stats = if gaa.to_i == 0 && sv_pct.to_i == 1
-          "Shutout"
-        else
-          "#{gaa} GAA, #{sv_pct} SV%"
-        end
+        format_goalie_stats(player)
       else
-        goals = player["goals"]
-        assists = player["assists"]
-        points = player["points"]
-        stats = "#{goals}G #{assists}A, #{points}#{"PT".pluralize(points).upcase}"
+        format_player_stats(player)
       end
+    end
+
+    def format_goalie_stats(player)
+      gaa = player["goalsAgainstAverage"]
+      sv_pct = player["savePctg"].round(3)
+      stats = if gaa.to_i == 0 && sv_pct.to_i == 1
+        "Shutout"
+      else
+        "#{gaa} GAA, #{sv_pct} SV%"
+      end
+      format_player_info(player, stats)
+    end
+
+    def format_player_stats(player)
+      stat_collection = []
+      stat_collection << "#{player["goals"]}G" if player["goals"].to_i > 0
+      stat_collection << "#{player["assists"]}A" if player["assists"].to_i > 0
+      stat_collection << "#{player["points"]}#{"PT".pluralize(player["points"]).upcase}" if player["points"].to_i > 0
+      stats = stat_collection.join(", ")
+      format_player_info(player, stats)
+    end
+
+    def format_player_info(player, stats)
       "#{player["teamAbbrev"]} ##{player["sweaterNo"]} #{player["firstName"]} #{player["lastName"]} (#{stats})\n"
+    end
+
+    def post_three_stars(post)
+      RodTheBot::Post.perform_async(post)
     end
   end
 end
