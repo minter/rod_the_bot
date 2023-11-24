@@ -3,31 +3,45 @@ module RodTheBot
     include Sidekiq::Worker
 
     def perform
-      # Get the scores for all games last night
+      scores = fetch_yesterdays_scores
+      scores_post = format_scores(scores)
+      post_scores(scores_post)
+    end
+
+    private
+
+    def fetch_yesterdays_scores
+      Time.zone = TZInfo::Timezone.get(ENV["TIME_ZONE"])
       yesterday = Date.yesterday.strftime("%Y-%m-%d")
-      scores_post = "🙌 Final scores from last night's games:\n\n"
       response = HTTParty.get("https://api-web.nhle.com/v1/score/#{yesterday}")["games"]
-      yesterday_scores = response.find_all { |game| game["gameDate"] == yesterday }
-      scores = []
+      response.find_all { |game| game["gameDate"] == yesterday }
+    end
+
+    def format_scores(yesterday_scores)
+      scores_post = "🙌 Final scores from last night's games:\n\n"
       if yesterday_scores.empty?
         scores_post += "No games scheduled\n"
       else
-        yesterday_scores.each do |game|
-          home_team = game["homeTeam"]
-          home_score = home_team["score"]
-          visitor_team = game["awayTeam"]
-          visitor_score = visitor_team["score"]
-          score_text = "#{visitor_team["abbrev"]} #{visitor_score} : #{home_score} #{home_team["abbrev"]}"
-          score_text += " (SO)" if game["periodDescriptor"]["periodType"] == "SO"
-          score_text += " (OT)" if game["periodDescriptor"]["periodType"] == "OT"
-          scores.push(score_text)
+        scores = yesterday_scores.map do |game|
+          format_game_score(game)
         end
-
-        # Save the scores in a post
         scores_post += scores.join("\n") + "\n"
       end
+      scores_post
+    end
 
-      # Post the scores to your social media account
+    def format_game_score(game)
+      home_team = game["homeTeam"]
+      home_score = home_team["score"]
+      visitor_team = game["awayTeam"]
+      visitor_score = visitor_team["score"]
+      score_text = "#{visitor_team["abbrev"]} #{visitor_score} : #{home_score} #{home_team["abbrev"]}"
+      score_text += " (SO)" if game["periodDescriptor"]["periodType"] == "SO"
+      score_text += " (OT)" if game["periodDescriptor"]["periodType"] == "OT"
+      score_text
+    end
+
+    def post_scores(scores_post)
       RodTheBot::Post.perform_async(scores_post)
     end
   end
