@@ -29,12 +29,6 @@ module RodTheBot
       away_standings = fetch_standings_info(away["abbrev"])
       home_standings = fetch_standings_info(home["abbrev"])
 
-      your_team = if home["id"].to_i == ENV["NHL_TEAM_ID"].to_i
-        home
-      else
-        away
-      end
-
       your_standings = if home["id"].to_i == ENV["NHL_TEAM_ID"].to_i
         home_standings
       else
