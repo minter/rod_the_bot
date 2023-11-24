@@ -3,39 +3,38 @@ module RodTheBot
     include Sidekiq::Worker
 
     def perform(game_id)
-      @feed = HTTParty.get("https://api-web.nhle.com/v1/gamecenter/#{game_id}/play-by-play")
-      home = @feed["homeTeam"]
-      away = @feed["awayTeam"]
-
+      @feed = fetch_game_data(game_id)
       players = build_players(@feed)
-      home_goalie = nil
-      away_goalie = nil
+      home_goalie = find_starting_goalie(@feed["homeTeam"], players)
+      away_goalie = find_starting_goalie(@feed["awayTeam"], players)
+      post = format_post(@feed, home_goalie, away_goalie)
+      RodTheBot::Post.perform_async(post)
+    end
 
-      home["onIce"].each do |player|
+    private
+
+    def fetch_game_data(game_id)
+      HTTParty.get("https://api-web.nhle.com/v1/gamecenter/#{game_id}/play-by-play")
+    end
+
+    def find_starting_goalie(team, players)
+      team["onIce"].each do |player|
         id = player["playerId"]
-        if players[id][:position] == "G"
-          home_goalie = players[id]
-        end
+        return players[id] if players[id][:position] == "G"
       end
+    end
 
-      away["onIce"].each do |player|
-        id = player["playerId"]
-        if players[id][:position] == "G"
-          away_goalie = players[id]
-        end
-      end
-
-      post = <<~POST
-        🚦 We're ready for puck drop at #{@feed["venue"]["default"]}!
+    def format_post(feed, home_goalie, away_goalie)
+      <<~POST
+        🚦 We're ready for puck drop at #{feed["venue"]["default"]}!
         
-        #{away["name"]["default"]} at #{home["name"]["default"]} is about to begin!
+        #{feed["awayTeam"]["name"]["default"]} at #{feed["homeTeam"]["name"]["default"]} is about to begin!
 
         Starting Goaltenders:
 
-        #{home["abbrev"]}: #{home_goalie[:name]}
-        #{away["abbrev"]}: #{away_goalie[:name]}
+        #{feed["homeTeam"]["abbrev"]}: #{home_goalie[:name]}
+        #{feed["awayTeam"]["abbrev"]}: #{away_goalie[:name]}
       POST
-      RodTheBot::Post.perform_async(post)
     end
 
     def build_players(feed)

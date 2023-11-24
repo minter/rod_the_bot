@@ -3,21 +3,34 @@ module RodTheBot
     include Sidekiq::Worker
 
     def perform
-      # Get the standings for your team's division
-      standings = HTTParty.get("https://api-web.nhle.com/v1/standings/now")["standings"]
+      standings = fetch_standings
+      my_division = find_my_division(standings)
+      division_teams = sort_teams_in_division(standings, my_division)
+      post = format_standings(my_division, division_teams)
+      RodTheBot::Post.perform_async(post)
+    end
+
+    private
+
+    def fetch_standings
+      HTTParty.get("https://api-web.nhle.com/v1/standings/now")["standings"]
+    end
+
+    def find_my_division(standings)
       my_team = standings.find { |team| team["teamAbbrev"]["default"] == ENV["NHL_TEAM_ABBREVIATION"] }
-      my_division = my_team["divisionName"]
-      division_teams = standings.select { |team| team["divisionName"] == my_division }.sort_by { |team| [team["points"], team["gamesPlayed"]] }.reverse
+      my_team["divisionName"]
+    end
 
-      # Start post
+    def sort_teams_in_division(standings, my_division)
+      standings.select { |team| team["divisionName"] == my_division }.sort_by { |team| [team["points"], team["gamesPlayed"]] }.reverse
+    end
+
+    def format_standings(my_division, division_teams)
       post = "📋 Here are the current standings for the #{my_division} division:\n\n"
-
-      # Print the team abbreviation, position, and points for each team in the standings
       division_teams.each_with_index do |team, index|
         post += "#{index + 1}. #{team["teamAbbrev"]["default"]}: #{team["points"]} pts (#{team["gamesPlayed"]} GP)\n"
       end
-
-      RodTheBot::Post.perform_async(post)
+      post
     end
   end
 end

@@ -13,21 +13,23 @@ module RodTheBot
 
       RodTheBot::YesterdaysScoresWorker.perform_in(15.minutes)
       RodTheBot::DivisionStandingsWorker.perform_in(16.minutes)
-
       @game = @week["games"].find { |game| game["gameDate"] == today }
 
       return if @game.nil?
 
-      time = @time_zone.to_local(Time.parse(@game["startTimeUTC"]))
-      time_string = time.strftime("%l:%M %p").strip + " " + @time_zone.abbreviation
+      time = Time.zone.parse(@game["startTimeUTC"])
+      time_string = time.strftime("%l:%M %p").strip + " " + Time.zone.tzinfo.abbreviation
       home = @game["homeTeam"]
       away = @game["awayTeam"]
+      your_team = (home["id"].to_i == ENV["NHL_TEAM_ID"].to_i) ? home : away
+      @your_team_is = (home["id"].to_i == ENV["NHL_TEAM_ID"].to_i) ? "homeTeam" : "awayTeam"
       venue = @game["venue"]
 
       game_id = @game["id"]
 
       away_standings = fetch_standings_info(away["abbrev"])
       home_standings = fetch_standings_info(home["abbrev"])
+      media = media(your_team)
 
       your_standings = if home["id"].to_i == ENV["NHL_TEAM_ID"].to_i
         home_standings
@@ -49,12 +51,23 @@ module RodTheBot
           
           ⏰ #{time_string}
           📍 #{venue["default"]}
+          📺 #{media[:broadcast].join(", ")}
         POST
 
         RodTheBot::GameStream.perform_at(time - 15.minutes, game_id)
         RodTheBot::Post.perform_async(gameday_post)
         RodTheBot::SeasonStatsWorker.perform_async(your_standings[:team_name])
       end
+    end
+
+    def media(team)
+      media = {broadcast: []}
+      @game["tvBroadcasts"].each do |broadcast|
+        media[:broadcast] << broadcast["network"] if broadcast["countryCode"] == "US" && [@your_team_is[0].upcase, "N"].include?(broadcast["market"])
+      end
+      media[:radio] = @game[@your_team_is]["radioLink"]
+      media[:tickets] = @game["ticketsLink"]
+      media
     end
 
     def record(team)

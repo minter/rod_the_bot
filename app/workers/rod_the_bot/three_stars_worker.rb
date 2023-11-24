@@ -5,7 +5,7 @@ module RodTheBot
     def perform(game_id)
       @feed = fetch_game_data(game_id)
 
-      if @feed["summary"]["threeStars"].present?
+      if @feed["summary"].present? && @feed["summary"]["threeStars"].present?
         post = format_three_stars(@feed["summary"]["threeStars"])
         post_three_stars(post)
       else
