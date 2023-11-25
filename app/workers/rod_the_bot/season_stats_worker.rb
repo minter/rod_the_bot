@@ -5,6 +5,7 @@ module RodTheBot
     include ActiveSupport::Inflector
 
     def perform(your_team)
+      @season = nil
       skater_stats, goalie_stats = collect_roster_stats
 
       goalie_post = <<~POST
@@ -63,7 +64,7 @@ module RodTheBot
         📊 Season stats and NHL ranks for the #{your_team} (3/3)
 
         Faceoff Percentage: #{season_stats_with_rank[:faceoff_percentage][:value]} (Rank: #{season_stats_with_rank[:faceoff_percentage][:rank]})
-        Shooting Percentage: #{season_stats_with_rank[:shooting_percentage][:value]} (Rank: #{season_stats_with_rank[:shooting_percentage][:rank]})
+        Points Percentage: #{season_stats_with_rank[:points_percentage][:value]} (Rank: #{season_stats_with_rank[:points_percentage][:rank]})
       POST
 
       RodTheBot::Post.perform_in(30.minutes, goalie_post)
@@ -81,6 +82,7 @@ module RodTheBot
       skater_stats = {}
       goalie_stats = {}
       roster = HTTParty.get("https://api-web.nhle.com/v1/club-stats/#{ENV["NHL_TEAM_ABBREVIATION"]}/now")
+      @season = roster["season"]
       roster["skaters"].each do |player|
         skater_stats[player["playerId"]] = {
           name: player["firstName"]["default"] + " " + player["lastName"]["default"],
@@ -107,34 +109,35 @@ module RodTheBot
       [skater_stats, goalie_stats]
     end
 
+    def fetch_stats_and_rank(stat)
+      feed = HTTParty.get("https://api.nhle.com/stats/rest/en/team/summary?sort=#{stat}&cayenneExp=seasonId=#{@season}%20and%20gameTypeId=2")
+      # In stats against, the lower numbers are better. In other cases, the higher numbers are better
+      data = stat.match?(/Against/) ? feed["data"] : feed["data"].reverse
+      data.each_with_index do |team, index|
+        if team["teamId"] == ENV["NHL_TEAM_ID"].to_i
+          value = case stat
+          when /Pct$/
+            (team[stat] * 100).round(1).to_s + "%"
+          when /PerGame$/
+            team[stat].round(2)
+          else
+            team[stat]
+          end
+          return {value: value, rank: ordinalize(index + 1)}
+        end
+      end
+    end
+
     def season_stats_with_rank
-      team_stats = HTTParty.get("https://statsapi.web.nhl.com/api/v1/teams/#{ENV["NHL_TEAM_ID"]}/stats?stats=statsSingleSeason&season=20232024")["stats"][0]["splits"][0]["stat"]
-      team_ranks = HTTParty.get("https://statsapi.web.nhl.com/api/v1/teams/#{ENV["NHL_TEAM_ID"]}/stats?stats=statsSingleSeason&season=20232024")["stats"][1]["splits"][0]["stat"]
-      faceoff_percentage = team_stats["faceOffWinPercentage"].to_f.round(1)
-      average_goals_scored = team_stats["goalsPerGame"].to_f.round(1)
-      average_goals_allowed = team_stats["goalsAgainstPerGame"].to_f.round(1)
-      shots_per_game = team_stats["shotsPerGame"].to_f.round(1)
-      shots_allowed_per_game = team_stats["shotsAllowed"].to_f.round(1)
-      shooting_percentage = team_stats["shootingPctg"].to_f.round(2)
-      power_play_percentage = team_stats["powerPlayPercentage"].to_f.round(2)
-      penalty_kill_percentage = team_stats["penaltyKillPercentage"].to_f.round(2)
-      faceoff_rank = team_ranks["faceOffWinPercentage"]
-      goals_scored_rank = team_ranks["goalsPerGame"]
-      goals_allowed_rank = team_ranks["goalsAgainstPerGame"]
-      shots_per_game_rank = team_ranks["shotsPerGame"]
-      shots_allowed_per_game_rank = team_ranks["shotsAllowed"]
-      shooting_percentage_rank = team_ranks["shootingPctRank"]
-      power_play_percentage_rank = team_ranks["powerPlayPercentage"]
-      penalty_kill_percentage_rank = team_ranks["penaltyKillPercentage"]
       {
-        faceoff_percentage: {value: faceoff_percentage, rank: faceoff_rank},
-        average_goals_scored: {value: average_goals_scored, rank: goals_scored_rank},
-        average_goals_allowed: {value: average_goals_allowed, rank: goals_allowed_rank},
-        shots_per_game: {value: shots_per_game, rank: shots_per_game_rank},
-        shots_allowed_per_game: {value: shots_allowed_per_game, rank: shots_allowed_per_game_rank},
-        shooting_percentage: {value: shooting_percentage, rank: shooting_percentage_rank},
-        power_play_percentage: {value: power_play_percentage, rank: power_play_percentage_rank},
-        penalty_kill_percentage: {value: penalty_kill_percentage, rank: penalty_kill_percentage_rank}
+        faceoff_percentage: fetch_stats_and_rank("faceoffWinPct"),
+        average_goals_scored: fetch_stats_and_rank("goalsForPerGame"),
+        average_goals_allowed: fetch_stats_and_rank("goalsAgainstPerGame"),
+        shots_per_game: fetch_stats_and_rank("shotsForPerGame"),
+        shots_allowed_per_game: fetch_stats_and_rank("shotsAgainstPerGame"),
+        points_percentage: fetch_stats_and_rank("pointPct"),
+        power_play_percentage: fetch_stats_and_rank("powerPlayPct"),
+        penalty_kill_percentage: fetch_stats_and_rank("penaltyKillPct")
       }
     end
   end
