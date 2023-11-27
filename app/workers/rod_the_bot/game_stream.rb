@@ -30,7 +30,7 @@ module RodTheBot
           end
         elsif play["typeDescKey"] == "period-end"
           if REDIS.get("#{@game_id}:#{play["eventId"]}").nil?
-            RodTheBot::EndOfPeriodWorker.perform_async(@game_id, play["period"])
+            RodTheBot::EndOfPeriodWorker.perform_in(90, @game_id, play["period"])
             REDIS.set("#{game_id}:#{play["eventId"]}", "true", ex: 172800)
           end
         end
