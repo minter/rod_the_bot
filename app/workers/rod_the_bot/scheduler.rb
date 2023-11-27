@@ -7,77 +7,87 @@ module RodTheBot
     include ActiveSupport::Inflector
 
     def perform
-      @time_zone = TZInfo::Timezone.get(ENV["TIME_ZONE"])
-      today = @time_zone.to_local(Time.now).strftime("%Y-%m-%d")
-      @game = HTTParty.get("https://statsapi.web.nhl.com/api/v1/schedule?teamId=#{ENV["NHL_TEAM_ID"]}&date=#{today}")["dates"].first
+      Time.zone = TZInfo::Timezone.get(ENV["TIME_ZONE"])
+      today = Time.now.strftime("%Y-%m-%d")
+      @week = HTTParty.get("https://api-web.nhle.com/v1/club-schedule/#{ENV["NHL_TEAM_ABBREVIATION"]}/week/#{today}")
 
       RodTheBot::YesterdaysScoresWorker.perform_in(15.minutes)
-      RodTheBot::DivisionStandingsWorker.perform_in(16.minutes, ENV["NHL_TEAM_ID"])
+      RodTheBot::DivisionStandingsWorker.perform_in(16.minutes)
+      @game = @week["games"].find { |game| game["gameDate"] == today }
 
       return if @game.nil?
 
-      time = @time_zone.to_local(Time.parse(@game["games"].first["gameDate"]))
-      time_string = time.strftime("%l:%M %p") + " " + @time_zone.abbreviation
-      home = @game["games"].first["teams"]["home"]
-      away = @game["games"].first["teams"]["away"]
-      venue = @game["games"].first["venue"]
+      time = Time.zone.parse(@game["startTimeUTC"])
+      time_string = time.strftime("%l:%M %p").strip + " " + Time.zone.tzinfo.abbreviation
+      home = @game["homeTeam"]
+      away = @game["awayTeam"]
+      your_team = (home["id"].to_i == ENV["NHL_TEAM_ID"].to_i) ? home : away
+      @your_team_is = (home["id"].to_i == ENV["NHL_TEAM_ID"].to_i) ? "homeTeam" : "awayTeam"
+      venue = @game["venue"]
 
-      game_id = @game["games"].first["gamePk"]
+      game_id = @game["id"]
 
-      your_team = if home["team"]["id"].to_i == ENV["NHL_TEAM_ID"].to_i
-        home
+      away_standings = fetch_standings_info(away["abbrev"])
+      home_standings = fetch_standings_info(home["abbrev"])
+      media = media(your_team)
+
+      your_standings = if home["id"].to_i == ENV["NHL_TEAM_ID"].to_i
+        home_standings
       else
-        away
+        away_standings
       end
 
-      if away["team"]["id"].to_i == ENV["NHL_TEAM_ID"].to_i || home["team"]["id"].to_i == ENV["NHL_TEAM_ID"].to_i
+      if away["id"].to_i == ENV["NHL_TEAM_ID"].to_i || home["id"].to_i == ENV["NHL_TEAM_ID"].to_i
         gameday_post = <<~POST
-          🗣️ It's a #{your_team["team"]["name"]} Gameday! 🗣️
+          🗣️ It's a #{your_standings[:team_name]} Gameday! 🗣️
 
-          #{away["team"]["name"]}
-          #{record(away)}
+          #{away_standings[:team_name]}
+          #{record(away_standings)}
 
           at 
 
-          #{home["team"]["name"]}
-          #{record(home)}
+          #{home_standings[:team_name]}
+          #{record(home_standings)}
           
           ⏰ #{time_string}
-          📍 #{venue["name"]}
+          📍 #{venue["default"]}
+          📺 #{media[:broadcast].join(", ")}
         POST
 
         RodTheBot::GameStream.perform_at(time - 15.minutes, game_id)
         RodTheBot::Post.perform_async(gameday_post)
-        RodTheBot::SeasonStatsWorker.perform_async(your_team)
+        RodTheBot::SeasonStatsWorker.perform_async(your_standings[:team_name])
       end
+    end
+
+    def media(team)
+      media = {broadcast: []}
+      @game["tvBroadcasts"].each do |broadcast|
+        media[:broadcast] << broadcast["network"] if broadcast["countryCode"] == "US" && [@your_team_is[0].upcase, "N"].include?(broadcast["market"])
+      end
+      media[:radio] = @game[@your_team_is]["radioLink"]
+      media[:tickets] = @game["ticketsLink"]
+      media
     end
 
     def record(team)
-      points = team["leagueRecord"]["wins"] * 2 + team["leagueRecord"]["ot"]
-      rank = fetch_division_info(team["team"]["id"])
-      record = "(#{team["leagueRecord"]["wins"]}-#{team["leagueRecord"]["losses"]}-#{team["leagueRecord"]["ot"]}, #{points} #{"point".pluralize(points)})\n"
-      record += "#{ordinalize rank[:division_rank]} in the #{rank[:division_name]}" unless rank[:division_name] == "Unknown"
+      record = "(#{team[:wins]}-#{team[:losses]}-#{team[:ot]}, #{team[:points]} #{"point".pluralize(team[:points])})\n"
+      record += "#{ordinalize team[:division_rank]} in the #{team[:division_name]}" unless team[:division_name] == "Unknown"
       record
     end
 
-    def fetch_division_info(team_id)
-      response = HTTParty.get("https://statsapi.web.nhl.com/api/v1/standings")
-      standings = response["records"]
-
-      standings.each do |division|
-        division["teamRecords"].each do |team|
-          if team["team"]["id"].to_i == team_id.to_i
-            return {
-              division_name: division["division"]["name"],
-              division_rank: team["divisionRank"]
-            }
-          end
-        end
-      end
+    def fetch_standings_info(team_abbreviation)
+      response = HTTParty.get("https://api-web.nhle.com/v1/standings/now")
+      team = response["standings"].find { |team| team["teamAbbrev"]["default"] == team_abbreviation }
 
       {
-        division_name: "Unknown",
-        division_rank: "Unknown"
+        division_name: team["divisionName"],
+        division_rank: team["divisionSequence"],
+        points: team["points"],
+        wins: team["wins"],
+        losses: team["losses"],
+        ot: team["otLosses"],
+        team_name: team["teamName"]["default"]
       }
     end
   end

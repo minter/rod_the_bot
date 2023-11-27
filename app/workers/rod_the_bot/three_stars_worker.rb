@@ -3,47 +3,66 @@ module RodTheBot
     include Sidekiq::Worker
 
     def perform(game_id)
-      # https://statsapi.web.nhl.com/api/v1/game/2023020034/feed/live
-      @feed = HTTParty.get("https://statsapi.web.nhl.com/api/v1/game/#{game_id}/feed/live")
+      @feed = fetch_game_data(game_id)
 
-      RodTheBot::ThreeStarsWorker.perform_in(60, game_id) and return unless @feed["liveData"]["decisions"]["firstStar"].present?
-
-      @players = {}
-      %w[home away].each do |team_type|
-        @feed["liveData"]["boxscore"]["teams"][team_type]["players"].each do |id, player|
-          @players[id] = player
-          @players[id]["team"] = @feed["gameData"]["players"][id]["currentTeam"]["triCode"]
-        end
+      if @feed["summary"].present? && @feed["summary"]["threeStars"].present?
+        post = format_three_stars(@feed["summary"]["threeStars"])
+        post_three_stars(post)
+      else
+        RodTheBot::ThreeStarsWorker.perform_in(60, game_id)
       end
-
-      first_star_id = "ID" + @feed["liveData"]["decisions"]["firstStar"]["id"].to_s
-      second_star_id = "ID" + @feed["liveData"]["decisions"]["secondStar"]["id"].to_s
-      third_star_id = "ID" + @feed["liveData"]["decisions"]["thirdStar"]["id"].to_s
-
-      post = <<~POST
-        Three Stars Of The Game:
-
-        ⭐️⭐️⭐️ #{player_stats(@players, third_star_id)}
-        ⭐️⭐️ #{player_stats(@players, second_star_id)}
-        ⭐️ #{player_stats(@players, first_star_id)}
-      POST
-
-      RodTheBot::Post.perform_async(post)
     end
 
-    def player_stats(players, id)
-      player = players[id]
-      if player["position"]["abbreviation"] == "G"
-        shots = player["stats"]["goalieStats"]["shots"]
-        saves = player["stats"]["goalieStats"]["saves"]
-        stats = "#{saves} saves on #{shots} shots"
+    private
+
+    def fetch_game_data(game_id)
+      HTTParty.get("https://api-web.nhle.com/v1/gamecenter/#{game_id}/landing")
+    end
+
+    def format_three_stars(three_stars)
+      <<~POST
+        Three Stars Of The Game:
+
+        ⭐️⭐️⭐️ #{player_stats(three_stars[2])}
+        ⭐️⭐️ #{player_stats(three_stars[1])}
+        ⭐️ #{player_stats(three_stars[0])}
+      POST
+    end
+
+    def player_stats(player)
+      if player["position"] == "G"
+        format_goalie_stats(player)
       else
-        goals = player["stats"]["skaterStats"]["goals"]
-        assists = player["stats"]["skaterStats"]["assists"]
-        points = goals + assists
-        stats = "#{goals}G #{assists}A, #{points}#{"PT".pluralize(points).upcase}"
+        format_player_stats(player)
       end
-      "#{player["team"]} ##{player["jerseyNumber"]} #{player["person"]["fullName"]} (#{stats})\n"
+    end
+
+    def format_goalie_stats(player)
+      gaa = player["goalsAgainstAverage"]
+      sv_pct = player["savePctg"].round(3)
+      stats = if gaa.to_i == 0 && sv_pct.to_i == 1
+        "Shutout"
+      else
+        "#{gaa} GAA, #{sv_pct} SV%"
+      end
+      format_player_info(player, stats)
+    end
+
+    def format_player_stats(player)
+      stat_collection = []
+      stat_collection << "#{player["goals"]}G" if player["goals"].to_i > 0
+      stat_collection << "#{player["assists"]}A" if player["assists"].to_i > 0
+      stat_collection << "#{player["points"]}#{"PT".pluralize(player["points"]).upcase}" if player["points"].to_i > 0
+      stats = stat_collection.join(", ")
+      format_player_info(player, stats)
+    end
+
+    def format_player_info(player, stats)
+      "#{player["teamAbbrev"]} ##{player["sweaterNo"]} #{player["firstName"]} #{player["lastName"]} (#{stats})\n"
+    end
+
+    def post_three_stars(post)
+      RodTheBot::Post.perform_async(post)
     end
   end
 end

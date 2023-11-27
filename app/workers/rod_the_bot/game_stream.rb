@@ -4,35 +4,34 @@ module RodTheBot
 
     def perform(game_id)
       @game_id = game_id
-      @feed = HTTParty.get("https://statsapi.web.nhl.com/api/v1/game/#{game_id}/feed/live")
-      @game_final = @feed["gameData"]["status"]["detailedState"] == "Final"
-      @players = {}
+      @feed = HTTParty.get("https://api-web.nhle.com/v1/gamecenter/#{game_id}/play-by-play")
+      @game_final = @feed["plays"].find { |play| play["typeDescKey"] == "game-end" }.present?
 
-      @feed["liveData"]["plays"]["allPlays"].each do |play|
-        if play["result"]["event"] == "Goal"
-          if REDIS.get("#{@game_id}:#{play["about"]["eventId"]}").nil?
-            RodTheBot::GoalWorker.perform_in(60, @game_id, play["about"]["eventId"])
-            REDIS.set("#{game_id}:#{play["about"]["eventId"]}", "true", ex: 172800)
+      @feed["plays"].each do |play|
+        if play["typeDescKey"] == "goal"
+          if REDIS.get("#{@game_id}:#{play["eventId"]}").nil?
+            RodTheBot::GoalWorker.perform_in(60, @game_id, play["eventId"])
+            REDIS.set("#{game_id}:#{play["eventId"]}", "true", ex: 172800)
           end
-        elsif play["result"]["event"] == "Penalty"
-          if REDIS.get("#{@game_id}:#{play["about"]["eventId"]}").nil?
-            RodTheBot::PenaltyWorker.perform_in(60, @game_id, play["about"]["eventId"])
-            REDIS.set("#{game_id}:#{play["about"]["eventId"]}", "true", ex: 172800)
+        elsif play["typeDescKey"] == "penalty"
+          if REDIS.get("#{@game_id}:#{play["eventId"]}").nil?
+            RodTheBot::PenaltyWorker.perform_in(60, @game_id, play["eventId"])
+            REDIS.set("#{game_id}:#{play["eventId"]}", "true", ex: 172800)
           end
-        elsif play["result"]["eventTypeId"] == "PERIOD_READY" && play["about"]["period"] == 1
-          if REDIS.get("#{@game_id}:#{play["about"]["eventId"]}").nil?
+        elsif play["typeDescKey"] == "period-start" && play["period"] == 1
+          if REDIS.get("#{@game_id}:#{play["eventId"]}").nil?
             RodTheBot::GameStartWorker.perform_async(@game_id)
-            REDIS.set("#{game_id}:#{play["about"]["eventId"]}", "true", ex: 172800)
+            REDIS.set("#{game_id}:#{play["eventId"]}", "true", ex: 172800)
           end
-        elsif play["result"]["eventTypeId"] == "PERIOD_READY"
-          if REDIS.get("#{@game_id}:#{play["about"]["eventId"]}").nil?
-            RodTheBot::PeriodStartWorker.perform_async(@game_id, play["about"]["ordinalNum"])
-            REDIS.set("#{game_id}:#{play["about"]["eventId"]}", "true", ex: 172800)
+        elsif play["typeDescKey"] == "period-start"
+          if REDIS.get("#{@game_id}:#{play["eventId"]}").nil?
+            RodTheBot::PeriodStartWorker.perform_async(@game_id, play["period"])
+            REDIS.set("#{game_id}:#{play["eventId"]}", "true", ex: 172800)
           end
-        elsif play["result"]["eventTypeId"] == "PERIOD_END"
-          if REDIS.get("#{@game_id}:#{play["about"]["eventId"]}").nil?
-            RodTheBot::EndOfPeriodWorker.perform_async(@game_id, play["about"]["ordinalNum"]) unless play["about"]["periodType"] == "SHOOTOUT"
-            REDIS.set("#{game_id}:#{play["about"]["eventId"]}", "true", ex: 172800)
+        elsif play["typeDescKey"] == "period-end"
+          if REDIS.get("#{@game_id}:#{play["eventId"]}").nil?
+            RodTheBot::EndOfPeriodWorker.perform_in(90, @game_id, play["period"])
+            REDIS.set("#{game_id}:#{play["eventId"]}", "true", ex: 172800)
           end
         end
       end

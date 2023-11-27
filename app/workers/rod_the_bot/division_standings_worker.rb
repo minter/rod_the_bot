@@ -2,27 +2,35 @@ module RodTheBot
   class DivisionStandingsWorker
     include Sidekiq::Worker
 
-    def perform(team_id)
-      # Get the team's division ID
-      team = HTTParty.get("https://statsapi.web.nhl.com/api/v1/teams/#{team_id}").parsed_response["teams"][0]
-      division_id = team["division"]["id"]
-
-      # Start post
-      post = "📋 Here are the current standings for the #{team["division"]["name"]} division:\n\n"
-
-      # Get the standings for the team's division
-      standings = HTTParty.get("https://statsapi.web.nhl.com/api/v1/standings/byDivision?division=#{division_id}").parsed_response["records"][0]["teamRecords"]
-
-      # Sort the standings by points from highest to lowest
-      standings.sort_by! { |team| -team["points"] }
-
-      # Print the team abbreviation, position, and points for each team in the standings
-      standings.each_with_index do |team, index|
-        team_data = HTTParty.get("https://statsapi.web.nhl.com/api/v1/teams/#{team["team"]["id"]}").parsed_response["teams"][0]
-        post += "#{index + 1}. #{team_data["abbreviation"]}: #{team["points"]} pts (#{team["gamesPlayed"]} GP)\n"
-      end
-
+    def perform
+      standings = fetch_standings
+      my_division = find_my_division(standings)
+      division_teams = sort_teams_in_division(standings, my_division)
+      post = format_standings(my_division, division_teams)
       RodTheBot::Post.perform_async(post)
+    end
+
+    private
+
+    def fetch_standings
+      HTTParty.get("https://api-web.nhle.com/v1/standings/now")["standings"]
+    end
+
+    def find_my_division(standings)
+      my_team = standings.find { |team| team["teamAbbrev"]["default"] == ENV["NHL_TEAM_ABBREVIATION"] }
+      my_team["divisionName"]
+    end
+
+    def sort_teams_in_division(standings, my_division)
+      standings.select { |team| team["divisionName"] == my_division }.sort_by { |team| [team["points"], team["gamesPlayed"]] }.reverse
+    end
+
+    def format_standings(my_division, division_teams)
+      post = "📋 Here are the current standings for the #{my_division} division:\n\n"
+      division_teams.each_with_index do |team, index|
+        post += "#{index + 1}. #{team["teamAbbrev"]["default"]}: #{team["points"]} pts (#{team["gamesPlayed"]} GP)\n"
+      end
+      post
     end
   end
 end
