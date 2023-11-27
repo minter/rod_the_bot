@@ -12,8 +12,6 @@ services:
     build: .
     env_file: .env
     command: bundle exec sidekiq
-    extra_hosts:
-      - "statsapi.web.nhl.com:18.66.2.22"
     environment:
       REDIS_URL: redis://redis:6379/0
       RAILS_ENV: production
