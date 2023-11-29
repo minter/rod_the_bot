@@ -3,6 +3,14 @@ module RodTheBot
     include Sidekiq::Worker
     include ActiveSupport::Inflector
 
+    SEVERITY = {
+      "MIN" => "Minor",
+      "MAJ" => "Major",
+      "MIS" => "Misconduct",
+      "GMIS" => "Game Misconduct",
+      "MATCH" => "Match"
+    }.freeze
+
     def perform(game_id, play_id)
       @feed = HTTParty.get("https://api-web.nhle.com/v1/gamecenter/#{game_id}/play-by-play")
       @play = @feed["plays"].find { |play| play["eventId"].to_i == play_id.to_i }
@@ -10,14 +18,6 @@ module RodTheBot
 
       home = @feed["homeTeam"]
       away = @feed["awayTeam"]
-
-      severity = {
-        "MIN" => "Minor",
-        "MAJ" => "Major",
-        "MIS" => "Misconduct",
-        "GMIS" => "Game Misconduct",
-        "MATCH" => "Match"
-      }
 
       if home["id"].to_i == ENV["NHL_TEAM_ID"].to_i
         @your_team = home
@@ -38,7 +38,7 @@ module RodTheBot
       post += <<~POST
         #{players[@play["details"]["committedByPlayerId"]][:name]} - #{@play["details"]["descKey"].tr("-", " ").titlecase}
         
-        That's a #{@play["details"]["duration"]} minute #{severity[@play["details"]["typeCode"]]} penalty at #{@play["timeInPeriod"]} of the #{ordinalize(@play["period"])} Period
+        That's a #{@play["details"]["duration"]} minute #{SEVERITY[@play["details"]["typeCode"]]} penalty at #{@play["timeInPeriod"]} of the #{ordinalize(@play["period"])} Period
       POST
 
       RodTheBot::Post.perform_async(post)
