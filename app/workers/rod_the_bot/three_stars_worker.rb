@@ -2,11 +2,13 @@ module RodTheBot
   class ThreeStarsWorker
     include Sidekiq::Worker
 
+    attr_reader :feed
+
     def perform(game_id)
       @feed = fetch_game_data(game_id)
 
-      if @feed["summary"].present? && @feed["summary"]["threeStars"].present?
-        post = format_three_stars(@feed["summary"]["threeStars"])
+      if feed["summary"].present? && feed["summary"]["threeStars"].present?
+        post = format_three_stars(feed["summary"]["threeStars"])
         post_three_stars(post)
       else
         RodTheBot::ThreeStarsWorker.perform_in(60, game_id)

@@ -15,7 +15,7 @@ class FinalScoreWorkerTest < ActiveSupport::TestCase
   def test_perform
     VCR.use_cassette("nhl_game_boxscore_2023020328") do
       @worker.perform(2023020328)
-      assert_not_nil @worker.feed
+      assert_not_empty @worker.feed
     end
   end
 
