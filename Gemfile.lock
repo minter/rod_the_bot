@@ -75,6 +75,8 @@ GEM
       minitest (>= 5.1)
       mutex_m
       tzinfo (~> 2.0)
+    addressable (2.8.5)
+      public_suffix (>= 2.0.2, < 6.0)
     ast (2.4.2)
     base64 (0.2.0)
     bigdecimal (3.1.4)
@@ -92,6 +94,8 @@ GEM
     coderay (1.1.3)
     concurrent-ruby (1.2.2)
     connection_pool (2.4.1)
+    crack (0.4.5)
+      rexml
     crass (1.0.6)
     date (3.3.4)
     debug (1.8.0)
@@ -111,6 +115,7 @@ GEM
       raabro (~> 1.4)
     globalid (1.2.1)
       activesupport (>= 6.1)
+    hashdiff (1.0.1)
     httparty (0.21.0)
       mini_mime (>= 1.0.0)
       multi_xml (>= 0.5.2)
@@ -165,6 +170,7 @@ GEM
       pry (>= 0.10.4)
     psych (5.1.1.1)
       stringio
+    public_suffix (5.0.4)
     puma (6.4.0)
       nio4r (~> 2.0)
     raabro (1.4.0)
@@ -269,6 +275,11 @@ GEM
     tzinfo (2.0.6)
       concurrent-ruby (~> 1.0)
     unicode-display_width (2.5.0)
+    vcr (6.2.0)
+    webmock (3.19.1)
+      addressable (>= 2.8.0)
+      crack (>= 0.3.2)
+      hashdiff (>= 0.4.0, < 2.0.0)
     webrick (1.8.1)
     websocket-driver (0.7.6)
       websocket-extensions (>= 0.1.0)
@@ -301,6 +312,8 @@ DEPENDENCIES
   sqlite3
   standard
   tzinfo-data
+  vcr
+  webmock
 
 RUBY VERSION
    ruby 3.2.2p53

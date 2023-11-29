@@ -43,6 +43,10 @@ gem "redis", "~>5"
 gem "sidekiq", "~> 7"
 gem "sidekiq-scheduler", "~> 5"
 
+group :test do
+  gem "vcr"
+  gem "webmock"
+end
 group :development, :test do
   # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem
   gem "debug", platforms: %i[mri windows]
