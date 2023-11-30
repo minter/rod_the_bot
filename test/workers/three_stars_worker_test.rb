@@ -1,5 +1,4 @@
 require "test_helper"
-require "vcr"
 
 class ThreeStarsWorkerTest < ActiveSupport::TestCase
   def setup

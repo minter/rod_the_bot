@@ -1,5 +1,4 @@
 require "test_helper"
-require "vcr"
 
 class FinalScoreWorkerTest < ActiveSupport::TestCase
   def setup

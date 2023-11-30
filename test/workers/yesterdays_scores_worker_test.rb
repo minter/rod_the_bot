@@ -1,5 +1,4 @@
 require "test_helper"
-require "vcr"
 
 class YesterdaysScoresWorkerTest < ActiveSupport::TestCase
   def setup
