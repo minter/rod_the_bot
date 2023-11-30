@@ -13,6 +13,8 @@ module ActiveSupport
     fixtures :all
 
     Sidekiq::Testing.fake!
+
+    ENV["TIME_ZONE"] = "America/New_York"
     # Add more helper methods to be used by all tests here...
   end
 end

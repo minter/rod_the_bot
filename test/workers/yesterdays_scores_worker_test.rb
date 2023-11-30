@@ -2,7 +2,7 @@ require "test_helper"
 
 class YesterdaysScoresWorkerTest < ActiveSupport::TestCase
   def setup
-    Time.zone = "Eastern Time (US & Canada)"
+    Time.zone = TZInfo::Timezone.get(ENV["TIME_ZONE"])
     @worker = RodTheBot::YesterdaysScoresWorker.new
     VCR.configure do |config|
       config.cassette_library_dir = "fixtures/vcr_cassettes"
