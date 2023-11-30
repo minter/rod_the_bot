@@ -12,6 +12,7 @@ class GoalWorkerTest < Minitest::Test
     @goal_worker = RodTheBot::GoalWorker.new
     @game_id = "2023020339"
     @play_id = "240"
+    ENV["NHL_TEAM_ID"] = "99"
   end
 
   def test_perform
