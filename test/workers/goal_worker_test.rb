@@ -12,7 +12,7 @@ class GoalWorkerTest < Minitest::Test
     @goal_worker = RodTheBot::GoalWorker.new
     @game_id = "2023020339"
     @play_id = "240"
-    ENV["NHL_TEAM_ID"] = "99"
+    ENV["NHL_TEAM_ID"] = "26"
   end
 
   def test_perform
@@ -23,7 +23,7 @@ class GoalWorkerTest < Minitest::Test
         assert_equal 1, RodTheBot::Post.jobs.size
         assert_equal 1, RodTheBot::ScoringChangeWorker.jobs.size
         expected_output = <<~POST
-          👎 Kings Goal
+          🎉 Kings GOOOOOOOAL!
           
           🚨 Arthur Kaliyev (5)
           🍎 Andreas Englund (6)
