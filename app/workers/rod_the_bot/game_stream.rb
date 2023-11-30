@@ -2,46 +2,44 @@ module RodTheBot
   class GameStream
     include Sidekiq::Worker
 
+    attr_reader :feed, :game_id
+
     def perform(game_id)
       @game_id = game_id
       @feed = HTTParty.get("https://api-web.nhle.com/v1/gamecenter/#{game_id}/play-by-play")
-      @game_final = @feed["plays"].find { |play| play["typeDescKey"] == "game-end" }.present?
+      game_final = feed["plays"].find { |play| play["typeDescKey"] == "game-end" }.present?
 
-      @feed["plays"].each do |play|
-        if play["typeDescKey"] == "goal"
-          if REDIS.get("#{@game_id}:#{play["eventId"]}").nil?
-            RodTheBot::GoalWorker.perform_in(60, @game_id, play["eventId"])
-            REDIS.set("#{game_id}:#{play["eventId"]}", "true", ex: 172800)
-          end
-        elsif play["typeDescKey"] == "penalty"
-          if REDIS.get("#{@game_id}:#{play["eventId"]}").nil?
-            RodTheBot::PenaltyWorker.perform_in(60, @game_id, play["eventId"])
-            REDIS.set("#{game_id}:#{play["eventId"]}", "true", ex: 172800)
-          end
-        elsif play["typeDescKey"] == "period-start" && play["period"] == 1
-          if REDIS.get("#{@game_id}:#{play["eventId"]}").nil?
-            RodTheBot::GameStartWorker.perform_async(@game_id)
-            REDIS.set("#{game_id}:#{play["eventId"]}", "true", ex: 172800)
-          end
-        elsif play["typeDescKey"] == "period-start"
-          if REDIS.get("#{@game_id}:#{play["eventId"]}").nil?
-            RodTheBot::PeriodStartWorker.perform_async(@game_id, play["period"])
-            REDIS.set("#{game_id}:#{play["eventId"]}", "true", ex: 172800)
-          end
-        elsif play["typeDescKey"] == "period-end"
-          if REDIS.get("#{@game_id}:#{play["eventId"]}").nil?
-            RodTheBot::EndOfPeriodWorker.perform_in(90, @game_id, play["period"])
-            REDIS.set("#{game_id}:#{play["eventId"]}", "true", ex: 172800)
-          end
-        end
+      game_id["plays"].each do |play|
+        process_play(play)
       end
 
-      if @game_final
-        RodTheBot::FinalScoreWorker.perform_in(60, @game_id)
-        RodTheBot::ThreeStarsWorker.perform_in(90, @game_id)
+      if game_final
+        RodTheBot::FinalScoreWorker.perform_in(60, game_id)
+        RodTheBot::ThreeStarsWorker.perform_in(90, game_id)
       else
-        RodTheBot::GameStream.perform_in(30, @game_id)
+        RodTheBot::GameStream.perform_in(30, game_id)
       end
+    end
+
+    private
+
+    def process_play(play)
+      worker_class, method, delay = worker_mapping[play["typeDescKey"]]
+      return unless worker_class
+
+      if REDIS.get("#{game_id}:#{play["eventId"]}").nil?
+        worker_class.send(method, delay, game_id, play["eventId"])
+        REDIS.set("#{game_id}:#{play["eventId"]}", "true", ex: 172800)
+      end
+    end
+
+    def worker_mapping
+      {
+        "goal" => [RodTheBot::GoalWorker, :perform_in, 60],
+        "penalty" => [RodTheBot::PenaltyWorker, :perform_in, 60],
+        "period-start" => [RodTheBot::PeriodStartWorker, :perform_async, nil],
+        "period-end" => [RodTheBot::EndOfPeriodWorker, :perform_in, 90]
+      }
     end
   end
 end
