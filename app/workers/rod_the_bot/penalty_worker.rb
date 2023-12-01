@@ -11,9 +11,9 @@ module RodTheBot
       "MATCH" => "Match"
     }.freeze
 
-    def perform(game_id, play_id)
+    def perform(game_id, play)
       @feed = HTTParty.get("https://api-web.nhle.com/v1/gamecenter/#{game_id}/play-by-play")
-      @play = @feed["plays"].find { |play| play["eventId"].to_i == play_id.to_i }
+      @play = play
       return if @play.nil?
 
       home = @feed["homeTeam"]

@@ -9,7 +9,10 @@ class PenaltyWorkerTest < Minitest::Test
 
   def test_perform
     VCR.use_cassette("nhl_game_#{@game_id}_gamecenter_pbp_end_of_period_1") do
-      @worker.perform(@game_id, @play_id)
+      feed = HTTParty.get("https://api-web.nhle.com/v1/gamecenter/#{@game_id}/play-by-play", allow_playback_repeats: true)
+      play = feed["plays"].find { |play| play["eventId"].to_i == @play_id.to_i }
+
+      @worker.perform(@game_id, play)
 
       assert_equal 1, RodTheBot::Post.jobs.size
       expected_output = <<~POST

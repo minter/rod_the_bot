@@ -3,14 +3,14 @@ module RodTheBot
     include Sidekiq::Worker
     include ActiveSupport::Inflector
 
-    def perform(game_id, play_id)
+    def perform(game_id, play)
       situations = {
         "0651" => "Empty Net ",
         "1451" => "Shorthanded ",
         "1541" => "Power Play "
       }
       @feed = HTTParty.get("https://api-web.nhle.com/v1/gamecenter/#{game_id}/play-by-play")
-      @play = @feed["plays"].find { |play| play["eventId"].to_i == play_id.to_i }
+      @play = play
       home = @feed["homeTeam"]
       away = @feed["awayTeam"]
       if home["id"].to_i == ENV["NHL_TEAM_ID"].to_i
@@ -47,7 +47,7 @@ module RodTheBot
       post += "⏱️  #{@play["timeInPeriod"]} #{ordinalize(@play["period"])} Period\n\n"
       post += "#{away["abbrev"]} #{@play["details"]["awayScore"]} - #{home["abbrev"]} #{@play["details"]["homeScore"]}\n"
       RodTheBot::Post.perform_async(post)
-      RodTheBot::ScoringChangeWorker.perform_in(600, game_id, play_id, original_play)
+      RodTheBot::ScoringChangeWorker.perform_in(600, game_id, play["eventId"], original_play)
     end
 
     def build_players(feed)
