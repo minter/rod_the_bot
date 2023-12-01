@@ -72,13 +72,13 @@ module RodTheBot
       players = create_players("toi")
       players.sort_by do |k, v|
         toi_minutes, toi_seconds = v[:stat].split(":").map(&:to_i)
-        toi_minutes * 60 + toi_seconds
+        [toi_minutes * 60 + toi_seconds, v[:name]]
       end.last(5).reverse
     end
 
     def shots_on_goal_leaders
       players = create_players("shots")
-      players.sort_by { |k, v| v[:stat] }.last(5).reverse
+      players.sort_by { |k, v| [v[:stat], v[:name]] }.last(5).reverse
     end
 
     def get_game_splits_stats
