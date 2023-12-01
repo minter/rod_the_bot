@@ -21,7 +21,7 @@ class EndOfPeriodStatsWorkerTest < Minitest::Test
       @worker.perform(@game_id, period_number)
       assert_equal 2, RodTheBot::Post.jobs.size
       toi_expected_output = <<~POST
-        ⏱️ Time on ice leaders for the Kings after the 1 period
+        ⏱️ Time on ice leaders for the Kings after the 1st period
         
         D. Doughty - 07:28
         V. Gavrikov - 06:56
@@ -31,7 +31,7 @@ class EndOfPeriodStatsWorkerTest < Minitest::Test
       POST
 
       sog_expected_output = <<~POST
-        🏒 Shots on goal leaders for the Kings after the 1 period
+        🏒 Shots on goal leaders for the Kings after the 1st period
         
         Q. Byfield - 3
         K. Fiala - 3
