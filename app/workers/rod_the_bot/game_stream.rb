@@ -9,7 +9,7 @@ module RodTheBot
       @feed = HTTParty.get("https://api-web.nhle.com/v1/gamecenter/#{game_id}/play-by-play")
       game_final = feed["plays"].find { |play| play["typeDescKey"] == "game-end" }.present?
 
-      game_id["plays"].each do |play|
+      @feed["plays"].each do |play|
         process_play(play)
       end
 
@@ -24,21 +24,21 @@ module RodTheBot
     private
 
     def process_play(play)
-      worker_class, method, delay = worker_mapping[play["typeDescKey"]]
+      worker_class, delay = worker_mapping[play["typeDescKey"]]
       return unless worker_class
 
       if REDIS.get("#{game_id}:#{play["eventId"]}").nil?
-        worker_class.send(method, delay, game_id, play["eventId"])
+        worker_class.perform_in(delay, game_id, play)
         REDIS.set("#{game_id}:#{play["eventId"]}", "true", ex: 172800)
       end
     end
 
     def worker_mapping
       {
-        "goal" => [RodTheBot::GoalWorker, :perform_in, 60],
-        "penalty" => [RodTheBot::PenaltyWorker, :perform_in, 60],
-        "period-start" => [RodTheBot::PeriodStartWorker, :perform_async, nil],
-        "period-end" => [RodTheBot::EndOfPeriodWorker, :perform_in, 90]
+        "goal" => [RodTheBot::GoalWorker, 60],
+        "penalty" => [RodTheBot::PenaltyWorker, 60],
+        "period-start" => [RodTheBot::PeriodStartWorker, 1],
+        "period-end" => [RodTheBot::EndOfPeriodWorker, 90]
       }
     end
   end
