@@ -30,7 +30,6 @@ module RodTheBot
         @game_stream.send(:process_play, play)
       end
 
-      # assert_equal "true", REDIS.get("#{@game_id}:#{play["eventId"]}")
       assert_equal 1, RodTheBot::GoalWorker.jobs.size
     end
 
