@@ -5,7 +5,6 @@ module RodTheBot
   class GameStreamTest < Minitest::Test
     def setup
       Sidekiq::Worker.clear_all
-      Sidekiq.redis(&:flushdb)
       @game_stream = GameStream.new
       @game_id = "2023020369" # replace with a valid game_id
     end
