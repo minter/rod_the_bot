@@ -27,7 +27,7 @@ gem "sidekiq-scheduler", "~> 5"
 
 group :test do
   gem "minitest"
-  gem "fakeredis"
+  gem "fakeredis", require: "fakeredis"
   gem "timecop"
   gem "vcr"
   gem "webmock"
