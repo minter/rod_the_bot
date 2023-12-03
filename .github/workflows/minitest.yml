@@ -3,6 +3,11 @@ on: [push, pull_request]
 jobs:
   run-minitest:
     runs-on: ubuntu-latest
+    services: 
+      redis:
+        image: redis:alpine
+        ports: ["6379:6379"]
+        options: --entrypoint redis-server
     steps:
       - uses: actions/checkout@v4
       - name: Set up Ruby
@@ -13,5 +18,8 @@ jobs:
           # runs 'bundle install' and caches installed gems automatically
           bundler-cache: true
       - name: Run tests
+        env: 
+          RAILS_ENV: test
+          REDIS_URL: redis://redis:6379
         run: |
           bundle exec rails test

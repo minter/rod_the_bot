@@ -110,7 +110,6 @@ GEM
     erubi (1.12.0)
     et-orbi (1.2.7)
       tzinfo
-    fakeredis (0.1.4)
     fugit (1.9.0)
       et-orbi (~> 1, >= 1.2.7)
       raabro (~> 1.4)
@@ -302,7 +301,6 @@ DEPENDENCIES
   bundler-audit
   debug
   dotenv-rails (~> 2)
-  fakeredis
   httparty (~> 0)
   minitest
   pry-rails

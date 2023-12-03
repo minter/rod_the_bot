@@ -5,6 +5,7 @@ module RodTheBot
   class GameStreamTest < Minitest::Test
     def setup
       Sidekiq::Worker.clear_all
+      Sidekiq.redis(&:flushdb)
       @game_stream = GameStream.new
       @game_id = "2023020369" # replace with a valid game_id
     end
@@ -22,16 +23,16 @@ module RodTheBot
       assert_equal 2, RodTheBot::PenaltyWorker.jobs.size
     end
 
-    # def test_process_play
-    #   play = {"typeDescKey" => "goal", "eventId" => "73"}
+    def test_process_play
+      play = {"typeDescKey" => "goal", "eventId" => "73"}
 
-    #   VCR.use_cassette("game_stream_#{@game_id}_in_progress") do
-    #     @game_stream.send(:process_play, play)
-    #   end
+      VCR.use_cassette("game_stream_#{@game_id}_in_progress") do
+        @game_stream.send(:process_play, play)
+      end
 
-    #   # assert_equal "true", REDIS.get("#{@game_id}:#{play["eventId"]}")
-    #   assert_equal 1, RodTheBot::GoalWorker.jobs.size
-    # end
+      # assert_equal "true", REDIS.get("#{@game_id}:#{play["eventId"]}")
+      assert_equal 1, RodTheBot::GoalWorker.jobs.size
+    end
 
     def test_worker_mapping
       expected_mapping = {
