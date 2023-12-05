@@ -11,9 +11,13 @@ module RodTheBot
       away = feed.fetch("awayTeam", {})
 
       period_descriptor = play.fetch("periodDescriptor", {})
-      post = format_post(period_descriptor, home, away)
-
-      RodTheBot::Post.perform_async(post)
+      if period_descriptor.fetch("number") == 1
+        # Use the start of game worker instead of the start of period worker
+        GameStartWorker.perform_async(game_id)
+      else
+        post = format_post(period_descriptor, home, away)
+        RodTheBot::Post.perform_async(post)
+      end
     end
 
     def format_post(period_descriptor, home, away)

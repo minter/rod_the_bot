@@ -22,13 +22,26 @@ class PeriodStartWorkerTest < Minitest::Test
 
       @worker.perform(@game_id, play)
 
+      assert_equal 1, RodTheBot::GameStartWorker.jobs.count
+    end
+  end
+
+  def test_second_period
+    game_id = 2023020377
+    VCR.use_cassette("nhl_gamecenter_pbp_#{game_id}") do
+      @feed = HTTParty.get("https://api-web.nhle.com/v1/gamecenter/#{game_id}/play-by-play")
+
+      play_id = 123
+      play = @feed["plays"].find { |play| play["eventId"].to_i == play_id.to_i }
+
+      @worker.perform(game_id, play)
+
       expected_output = <<~POST
-        🎬 It's time to start the 1st period at PNC Arena!
+        🎬 It's time to start the 2nd period at Canada Life Centre!
         
-        We're ready for another puck drop between the Islanders and the Hurricanes!
+        We're ready for another puck drop between the Hurricanes and the Jets!
       POST
       assert_equal expected_output, RodTheBot::Post.jobs.first["args"].first
-      # Add assertions here based on what you expect to happen when perform is called
     end
   end
 
