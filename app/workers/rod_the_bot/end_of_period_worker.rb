@@ -19,7 +19,7 @@ module RodTheBot
       end_of_period_post = format_post(home, away, period_descriptor)
 
       RodTheBot::Post.perform_async(end_of_period_post)
-      RodTheBot::EndOfPeriodStatsWorker.perform_async(game_id, period)
+      RodTheBot::EndOfPeriodStatsWorker.perform_in(60, game_id, period)
     end
 
     private
