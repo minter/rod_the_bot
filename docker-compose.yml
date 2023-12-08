@@ -15,6 +15,7 @@ services:
     environment:
       REDIS_URL: redis://redis:6379/0
       RAILS_ENV: production
+      RUBY_YJIT_ENABLE: 1
     volumes:
       - ./:/app
 
