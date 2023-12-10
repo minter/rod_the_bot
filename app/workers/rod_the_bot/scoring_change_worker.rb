@@ -10,6 +10,7 @@ module RodTheBot
       away = @feed["awayTeam"]
 
       return if @play.blank?
+      return if @play["typeDescKey"] != "goal"
 
       # If nothing has changed on this scoring play, exit
       original_scorers = [original_play["details"]["scoringPlayerId"], original_play["details"]["assist1PlayerId"], original_play["details"]["assist2PlayerId"]]
