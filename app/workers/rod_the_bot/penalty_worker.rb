@@ -30,7 +30,9 @@ module RodTheBot
 
       players = build_players(@feed)
 
-      post = if players[@play["details"]["committedByPlayerId"]][:team_id] == ENV["NHL_TEAM_ID"].to_i
+      penalized_player = players[@play["details"]["committedByPlayerId"]] || players[@play["details"]["servedByPlayerId"]]
+
+      post = if penalized_player[:team_id] == ENV["NHL_TEAM_ID"].to_i
         "🙃 #{@your_team["name"]["default"]} Penalty\n\n"
       else
         "🤩 #{@their_team["name"]["default"]} Penalty!\n\n"
