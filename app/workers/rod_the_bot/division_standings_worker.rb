@@ -22,11 +22,11 @@ module RodTheBot
     end
 
     def sort_teams_in_division(standings, my_division)
-      standings.select { |team| team["divisionName"] == my_division }.sort_by { |team| [team["points"], team["gamesPlayed"]] }.reverse
+      standings.select { |team| team["divisionName"] == my_division }.sort_by { |team| [team["pointPctg"], team["points"], team["gamesPlayed"]] }.reverse
     end
 
     def format_standings(my_division, division_teams)
-      post = "📋 Here are the current standings for the #{my_division} division:\n\n"
+      post = "📋 Here are the current standings for the #{my_division} division (by PT%):\n\n"
       division_teams.each_with_index do |team, index|
         post += "#{index + 1}. #{team["teamAbbrev"]["default"]}: #{team["points"]} pts (#{team["gamesPlayed"]} GP)\n"
       end

@@ -34,15 +34,15 @@ class DivisionStandingsWorkerTest < Minitest::Test
       division_teams = @worker.send(:sort_teams_in_division, standings, my_division)
       post = @worker.send(:format_standings, my_division, division_teams)
       expected_output = <<~POST
-        📋 Here are the current standings for the Metropolitan division:
+        📋 Here are the current standings for the Metropolitan division (by PT%):
         
         1. NYR: 31 pts (20 GP)
         2. CAR: 26 pts (21 GP)
-        3. PHI: 23 pts (22 GP)
-        4. NYI: 22 pts (21 GP)
-        5. WSH: 22 pts (18 GP)
-        6. PIT: 21 pts (21 GP)
-        7. NJD: 21 pts (20 GP)
+        3. WSH: 22 pts (18 GP)
+        4. NJD: 21 pts (20 GP)
+        5. NYI: 22 pts (21 GP)
+        6. PHI: 23 pts (22 GP)
+        7. PIT: 21 pts (21 GP)
         8. CBJ: 18 pts (23 GP)
       POST
       assert_equal expected_output, post
