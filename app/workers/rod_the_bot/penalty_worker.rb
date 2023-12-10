@@ -8,7 +8,8 @@ module RodTheBot
       "MAJ" => "Major",
       "MIS" => "Misconduct",
       "GMIS" => "Game Misconduct",
-      "MATCH" => "Match"
+      "MATCH" => "Match",
+      "BEN" => "Minor"
     }.freeze
 
     def perform(game_id, play)
@@ -35,11 +36,20 @@ module RodTheBot
         "🤩 #{@their_team["name"]["default"]} Penalty!\n\n"
       end
 
-      post += <<~POST
-        #{players[@play["details"]["committedByPlayerId"]][:name]} - #{@play["details"]["descKey"].tr("-", " ").titlecase}
-        
-        That's a #{@play["details"]["duration"]} minute #{SEVERITY[@play["details"]["typeCode"]]} penalty at #{@play["timeInPeriod"]} of the #{ordinalize(@play["period"])} Period
-      POST
+      post += if play["details"]["typeCode"] == "BEN"
+        <<~POST
+          Bench Minor - #{@play["details"]["descKey"].tr("-", " ").titlecase}
+          Penalty is served by #{players[@play["details"]["servedByPlayerId"]][:name]}
+
+          That's a #{@play["details"]["duration"]} minute penalty at #{@play["timeInPeriod"]} of the #{ordinalize(@play["period"])} Period
+        POST
+      else
+        <<~POST
+          #{players[@play["details"]["committedByPlayerId"]][:name]} - #{@play["details"]["descKey"].tr("-", " ").titlecase}
+          
+          That's a #{@play["details"]["duration"]} minute #{SEVERITY[@play["details"]["typeCode"]]} penalty at #{@play["timeInPeriod"]} of the #{ordinalize(@play["period"])} Period
+        POST
+      end
 
       RodTheBot::Post.perform_async(post)
     end
