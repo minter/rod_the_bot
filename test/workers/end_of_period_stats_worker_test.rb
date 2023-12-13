@@ -16,7 +16,7 @@ class EndOfPeriodStatsWorkerTest < Minitest::Test
 
   def test_perform
     VCR.use_cassette("nhl_gamecenter") do
-      period_number = 1 # replace with a real period number
+      period_number = "1st" # replace with a real period number
 
       @worker.perform(@game_id, period_number)
       assert_equal 2, RodTheBot::Post.jobs.size

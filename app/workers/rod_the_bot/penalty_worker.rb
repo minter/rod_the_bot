@@ -9,7 +9,8 @@ module RodTheBot
       "MIS" => "Misconduct",
       "GMIS" => "Game Misconduct",
       "MATCH" => "Match",
-      "BEN" => "Minor"
+      "BEN" => "Minor",
+      "PS" => "Penalty Shot"
     }.freeze
 
     def perform(game_id, play)
@@ -45,6 +46,13 @@ module RodTheBot
 
           That's a #{@play["details"]["duration"]} minute penalty at #{@play["timeInPeriod"]} of the #{ordinalize(@play["period"])} Period
         POST
+      elsif play["details"]["typeCode"] == "PS"
+        <<~POST
+          #{players[@play["details"]["committedByPlayerId"]][:name]} - #{@play["details"]["descKey"].sub(/^ps-/, "").tr("-", " ").titlecase}
+          
+          That's a penalty shot awarded at #{@play["timeInPeriod"]} of the #{ordinalize(@play["period"])} Period
+        POST
+
       else
         <<~POST
           #{players[@play["details"]["committedByPlayerId"]][:name]} - #{@play["details"]["descKey"].tr("-", " ").titlecase}
