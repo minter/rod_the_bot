@@ -29,6 +29,11 @@ module RodTheBot
 
       type = situations[@play["situationCode"].to_s].to_s
 
+      if @play["details"]["scoringPlayerId"].blank?
+        RodTheBot::GoalWorker.perform_in(60, game_id, play)
+        return
+      end
+
       post = if players[@play["details"]["scoringPlayerId"]][:team_id] == ENV["NHL_TEAM_ID"].to_i
         "🎉 #{@your_team["name"]["default"]} #{type}GOOOOOOOAL!\n\n"
       else
