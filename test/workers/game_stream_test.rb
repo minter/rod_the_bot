@@ -35,7 +35,7 @@ module RodTheBot
 
     def test_worker_mapping
       expected_mapping = {
-        "goal" => [RodTheBot::GoalWorker, 60],
+        "goal" => [RodTheBot::GoalWorker, 90],
         "penalty" => [RodTheBot::PenaltyWorker, 60],
         "period-start" => [RodTheBot::PeriodStartWorker, 1],
         "period-end" => [RodTheBot::EndOfPeriodWorker, 90]
