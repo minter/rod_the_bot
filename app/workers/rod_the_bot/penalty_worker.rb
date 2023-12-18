@@ -29,6 +29,8 @@ module RodTheBot
         @their_team = home
       end
 
+      return if @feed["plays"].find { |play| play["eventId"] == @play["eventId"] }.empty?
+
       players = build_players(@feed)
 
       penalized_player = players[@play["details"]["committedByPlayerId"]] || players[@play["details"]["servedByPlayerId"]]
