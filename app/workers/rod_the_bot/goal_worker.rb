@@ -4,11 +4,6 @@ module RodTheBot
     include ActiveSupport::Inflector
 
     def perform(game_id, play)
-      situations = {
-        "0651" => "Empty Net ",
-        "1451" => "Shorthanded ",
-        "1541" => "Power Play "
-      }
       @feed = HTTParty.get("https://api-web.nhle.com/v1/gamecenter/#{game_id}/play-by-play")
       @play = play
       home = @feed["homeTeam"]
@@ -28,17 +23,15 @@ module RodTheBot
 
       original_play = @play.deep_dup
 
-      type = situations[@play["situationCode"].to_s].to_s
-
       if @play["details"]["scoringPlayerId"].blank?
         RodTheBot::GoalWorker.perform_in(60, game_id, play)
         return
       end
 
       post = if players[@play["details"]["scoringPlayerId"]][:team_id] == ENV["NHL_TEAM_ID"].to_i
-        "🎉 #{@your_team["name"]["default"]} #{type}GOOOOOOOAL!\n\n"
+        "🎉 #{@your_team["name"]["default"]} GOOOOOOOAL!\n\n"
       else
-        "👎 #{@their_team["name"]["default"]} #{type}Goal\n\n"
+        "👎 #{@their_team["name"]["default"]} Goal\n\n"
       end
 
       post += "🚨 #{players[@play["details"]["scoringPlayerId"]][:name]} (#{@play["details"]["scoringPlayerTotal"]})\n"
