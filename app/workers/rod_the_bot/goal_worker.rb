@@ -6,6 +6,10 @@ module RodTheBot
     def perform(game_id, play)
       @feed = HTTParty.get("https://api-web.nhle.com/v1/gamecenter/#{game_id}/play-by-play")
       @play = play
+
+      # Skip goals in the shootout
+      return if @play["periodDescriptor"]["periodType"] == "SO"
+
       home = @feed["homeTeam"]
       away = @feed["awayTeam"]
       if home["id"].to_i == ENV["NHL_TEAM_ID"].to_i
