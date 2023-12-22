@@ -29,7 +29,7 @@ module RodTheBot
         @their_team = home
       end
 
-      return if @feed["plays"].find { |play| play["eventId"] == @play["eventId"] }.empty?
+      return if @feed["plays"].find { |play| play["eventId"] == @play["eventId"] }.blank?
 
       players = build_players(@feed)
 
