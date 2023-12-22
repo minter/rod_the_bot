@@ -5,7 +5,10 @@ module RodTheBot
 
     def perform(game_id, play)
       @feed = HTTParty.get("https://api-web.nhle.com/v1/gamecenter/#{game_id}/play-by-play")
-      @play = play
+      @play_id = play["eventId"]
+      @play = @feed["plays"].find { |play| play["eventId"] == @play_id }
+
+      return if @play.blank?
 
       # Skip goals in the shootout
       return if @play["periodDescriptor"]["periodType"] == "SO"
@@ -20,15 +23,12 @@ module RodTheBot
         @their_team = home
       end
 
-      return if @play.blank?
-      return if @feed["plays"].find { |play| play["eventId"] == @play["eventId"] }.empty?
-
       players = build_players(@feed)
 
       original_play = @play.deep_dup
 
       if @play["details"]["scoringPlayerId"].blank?
-        RodTheBot::GoalWorker.perform_in(60, game_id, play)
+        RodTheBot::GoalWorker.perform_in(60, game_id, @play)
         return
       end
 
