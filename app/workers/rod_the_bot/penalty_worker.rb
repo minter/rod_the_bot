@@ -41,25 +41,27 @@ module RodTheBot
         "🤩 #{@their_team["name"]["default"]} Penalty!\n\n"
       end
 
+      period_description = (@play["periodDescriptor"]["periodType"] == "OT") ? "Overtime" : ordinalize(@play["period"])
+
       post += if play["details"]["typeCode"] == "BEN"
         <<~POST
           Bench Minor - #{@play["details"]["descKey"].tr("-", " ").titlecase}
           Penalty is served by #{players[@play["details"]["servedByPlayerId"]][:name]}
 
-          That's a #{@play["details"]["duration"]} minute penalty at #{@play["timeInPeriod"]} of the #{ordinalize(@play["period"])} Period
+          That's a #{@play["details"]["duration"]} minute penalty at #{@play["timeInPeriod"]} of the #{period_description} Period
         POST
       elsif play["details"]["typeCode"] == "PS"
         <<~POST
           #{players[@play["details"]["committedByPlayerId"]][:name]} - #{@play["details"]["descKey"].sub(/^ps-/, "").tr("-", " ").titlecase}
           
-          That's a penalty shot awarded at #{@play["timeInPeriod"]} of the #{ordinalize(@play["period"])} Period
+          That's a penalty shot awarded at #{@play["timeInPeriod"]} of the #{period_description} Period
         POST
 
       else
         <<~POST
           #{players[@play["details"]["committedByPlayerId"]][:name]} - #{@play["details"]["descKey"].tr("-", " ").titlecase}
           
-          That's a #{@play["details"]["duration"]} minute #{SEVERITY[@play["details"]["typeCode"]]} penalty at #{@play["timeInPeriod"]} of the #{ordinalize(@play["period"])} Period
+          That's a #{@play["details"]["duration"]} minute #{SEVERITY[@play["details"]["typeCode"]]} penalty at #{@play["timeInPeriod"]} of the #{period_description} Period
         POST
       end
 
