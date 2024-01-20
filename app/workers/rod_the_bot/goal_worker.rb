@@ -32,10 +32,12 @@ module RodTheBot
         return
       end
 
+      modifiers = modifiers(@play["situationCode"].to_s, players[@play["details"]["scoringPlayerId"]][:team_id], home["id"], away["id"])
+
       post = if players[@play["details"]["scoringPlayerId"]][:team_id] == ENV["NHL_TEAM_ID"].to_i
-        "🎉 #{@your_team["name"]["default"]} GOOOOOOOAL!\n\n"
+        "🎉 #{@your_team["name"]["default"]}#{modifiers} GOOOOOOOAL!\n\n"
       else
-        "👎 #{@their_team["name"]["default"]} Goal\n\n"
+        "👎 #{@their_team["name"]["default"]}#{modifiers} Goal\n\n"
       end
 
       post += "🚨 #{players[@play["details"]["scoringPlayerId"]][:name]} (#{@play["details"]["scoringPlayerTotal"]})\n"
@@ -63,6 +65,27 @@ module RodTheBot
         }
       end
       players
+    end
+
+    def modifiers(situation_code, scoring_team_id, home_id, away_id)
+      away_goalies = situation_code[0].to_i
+      away_skaters = situation_code[1].to_i
+      home_skaters = situation_code[2].to_i
+      home_goalies = situation_code[3].to_i
+      away_players = away_goalies + away_skaters
+      home_players = home_goalies + home_skaters
+      modifiers = []
+
+      if scoring_team_id == home_id
+        modifiers << "Shorthanded" if away_players > home_players
+        modifiers << "Power Play" if away_players < home_players
+        modifiers << "Empty Net" if away_goalies == 0
+      else
+        modifiers << "Shorthanded" if home_players > away_players
+        modifiers << "Power Play" if home_players < away_players
+        modifiers << "Empty Net" if home_goalies == 0
+      end
+      modifiers.empty? ? "" : " " + modifiers.join(", ")
     end
   end
 end
