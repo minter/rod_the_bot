@@ -41,7 +41,7 @@ module RodTheBot
 
     def format_goalie_stats(player)
       gaa = player["goalsAgainstAverage"]
-      sv_pct = player["savePctg"].round(3)
+      sv_pct = sprintf("%.3f", player["savePctg"].round(3))
       stats = if gaa.to_i == 0 && sv_pct.to_i == 1
         "Shutout"
       else

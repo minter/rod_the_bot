@@ -30,7 +30,7 @@ module RodTheBot
     def find_goalie_record(player_id)
       player = fetch_data("https://api-web.nhle.com/v1/player/#{player_id}/landing")
       stats = player["featuredStats"]["regularSeason"]["subSeason"]
-      "(#{stats["wins"]}-#{stats["losses"]}-#{stats["otLosses"]}, #{stats["goalsAgainstAvg"].round(2)} GAA, #{stats["savePctg"].round(3)} SV%)"
+      "(#{stats["wins"]}-#{stats["losses"]}-#{stats["otLosses"]}, #{sprintf("%.2f", stats["goalsAgainstAvg"].round(2))} GAA, #{sprintf("%.3f", stats["savePctg"].round(3))} SV%)"
     end
 
     def find_officials(game_id)

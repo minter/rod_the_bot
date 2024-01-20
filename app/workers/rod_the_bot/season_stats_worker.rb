@@ -102,8 +102,8 @@ module RodTheBot
           games: player["gamesPlayed"],
           wins: player["wins"],
           losses: player["losses"],
-          save_percentage: player["savePercentage"].round(3),
-          goals_against_average: player["goalsAgainstAverage"].round(2)
+          save_percentage: sprintf("%.3f", player["savePercentage"].round(3)),
+          goals_against_average: sprintf("%.2f", player["goalsAgainstAverage"].round(2))
         }
       end
       [skater_stats, goalie_stats]
