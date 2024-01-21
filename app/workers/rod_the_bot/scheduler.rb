@@ -39,7 +39,7 @@ module RodTheBot
 
       if away["id"].to_i == ENV["NHL_TEAM_ID"].to_i || home["id"].to_i == ENV["NHL_TEAM_ID"].to_i
         gameday_post = <<~POST
-          🗣️ It's a #{your_standings[:team_name]} Gameday! 🗣️
+          🗣️ It's a #{your_standings[:team_name]} Gameday!
 
           #{away_standings[:team_name]}
           #{record(away_standings)}
