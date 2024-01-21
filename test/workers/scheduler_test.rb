@@ -33,7 +33,7 @@ class SchedulerTest < Minitest::Test
         @worker.perform
 
         expected_output = <<~POST
-          🗣️ It's a Carolina Hurricanes Gameday! 🗣️
+          🗣️ It's a Carolina Hurricanes Gameday!
           
           Buffalo Sabres
           (10-11-2, 22 points)
