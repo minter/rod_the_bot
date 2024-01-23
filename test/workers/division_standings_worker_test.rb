@@ -36,14 +36,14 @@ class DivisionStandingsWorkerTest < Minitest::Test
       expected_output = <<~POST
         📋 Here are the current standings for the Metropolitan division (by PT%):
         
-        1. NYR: 31 pts (0.775 PT%)
-        2. CAR: 26 pts (0.619 PT%)
-        3. WSH: 22 pts (0.611 PT%)
-        4. NJD: 21 pts (0.525 PT%)
-        5. NYI: 22 pts (0.524 PT%)
-        6. PHI: 23 pts (0.523 PT%)
-        7. PIT: 21 pts (0.500 PT%)
-        8. CBJ: 18 pts (0.391 PT%)
+        1. NYR: 31 pts (0.775%)
+        2. CAR: 26 pts (0.619%)
+        3. WSH: 22 pts (0.611%)
+        4. NJD: 21 pts (0.525%)
+        5. NYI: 22 pts (0.524%)
+        6. PHI: 23 pts (0.523%)
+        7. PIT: 21 pts (0.500%)
+        8. CBJ: 18 pts (0.391%)
       POST
       assert_equal expected_output, post
     end
