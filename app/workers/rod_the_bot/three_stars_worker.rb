@@ -56,7 +56,8 @@ module RodTheBot
       stat_collection << "#{player["assists"]}A" if player["assists"].to_i > 0
       stat_collection << "#{player["points"]}#{"PT".pluralize(player["points"]).upcase}" if player["points"].to_i > 0
       stats = stat_collection.join(", ")
-      format_player_info(player, "(#{stats})")
+      stats_output = stats.present? ? "(#{stats})" : ""
+      format_player_info(player, stats_output)
     end
 
     def format_player_info(player, stats)

@@ -10,26 +10,26 @@ class ThreeStarsWorkerTest < ActiveSupport::TestCase
   end
 
   def test_perform
-    VCR.use_cassette("nhl_game_landing_2023020328") do
-      @worker.perform(2023020328)
+    VCR.use_cassette("nhl_game_landing_2023020763") do
+      @worker.perform(2023020763)
       assert_not_empty @worker.feed
     end
   end
 
   def test_format_three_stars
-    VCR.use_cassette("nhl_game_landing_2023020328") do
-      @worker.perform(2023020328)
+    VCR.use_cassette("nhl_game_landing_2023020763") do
+      @worker.perform(2023020763)
       three_stars = @worker.feed["summary"]["threeStars"]
       post = @worker.send(:format_three_stars, three_stars)
       expected_output = <<~POST
         Three Stars Of The Game:
         
-        ⭐️⭐️⭐️ PHI #11 Travis Konecny (1G, 1PT)
+        ⭐️⭐️⭐️ CAR #88 Martin Necas (1G, 1PT)
         
-        ⭐️⭐️ CAR #58 Michael Bunting (1G, 1A, 2PTS)
+        ⭐️⭐️ CAR #74 Jaccob Slavin 
         
-        ⭐️ CAR #52 Pyotr Kochetkov (1.0 GAA, 0.966 SV%)
-        
+        ⭐️ CAR #7 Dmitry Orlov (1G, 1PT)
+
       POST
       assert_equal expected_output, post
     end
