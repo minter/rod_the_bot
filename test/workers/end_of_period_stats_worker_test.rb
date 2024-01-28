@@ -10,39 +10,51 @@ class EndOfPeriodStatsWorkerTest < Minitest::Test
   def setup
     Sidekiq::Worker.clear_all
     @worker = RodTheBot::EndOfPeriodStatsWorker.new
-    @game_id = 2023020339
-    ENV["NHL_TEAM_ID"] = "26"
+    @game_id = 2023020773
+    ENV["NHL_TEAM_ID"] = "19"
   end
 
   def test_perform
-    VCR.use_cassette("nhl_gamecenter") do
-      period_number = "1st" # replace with a real period number
+    VCR.use_cassette("nhl_gamecenter_2023020773_landing") do
+      period_number = "2nd"
 
       @worker.perform(@game_id, period_number)
-      assert_equal 2, RodTheBot::Post.jobs.size
+      assert_equal 3, RodTheBot::Post.jobs.size
       toi_expected_output = <<~POST
-        ⏱️ Time on ice leaders for the Kings after the 1st period
+        ⏱️ Time on ice leaders for the Blues after the 2nd period
         
-        D. Doughty - 07:28
-        V. Gavrikov - 06:56
-        A. Kopitar - 06:26
-        M. Anderson - 06:19
-        K. Fiala - 06:19
+        N. Leddy - 14:48
+        R. Thomas - 14:15
+        C. Parayko - 13:58
+        J. Kyrou - 13:27
+        T. Krug - 13:18
       POST
 
       sog_expected_output = <<~POST
-        🏒 Shots on goal leaders for the Kings after the 1st period
+        🏒 Shots on goal leaders for the Blues after the 2nd period
         
-        Q. Byfield - 3
-        K. Fiala - 3
-        M. Anderson - 1
-        D. Doughty - 1
-        C. Grundstrom - 1
+        P. Buchnevich - 4
+        N. Leddy - 3
+        T. Krug - 2
+        J. Neighbours - 2
+        J. Kyrou - 2
       POST
 
-      assert_equal toi_expected_output, RodTheBot::Post.jobs.first["args"].first
-      # assert_match(/Byfield/, RodTheBot::Post.jobs.second["args"].first)
-      assert_equal sog_expected_output, RodTheBot::Post.jobs.second["args"].first
+      game_stats_expected_output = <<~POST
+        📄 Game comparison after the 2nd period
+        
+        Faceoffs: LAK - 47.4% | STL - 52.6%
+        PIMs: LAK - 8 | STL - 2
+        Blocks: LAK - 9 | STL - 5
+        Hits: LAK - 14 | STL - 17
+        Power Play: LAK - 0/1 | STL - 1/4
+        Giveaways: LAK - 2 | STL - 2
+        Takeaways: LAK - 8 | STL - 4
+      POST
+
+      assert_equal toi_expected_output, RodTheBot::Post.jobs.second["args"].first
+      assert_equal sog_expected_output, RodTheBot::Post.jobs.third["args"].first
+      assert_equal game_stats_expected_output, RodTheBot::Post.jobs.first["args"].first
     end
   end
 end

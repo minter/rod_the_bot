@@ -6,13 +6,17 @@ module RodTheBot
     attr_reader :feed, :home, :visitor, :your_team, :your_team_status, :home_code, :visitor_code
 
     def perform(game_id, period_number)
-      @feed = HTTParty.get("https://api-web.nhle.com/v1/gamecenter/#{game_id}/boxscore")
+      @game_id = game_id
+      @feed = HTTParty.get("https://api-web.nhle.com/v1/gamecenter/#{game_id}/landing")
+      # return if @feed["gameState"] == "OFF"
+
       @home = feed.fetch("homeTeam", {})
       @visitor = feed.fetch("awayTeam", {})
       @your_team = (home.fetch("id", "").to_i == ENV["NHL_TEAM_ID"].to_i) ? home : visitor
       @your_team_status = (your_team.fetch("id", "") == home.fetch("id", "")) ? "homeTeam" : "awayTeam"
       @home_code = home.fetch("abbrev", "")
       @visitor_code = visitor.fetch("abbrev", "")
+      @game_stats = @feed["summary"]["teamGameStats"]
 
       period_state = if feed.fetch("gameState", "") == "OFF" || period_number.blank?
         "at the end of the game"
@@ -23,11 +27,9 @@ module RodTheBot
       period_toi_post = format_post(time_on_ice_leaders, "⏱️ Time on ice leaders", period_state)
       shots_on_goal_post = format_post(shots_on_goal_leaders, "🏒 Shots on goal leaders", period_state)
 
-      if feed.fetch("gameState", "") == "OFF" || period_number.blank?
-        game_splits_stats = get_game_splits_stats
-        game_split_stats_post = format_game_split_stats_post(game_splits_stats, period_state)
-        RodTheBot::Post.perform_in(180, game_split_stats_post)
-      end
+      game_splits_stats = get_game_splits_stats
+      game_split_stats_post = format_game_split_stats_post(game_splits_stats, period_state)
+      RodTheBot::Post.perform_in(180, game_split_stats_post)
 
       RodTheBot::Post.perform_in(60, period_toi_post)
       RodTheBot::Post.perform_in(120, shots_on_goal_post)
@@ -47,17 +49,20 @@ module RodTheBot
       <<~POST
         📄 Game comparison #{period_state}
 
-        Faceoff %: #{visitor_code} - #{game_splits_stats[:faceOffWinPercentage][:away]}% | #{home_code} - #{game_splits_stats[:faceOffWinPercentage][:home]}%
-        PIM: #{visitor_code} - #{game_splits_stats[:pim][:away]} | #{home_code} - #{game_splits_stats[:pim][:home]}
-        Blocks: #{visitor_code} - #{game_splits_stats[:blocks][:away]} | #{home_code} - #{game_splits_stats[:blocks][:home]}
+        Faceoffs: #{visitor_code} - #{game_splits_stats[:faceoffPctg][:away]}% | #{home_code} - #{game_splits_stats[:faceoffPctg][:home]}%
+        PIMs: #{visitor_code} - #{game_splits_stats[:pim][:away]} | #{home_code} - #{game_splits_stats[:pim][:home]}
+        Blocks: #{visitor_code} - #{game_splits_stats[:blockedShots][:away]} | #{home_code} - #{game_splits_stats[:blockedShots][:home]}
         Hits: #{visitor_code} - #{game_splits_stats[:hits][:away]} | #{home_code} - #{game_splits_stats[:hits][:home]}
-        Power Play: #{visitor_code} - #{game_splits_stats[:powerPlayConversion][:away]} | #{home_code} - #{game_splits_stats[:powerPlayConversion][:home]}
+        Power Play: #{visitor_code} - #{game_splits_stats[:powerPlay][:away]} | #{home_code} - #{game_splits_stats[:powerPlay][:home]}
+        Giveaways: #{visitor_code} - #{game_splits_stats[:giveaways][:away]} | #{home_code} - #{game_splits_stats[:giveaways][:home]}
+        Takeaways: #{visitor_code} - #{game_splits_stats[:takeaways][:away]} | #{home_code} - #{game_splits_stats[:takeaways][:home]}
       POST
     end
 
     def create_players(stat)
-      team = feed.fetch("boxscore", {}).fetch("playerByGameStats", {}).fetch(your_team_status, {}).fetch("forwards", []) +
-        feed.fetch("boxscore", {}).fetch("playerByGameStats", {}).fetch(your_team_status, {}).fetch("defense", [])
+      player_feed = HTTParty.get("https://api-web.nhle.com/v1/gamecenter/#{@game_id}/boxscore")
+      team = player_feed.fetch("boxscore", {}).fetch("playerByGameStats", {}).fetch(your_team_status, {}).fetch("forwards", []) +
+        player_feed.fetch("boxscore", {}).fetch("playerByGameStats", {}).fetch(your_team_status, {}).fetch("defense", [])
       players = {}
       team.each do |player|
         players[player.fetch("playerId", "")] = {
@@ -82,13 +87,11 @@ module RodTheBot
     end
 
     def get_game_splits_stats
-      {
-        pim: {home: home.fetch("pim", 0), away: visitor.fetch("pim", 0)},
-        faceOffWinPercentage: {home: home.fetch("faceoffWinningPctg", 0), away: visitor.fetch("faceoffWinningPctg", 0)},
-        blocks: {home: home.fetch("blocks", 0), away: visitor.fetch("blocks", 0)},
-        hits: {home: home.fetch("hits", 0), away: visitor.fetch("hits", 0)},
-        powerPlayConversion: {home: home.fetch("powerPlayConversion", 0), away: visitor.fetch("powerPlayConversion", 0)}
-      }
+      splits = {}
+      @game_stats.each do |stat|
+        splits[stat["category"].to_sym] = {home: stat["homeValue"], away: stat["awayValue"]}
+      end
+      splits
     end
   end
 end

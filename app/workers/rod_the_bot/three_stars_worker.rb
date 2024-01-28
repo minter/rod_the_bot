@@ -43,9 +43,9 @@ module RodTheBot
       gaa = player["goalsAgainstAverage"]
       sv_pct = sprintf("%.3f", player["savePctg"].round(3))
       stats = if gaa.to_i == 0 && sv_pct.to_i == 1
-        "Shutout"
+        "(Shutout)"
       else
-        "#{gaa} GAA, #{sv_pct} SV%"
+        "(#{gaa} GAA, #{sv_pct} SV%)"
       end
       format_player_info(player, stats)
     end
@@ -56,11 +56,11 @@ module RodTheBot
       stat_collection << "#{player["assists"]}A" if player["assists"].to_i > 0
       stat_collection << "#{player["points"]}#{"PT".pluralize(player["points"]).upcase}" if player["points"].to_i > 0
       stats = stat_collection.join(", ")
-      format_player_info(player, stats)
+      format_player_info(player, "(#{stats})")
     end
 
     def format_player_info(player, stats)
-      "#{player["teamAbbrev"]} ##{player["sweaterNo"]} #{player["firstName"]} #{player["lastName"]} (#{stats})\n"
+      "#{player["teamAbbrev"]} ##{player["sweaterNo"]} #{player["firstName"]} #{player["lastName"]} #{stats}\n"
     end
 
     def post_three_stars(post)
