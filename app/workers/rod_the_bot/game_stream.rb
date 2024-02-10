@@ -38,7 +38,7 @@ module RodTheBot
         "goal" => [RodTheBot::GoalWorker, 90],
         "penalty" => [RodTheBot::PenaltyWorker, 60],
         "period-start" => [RodTheBot::PeriodStartWorker, 1],
-        "period-end" => [RodTheBot::EndOfPeriodWorker, 90]
+        "period-end" => [RodTheBot::EndOfPeriodWorker, 180]
       }
     end
   end
