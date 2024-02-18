@@ -18,7 +18,7 @@ gem "tzinfo-data", platforms: %i[windows jruby]
 gem "bootsnap", require: false
 
 gem "bskyrb", "~> 0.5.3"
-gem "dotenv-rails", "~> 2", require: "dotenv/rails-now"
+gem "dotenv-rails", "~> 3", require: "dotenv/rails-now"
 gem "httparty", "~> 0"
 gem "pry-rails"
 gem "redis", "~>5"
