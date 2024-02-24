@@ -2,7 +2,7 @@ version: "3.8"
 services:
   redis:
     image: "redis:7-alpine"
-    command: redis-server --apendonly yes
+    command: redis-server --appendonly yes
     volumes:
       - "redis:/data"
 
