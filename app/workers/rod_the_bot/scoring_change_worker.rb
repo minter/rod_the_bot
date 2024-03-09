@@ -25,7 +25,7 @@ module RodTheBot
       post = <<~POST
         🔔 Scoring Change
 
-        The #{scoring_team["name"]["default"]} goal at #{@play["timeInPeriod"]} of the #{ordinalize(@play["period"])} period now reads:
+        The #{scoring_team["name"]["default"]} goal at #{@play["timeInPeriod"]} of the #{ordinalize(@play["periodDescriptor"]["number"])} period now reads:
 
       POST
       post += "🚨 #{players[@play["details"]["scoringPlayerId"]][:name]} (#{@play["details"]["scoringPlayerTotal"]})\n"

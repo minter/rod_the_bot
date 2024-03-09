@@ -41,7 +41,7 @@ module RodTheBot
         "🤩 #{@their_team["name"]["default"]} Penalty!\n\n"
       end
 
-      period_description = (@play["periodDescriptor"]["periodType"] == "OT") ? "Overtime" : ordinalize(@play["period"])
+      period_description = (@play["periodDescriptor"]["periodType"] == "OT") ? "Overtime" : ordinalize(@play["periodDescriptor"]["number"])
 
       post += if play["details"]["typeCode"] == "BEN"
         <<~POST

@@ -32,7 +32,7 @@ class PenaltyWorkerTest < Minitest::Test
     @game_id = 2023020433
     @play_id = 495
     ENV["NHL_TEAM_ID"] = "12"
-    VCR.use_cassette("nhl_game_#{@game_id}_gamecenter_pbp_end_of_period_1", allow_playback_repeats: true) do
+    VCR.use_cassette("nhl_game_#{@game_id}_gamecenter_pbp_penalty", allow_playback_repeats: true) do
       feed = HTTParty.get("https://api-web.nhle.com/v1/gamecenter/#{@game_id}/play-by-play", allow_playback_repeats: true)
       play = feed["plays"].find { |play| play["eventId"].to_i == @play_id.to_i }
 

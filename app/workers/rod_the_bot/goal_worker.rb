@@ -49,7 +49,7 @@ module RodTheBot
       end
       post += "🍎🍎 #{players[@play["details"]["assist2PlayerId"]][:name]} (#{@play["details"]["assist2PlayerTotal"]})\n" if @play["details"]["assist2PlayerId"].present?
 
-      post += "⏱️  #{@play["timeInPeriod"]} #{ordinalize(@play["period"])} Period\n\n"
+      post += "⏱️  #{@play["timeInPeriod"]} #{ordinalize(@play["periodDescriptor"]["number"])} Period\n\n"
       post += "#{away["abbrev"]} #{@play["details"]["awayScore"]} - #{home["abbrev"]} #{@play["details"]["homeScore"]}\n"
       RodTheBot::Post.perform_async(post)
       RodTheBot::ScoringChangeWorker.perform_in(600, game_id, play["eventId"], original_play)
