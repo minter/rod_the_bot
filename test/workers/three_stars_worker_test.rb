@@ -24,11 +24,11 @@ class ThreeStarsWorkerTest < ActiveSupport::TestCase
       expected_output = <<~POST
         Three Stars Of The Game:
         
-        ⭐️⭐️⭐️ CAR #88 Martin Necas (1G, 1PT)
+        ⭐️⭐️⭐️ CAR #88 M. Necas (1G, 1PT)
         
-        ⭐️⭐️ CAR #74 Jaccob Slavin 
+        ⭐️⭐️ CAR #74 J. Slavin 
         
-        ⭐️ CAR #7 Dmitry Orlov (1G, 1PT)
+        ⭐️ CAR #7 D. Orlov (1G, 1PT)
 
       POST
       assert_equal expected_output, post
