@@ -10,9 +10,16 @@ module RodTheBot
       Time.zone = TZInfo::Timezone.get(ENV["TIME_ZONE"])
       today = Time.now.strftime("%Y-%m-%d")
       @week = HTTParty.get("https://api-web.nhle.com/v1/club-schedule/#{ENV["NHL_TEAM_ABBREVIATION"]}/week/#{today}")
+      # TODO: Dynamically get current season
+      @is_postseason = HTTParty.get("https://api-web.nhle.com/v1/playoff-series/carousel/20232024/")["rounds"].present?
 
       RodTheBot::YesterdaysScoresWorker.perform_in(15.minutes)
-      RodTheBot::DivisionStandingsWorker.perform_in(16.minutes)
+      if @is_postseason
+        # Postseason
+        RodTheBot::PostseasonSeriesWorker.perform_in(16.minutes)
+      else
+        RodTheBot::DivisionStandingsWorker.perform_in(16.minutes)
+      end
       @game = @week["games"].find { |game| game["gameDate"] == today }
 
       return if @game.nil?
