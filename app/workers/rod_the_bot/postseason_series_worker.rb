@@ -7,7 +7,8 @@ module RodTheBot
       rounds = carousel["rounds"]
       current_round = carousel["currentRound"]
       current_series = rounds.find { |round| round["roundNumber"] == current_round }
-      format_series(current_series)
+      post = format_series(current_series)
+      RodTheBot::Post.perform_async(post)
     end
 
     private
