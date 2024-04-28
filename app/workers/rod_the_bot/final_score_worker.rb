@@ -12,7 +12,7 @@ module RodTheBot
       modifier = if feed.fetch("periodDescriptor", {}).fetch("periodType", "") == "SO"
         " (SO)"
       elsif feed.fetch("periodDescriptor", {}).fetch("periodType", "") == "OT"
-        (feed["periodDescriptor"]["number"].to_i >= 4) ? " (#{feed["periodDescriptor"]["number"].to_i - 3}OT)" : " (OT)"
+        (feed["periodDescriptor"]["number"].to_i >= 5) ? " (#{feed["periodDescriptor"]["number"].to_i - 3}OT)" : " (OT)"
       end
 
       post = format_post(home, visitor, modifier, home_team_is_yours)

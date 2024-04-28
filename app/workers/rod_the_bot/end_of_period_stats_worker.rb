@@ -21,13 +21,13 @@ module RodTheBot
       period_state = if feed.fetch("gameState", "") == "OFF" || period_number.blank?
         "at the end of the game"
       else
-        period_name = case @play["periodDescriptor"]["number"]
+        period_name = case feed["periodDescriptor"]["number"].to_i
         when 1..3
-          "#{ordinalize(@play["periodDescriptor"]["number"])} Period"
+          "#{ordinalize(feed["periodDescriptor"]["number"])} Period"
         when 4
           "OT Period"
         else
-          "#{@play["periodDescriptor"]["number"].to_i - 3}OT Period"
+          "#{feed["periodDescriptor"]["number"].to_i - 3}OT Period"
         end
         "after the #{period_name}"
       end
@@ -57,7 +57,7 @@ module RodTheBot
       <<~POST
         📄 Game comparison #{period_state}
 
-        Faceoffs: #{visitor_code} - #{game_splits_stats[:faceoffWinningPctg][:away]}% | #{home_code} - #{game_splits_stats[:faceoffWinningPctg][:home]}%
+        Faceoffs: #{visitor_code} - #{sprintf("%.2f%%", game_splits_stats[:faceoffWinningPctg][:away] * 100)}% | #{home_code} - #{sprintf("%.2f%%", game_splits_stats[:faceoffWinningPctg][:home] * 100)}%
         PIMs: #{visitor_code} - #{game_splits_stats[:pim][:away]} | #{home_code} - #{game_splits_stats[:pim][:home]}
         Blocks: #{visitor_code} - #{game_splits_stats[:blockedShots][:away]} | #{home_code} - #{game_splits_stats[:blockedShots][:home]}
         Hits: #{visitor_code} - #{game_splits_stats[:hits][:away]} | #{home_code} - #{game_splits_stats[:hits][:home]}
