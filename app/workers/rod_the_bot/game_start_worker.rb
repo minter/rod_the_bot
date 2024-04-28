@@ -4,13 +4,13 @@ module RodTheBot
 
     def perform(game_id)
       @feed = fetch_data("https://api-web.nhle.com/v1/gamecenter/#{game_id}/play-by-play")
-      players = build_players(@feed)
-      home_goalie = find_starting_goalie(@feed["homeTeam"], players)
-      home_goalie_record = find_goalie_record(home_goalie[:id])
-      away_goalie = find_starting_goalie(@feed["awayTeam"], players)
-      away_goalie_record = find_goalie_record(away_goalie[:id])
+      # players = build_players(@feed)
+      # home_goalie = find_starting_goalie(@feed["homeTeam"], players)
+      # home_goalie_record = find_goalie_record(home_goalie[:id])
+      # away_goalie = find_starting_goalie(@feed["awayTeam"], players)
+      # away_goalie_record = find_goalie_record(away_goalie[:id])
       officials = find_officials(game_id)
-      post = format_post(@feed, home_goalie, away_goalie, officials, home_goalie_record, away_goalie_record)
+      post = format_post(@feed, officials)
       RodTheBot::Post.perform_async(post)
     end
 
@@ -41,14 +41,10 @@ module RodTheBot
       officials
     end
 
-    def format_post(feed, home_goalie, away_goalie, officials, home_goalie_record, away_goalie_record)
+    def format_post(feed, officials)
       <<~POST
         🚦 It's puck drop at #{feed["venue"]["default"]} for #{feed["awayTeam"]["name"]["default"]} at #{feed["homeTeam"]["name"]["default"]}!
         
-        Starting Goalies:
-        #{feed["homeTeam"]["abbrev"]}: #{home_goalie[:name]} #{home_goalie_record}
-        #{feed["awayTeam"]["abbrev"]}: #{away_goalie[:name]} #{away_goalie_record}
-
         Refs: #{officials[:referees].map { |r| r["default"] }.join(", ")}
         Lines: #{officials[:lines].map { |r| r["default"] }.join(", ")}
       POST
