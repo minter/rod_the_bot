@@ -38,6 +38,9 @@ module RodTheBot
       score_text = "#{visitor_team["abbrev"]} #{visitor_score} : #{home_score} #{home_team["abbrev"]}"
       score_text += " (SO)" if game["periodDescriptor"]["periodType"] == "SO"
       score_text += " (OT)" if game["periodDescriptor"]["periodType"] == "OT"
+      if game["periodDescriptor"]["periodType"] == "OT"
+        score_text += (game["periodDescriptor"]["number"].to_i >= 4) ? " (#{game["periodDescriptor"]["number"].to_i - 3}OT)" : " (OT)"
+      end
       score_text
     end
 

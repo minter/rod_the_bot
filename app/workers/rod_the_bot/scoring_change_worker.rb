@@ -22,10 +22,19 @@ module RodTheBot
       scoring_team_id = players[@play["details"]["scoringPlayerId"]][:team_id]
       scoring_team = (home["id"] == scoring_team_id) ? home : away
 
+      period_name = case @play["periodDescriptor"]["number"]
+      when 1..3
+        "#{ordinalize(@play["periodDescriptor"]["number"])} Period"
+      when 4
+        "OT Period"
+      else
+        "#{@play["periodDescriptor"]["number"].to_i - 3}OT Period"
+      end
+
       post = <<~POST
         🔔 Scoring Change
 
-        The #{scoring_team["name"]["default"]} goal at #{@play["timeInPeriod"]} of the #{ordinalize(@play["periodDescriptor"]["number"])} period now reads:
+        The #{scoring_team["name"]["default"]} goal at #{@play["timeInPeriod"]} of the #{period_name} now reads:
 
       POST
       post += "🚨 #{players[@play["details"]["scoringPlayerId"]][:name]} (#{@play["details"]["scoringPlayerTotal"]})\n"

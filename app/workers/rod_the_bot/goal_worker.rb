@@ -32,6 +32,15 @@ module RodTheBot
         return
       end
 
+      period_name = case @play["periodDescriptor"]["number"]
+      when 1..3
+        "#{ordinalize(@play["periodDescriptor"]["number"])} Period"
+      when 4
+        "OT Period"
+      else
+        "#{@play["periodDescriptor"]["number"].to_i - 3}OT Period"
+      end
+
       modifiers = modifiers(@play["situationCode"].to_s, players[@play["details"]["scoringPlayerId"]][:team_id], home["id"], away["id"])
 
       post = if players[@play["details"]["scoringPlayerId"]][:team_id] == ENV["NHL_TEAM_ID"].to_i
@@ -49,7 +58,7 @@ module RodTheBot
       end
       post += "🍎🍎 #{players[@play["details"]["assist2PlayerId"]][:name]} (#{@play["details"]["assist2PlayerTotal"]})\n" if @play["details"]["assist2PlayerId"].present?
 
-      post += "⏱️  #{@play["timeInPeriod"]} #{ordinalize(@play["periodDescriptor"]["number"])} Period\n\n"
+      post += "⏱️  #{@play["timeInPeriod"]} #{period_name}\n\n"
       post += "#{away["abbrev"]} #{@play["details"]["awayScore"]} - #{home["abbrev"]} #{@play["details"]["homeScore"]}\n"
       RodTheBot::Post.perform_async(post)
       RodTheBot::ScoringChangeWorker.perform_in(600, game_id, play["eventId"], original_play)

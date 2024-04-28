@@ -6,46 +6,48 @@ module RodTheBot
 
     def perform(your_team)
       @season = nil
+      @season_type = nil
+      @season_type_id = nil
       skater_stats, goalie_stats = collect_roster_stats
 
       goalie_post = <<~POST
-        🥅 Season goaltending stats for the #{your_team}
+        🥅 #{@season_type} goaltending stats for the #{your_team}
 
         #{goalie_stats.sort_by { |k, v| v[:wins] }.reverse.map { |player| "#{player[1][:name]}: #{player[1][:wins]}-#{player[1][:losses]}, #{player[1][:save_percentage]} SV%, #{player[1][:goals_against_average]} GAA" }.join("\n")}
       POST
 
       skater_points_leader_post = <<~POST
-        📈 Season points leaders for the #{your_team}
+        📈 #{@season_type} points leaders for the #{your_team}
 
         #{skater_stats.sort_by { |k, v| v[:points] }.last(4).reverse.map { |player| "#{player[1][:name]}: #{player[1][:points]} #{"point".pluralize(player[1][:points])}, (#{player[1][:goals]} #{"goal".pluralize(player[1][:goals])}, #{player[1][:assists]} #{"assist".pluralize(player[1][:assists])})" }.join("\n")}
       POST
 
       time_on_ice_leader_post = <<~POST
-        ⏱️ Season time on ice leaders for the #{your_team}
+        ⏱️ #{@season_type} time on ice leaders for the #{your_team}
 
         #{skater_stats.sort_by { |k, v| v[:time_on_ice] }.last(4).reverse.map { |player| "#{player[1][:name]}: #{Time.at(player[1][:time_on_ice]).strftime("%M:%S")}" }.join("\n")}
       POST
 
       goal_leader_post = <<~POST
-        🚨 Season goal scoring leaders for the #{your_team}
+        🚨 #{@season_type} goal scoring leaders for the #{your_team}
 
         #{skater_stats.sort_by { |k, v| v[:goals] }.last(4).reverse.map { |player| "#{player[1][:name]}: #{player[1][:goals]} #{"goal".pluralize(player[1][:goals])}" }.join("\n")}
       POST
 
       assist_leader_post = <<~POST
-        🏒 Season assist leaders for the #{your_team}
+        🏒 #{@season_type} assist leaders for the #{your_team}
 
         #{skater_stats.sort_by { |k, v| v[:assists] }.last(4).reverse.map { |player| "#{player[1][:name]}: #{player[1][:assists]} #{"assist".pluralize(player[1][:assists])}" }.join("\n")}
       POST
 
       pim_leader_post = <<~POST
-        🚔 Season penalty minute leaders for the #{your_team}
+        🚔 #{@season_type} penalty minute leaders for the #{your_team}
 
         #{skater_stats.sort_by { |k, v| v[:pim] }.last(4).reverse.map { |player| "#{player[1][:name]}: #{player[1][:pim]} #{"minute".pluralize(player[1][:pim])}" }.join("\n")}
       POST
 
       team_season_stats_post_1 = <<~POST
-        📊 Season stats and NHL ranks for the #{your_team} (1/3)
+        📊 #{@season_type} stats and NHL ranks for the #{your_team} (1/3)
 
         Average Goals Scored: #{season_stats_with_rank[:average_goals_scored][:value]} (Rank: #{season_stats_with_rank[:average_goals_scored][:rank]})
         Average Goals Allowed: #{season_stats_with_rank[:average_goals_allowed][:value]} (Rank: #{season_stats_with_rank[:average_goals_allowed][:rank]})
@@ -53,7 +55,7 @@ module RodTheBot
       POST
 
       team_season_stats_post_2 = <<~POST
-        📊 Season stats and NHL ranks for the #{your_team} (2/3)
+        📊 #{@season_type} stats and NHL ranks for the #{your_team} (2/3)
 
         Penalty Kill Percentage: #{season_stats_with_rank[:penalty_kill_percentage][:value]} (Rank: #{season_stats_with_rank[:penalty_kill_percentage][:rank]})
         Shots Per Game: #{season_stats_with_rank[:shots_per_game][:value]} (Rank: #{season_stats_with_rank[:shots_per_game][:rank]})
@@ -61,21 +63,30 @@ module RodTheBot
       POST
 
       team_season_stats_post_3 = <<~POST
-        📊 Season stats and NHL ranks for the #{your_team} (3/3)
+        📊 #{@season_type} stats and NHL ranks for the #{your_team} (3/3)
 
         Faceoff Percentage: #{season_stats_with_rank[:faceoff_percentage][:value]} (Rank: #{season_stats_with_rank[:faceoff_percentage][:rank]})
         Points Percentage: #{season_stats_with_rank[:points_percentage][:value]} (Rank: #{season_stats_with_rank[:points_percentage][:rank]})
       POST
 
-      RodTheBot::Post.perform_in(30.minutes, goalie_post)
-      RodTheBot::Post.perform_in(45.minutes, time_on_ice_leader_post)
-      RodTheBot::Post.perform_in(46.minutes, pim_leader_post)
-      RodTheBot::Post.perform_in(60.minutes, skater_points_leader_post)
-      RodTheBot::Post.perform_in(61.minutes, goal_leader_post)
-      RodTheBot::Post.perform_in(62.minutes, assist_leader_post)
-      RodTheBot::Post.perform_in(75.minutes, team_season_stats_post_1)
-      RodTheBot::Post.perform_in(76.minutes, team_season_stats_post_2)
-      RodTheBot::Post.perform_in(77.minutes, team_season_stats_post_3)
+      # RodTheBot::Post.perform_in(30.minutes, goalie_post)
+      # RodTheBot::Post.perform_in(45.minutes, time_on_ice_leader_post)
+      # RodTheBot::Post.perform_in(46.minutes, pim_leader_post)
+      # RodTheBot::Post.perform_in(60.minutes, skater_points_leader_post)
+      # RodTheBot::Post.perform_in(61.minutes, goal_leader_post)
+      # RodTheBot::Post.perform_in(62.minutes, assist_leader_post)
+      # RodTheBot::Post.perform_in(75.minutes, team_season_stats_post_1)
+      # RodTheBot::Post.perform_in(76.minutes, team_season_stats_post_2)
+      # RodTheBot::Post.perform_in(77.minutes, team_season_stats_post_3)
+      RodTheBot::Post.perform_in(1.minutes, goalie_post)
+      RodTheBot::Post.perform_in(2.minutes, time_on_ice_leader_post)
+      RodTheBot::Post.perform_in(3.minutes, pim_leader_post)
+      RodTheBot::Post.perform_in(4.minutes, skater_points_leader_post)
+      RodTheBot::Post.perform_in(5.minutes, goal_leader_post)
+      RodTheBot::Post.perform_in(6.minutes, assist_leader_post)
+      RodTheBot::Post.perform_in(7.minutes, team_season_stats_post_1)
+      RodTheBot::Post.perform_in(8.minutes, team_season_stats_post_2)
+      RodTheBot::Post.perform_in(9.minutes, team_season_stats_post_3)
     end
 
     def collect_roster_stats
@@ -83,6 +94,16 @@ module RodTheBot
       goalie_stats = {}
       roster = HTTParty.get("https://api-web.nhle.com/v1/club-stats/#{ENV["NHL_TEAM_ABBREVIATION"]}/now")
       @season = roster["season"]
+      @season_type_id = roster["gameType"]
+      @season_type = case roster["gameType"]
+      when 1
+        "Preseason"
+      when 2
+        "Season"
+      when 3
+        "Playoff"
+      end
+
       roster["skaters"].each do |player|
         skater_stats[player["playerId"]] = {
           name: player["firstName"]["default"] + " " + player["lastName"]["default"],
@@ -110,7 +131,7 @@ module RodTheBot
     end
 
     def fetch_stats_and_rank(stat)
-      feed = HTTParty.get("https://api.nhle.com/stats/rest/en/team/summary?sort=#{stat}&cayenneExp=seasonId=#{@season}%20and%20gameTypeId=2")
+      feed = HTTParty.get("https://api.nhle.com/stats/rest/en/team/summary?sort=#{stat}&cayenneExp=seasonId=#{@season}%20and%20gameTypeId=#{@season_type_id}")
       # In stats against, the lower numbers are better. In other cases, the higher numbers are better
       data = stat.match?(/Against/) ? feed["data"] : feed["data"].reverse
       data.each_with_index do |team, index|

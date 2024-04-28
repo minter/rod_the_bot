@@ -27,15 +27,22 @@ module RodTheBot
 
     def format_post(home, away, period_descriptor)
       period_number = period_descriptor.fetch("number", 1)
-      period = (period_descriptor.fetch("periodType") == "REG") ? ordinalize(period_number) : period_descriptor.fetch("periodType")
+      period_name = case period_number
+      when 1..3
+        "#{ordinalize(period_number)} Period"
+      when 4
+        "OT Period"
+      else
+        "#{period_number.to_i - 3}OT Period"
+      end
 
       <<~POST
-        🛑 That's the end of the #{period} period!
+        🛑 That's the end of the #{period_name}!
 
         #{away.fetch("name", {}).fetch("default", "")} - #{away.fetch("score", 0)} 
         #{home.fetch("name", {}).fetch("default", "")} - #{home.fetch("score", 0)}
 
-        Shots on goal after the #{period} period:
+        Shots on goal after the #{period_name}:
 
         #{away.fetch("name", {}).fetch("default", "")}: #{away.fetch("sog", 0)}
         #{home.fetch("name", {}).fetch("default", "")}: #{home.fetch("sog", 0)}

@@ -21,7 +21,15 @@ module RodTheBot
       period_state = if feed.fetch("gameState", "") == "OFF" || period_number.blank?
         "at the end of the game"
       else
-        "after the #{period_number} period"
+        period_name = case @play["periodDescriptor"]["number"]
+        when 1..3
+          "#{ordinalize(@play["periodDescriptor"]["number"])} Period"
+        when 4
+          "OT Period"
+        else
+          "#{@play["periodDescriptor"]["number"].to_i - 3}OT Period"
+        end
+        "after the #{period_name}"
       end
 
       period_toi_post = format_post(time_on_ice_leaders, "⏱️ Time on ice leaders", period_state)
@@ -49,7 +57,7 @@ module RodTheBot
       <<~POST
         📄 Game comparison #{period_state}
 
-        Faceoffs: #{visitor_code} - #{game_splits_stats[:faceoffPctg][:away]}% | #{home_code} - #{game_splits_stats[:faceoffPctg][:home]}%
+        Faceoffs: #{visitor_code} - #{game_splits_stats[:faceoffWinningPctg][:away]}% | #{home_code} - #{game_splits_stats[:faceoffWinningPctg][:home]}%
         PIMs: #{visitor_code} - #{game_splits_stats[:pim][:away]} | #{home_code} - #{game_splits_stats[:pim][:home]}
         Blocks: #{visitor_code} - #{game_splits_stats[:blockedShots][:away]} | #{home_code} - #{game_splits_stats[:blockedShots][:home]}
         Hits: #{visitor_code} - #{game_splits_stats[:hits][:away]} | #{home_code} - #{game_splits_stats[:hits][:home]}
@@ -61,8 +69,8 @@ module RodTheBot
 
     def create_players(stat)
       player_feed = HTTParty.get("https://api-web.nhle.com/v1/gamecenter/#{@game_id}/boxscore")
-      team = player_feed.fetch("boxscore", {}).fetch("playerByGameStats", {}).fetch(your_team_status, {}).fetch("forwards", []) +
-        player_feed.fetch("boxscore", {}).fetch("playerByGameStats", {}).fetch(your_team_status, {}).fetch("defense", [])
+      team = player_feed.fetch("playerByGameStats", {}).fetch(your_team_status, {}).fetch("forwards", []) +
+        player_feed.fetch("playerByGameStats", {}).fetch(your_team_status, {}).fetch("defense", [])
       players = {}
       team.each do |player|
         players[player.fetch("playerId", "")] = {
