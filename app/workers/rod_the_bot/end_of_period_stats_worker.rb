@@ -57,7 +57,7 @@ module RodTheBot
       <<~POST
         📄 Game comparison #{period_state}
 
-        Faceoffs: #{visitor_code} - #{sprintf("%.2f%%", game_splits_stats[:faceoffWinningPctg][:away] * 100)}% | #{home_code} - #{sprintf("%.2f%%", game_splits_stats[:faceoffWinningPctg][:home] * 100)}%
+        Faceoffs: #{visitor_code} - #{sprintf("%.2f", game_splits_stats[:faceoffWinningPctg][:away] * 100)}% | #{home_code} - #{sprintf("%.2f", game_splits_stats[:faceoffWinningPctg][:home] * 100)}%
         PIMs: #{visitor_code} - #{game_splits_stats[:pim][:away]} | #{home_code} - #{game_splits_stats[:pim][:home]}
         Blocks: #{visitor_code} - #{game_splits_stats[:blockedShots][:away]} | #{home_code} - #{game_splits_stats[:blockedShots][:home]}
         Hits: #{visitor_code} - #{game_splits_stats[:hits][:away]} | #{home_code} - #{game_splits_stats[:hits][:home]}
