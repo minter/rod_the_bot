@@ -40,7 +40,33 @@ module RodTheBot
       if game["periodDescriptor"]["periodType"] == "OT"
         score_text += (game["periodDescriptor"]["number"].to_i >= 5) ? " (#{game["periodDescriptor"]["number"].to_i - 3}OT)" : " (OT)"
       end
+
+      if (matchup = series_find(visitor_team["abbrev"], home_team["abbrev"]))
+        series_length = matchup["neededToWin"]
+        score_text += if matchup["bottomSeed"]["wins"] == series_length || matchup["topSeed"]["wins"] == series_length
+          if matchup["bottomSeed"]["wins"] == series_length
+            " (#{matchup["bottomSeed"]["abbrev"]} wins #{matchup["bottomSeed"]["wins"]}-#{matchup["topSeed"]["wins"]})"
+          else
+            " (#{matchup["topSeed"]["abbrev"]} wins #{matchup["topSeed"]["wins"]}-#{matchup["bottomSeed"]["wins"]})"
+          end
+        elsif matchup["bottomSeed"]["wins"] == matchup["topSeed"]["wins"]
+          " (Series tied #{matchup["bottomSeed"]["wins"]}-#{matchup["topSeed"]["wins"]})"
+        elsif matchup["bottomSeed"]["wins"] > matchup["topSeed"]["wins"]
+          " (#{matchup["bottomSeed"]["abbrev"]} leads #{matchup["bottomSeed"]["wins"]}-#{matchup["topSeed"]["wins"]})"
+        else
+          " (#{matchup["topSeed"]["abbrev"]} leads #{matchup["topSeed"]["wins"]}-#{matchup["bottomSeed"]["wins"]})"
+        end
+      end
       score_text
+    end
+
+    def series_find(your_team, their_team)
+      response = HTTParty.get("https://api-web.nhle.com/v1/playoff-series/carousel/20232024/")
+
+      response["rounds"].each do |round|
+        matchup = round["series"].find { |series| (series["bottomSeed"]["abbrev"] == your_team && series["topSeed"]["abbrev"] == their_team) || (series["topSeed"]["abbrev"] == your_team && series["bottomSeed"]["abbrev"] == their_team) }
+        return matchup if matchup
+      end
     end
 
     def post_scores(scores_post)
