@@ -12,16 +12,16 @@ inherit_gem:
 
 AllCops:
   NewCops: enable
-  TargetRubyVersion: 3.2.2
+  TargetRubyVersion: 3.3.1
   Exclude:
-    - 'db/**/*'
-    - 'script/*'
-    - 'bin/*'
-    - 'spec/*'
-    - 'spec/**/*'
-    - 'Rakefile'
-    - 'config/puma.rb'
-    - 'node_modules/**/*'
+    - "db/**/*"
+    - "script/*"
+    - "bin/*"
+    - "spec/*"
+    - "spec/**/*"
+    - "Rakefile"
+    - "config/puma.rb"
+    - "node_modules/**/*"
 
 Style/Documentation:
   Enabled: false
@@ -71,4 +71,3 @@ Style/HashTransformValues:
 Style/StringLiterals:
   Enabled: true
   EnforcedStyle: double_quotes
-
