@@ -109,10 +109,10 @@ GEM
       railties (>= 6.1)
     drb (2.2.1)
     erubi (1.12.0)
-    et-orbi (1.2.7)
+    et-orbi (1.2.11)
       tzinfo
-    fugit (1.9.0)
-      et-orbi (~> 1, >= 1.2.7)
+    fugit (1.11.0)
+      et-orbi (~> 1, >= 1.2.11)
       raabro (~> 1.4)
     globalid (1.2.1)
       activesupport (>= 6.1)
@@ -138,23 +138,24 @@ GEM
       net-imap
       net-pop
       net-smtp
-    marcel (1.0.2)
-    method_source (1.0.0)
+    marcel (1.0.4)
+    method_source (1.1.0)
     mini_mime (1.1.5)
     minitest (5.22.3)
     msgpack (1.7.2)
-    multi_xml (0.6.0)
+    multi_xml (0.7.1)
+      bigdecimal (~> 3.1)
     mutex_m (0.2.0)
-    net-imap (0.4.10)
+    net-imap (0.4.11)
       date
       net-protocol
     net-pop (0.1.2)
       net-protocol
     net-protocol (0.2.2)
       timeout
-    net-smtp (0.4.0.1)
+    net-smtp (0.5.0)
       net-protocol
-    nio4r (2.7.0)
+    nio4r (2.7.3)
     nokogiri (1.16.5-aarch64-linux)
       racc (~> 1.4)
     nokogiri (1.16.5-arm64-darwin)
@@ -172,10 +173,10 @@ GEM
       pry (>= 0.10.4)
     psych (5.1.2)
       stringio
-    public_suffix (5.0.4)
+    public_suffix (5.0.5)
     raabro (1.4.0)
     racc (1.7.3)
-    rack (3.0.10)
+    rack (3.0.11)
     rack-session (2.0.0)
       rack (>= 3.0.0)
     rack-test (2.1.0)
@@ -221,7 +222,7 @@ GEM
     redis-client (0.22.1)
       connection_pool
     regexp_parser (2.9.1)
-    reline (0.5.5)
+    reline (0.5.7)
       io-console (~> 0.5)
     rexml (3.2.6)
     rubocop (1.63.5)
@@ -288,7 +289,7 @@ GEM
       date
       httparty
       json (>= 2.0)
-    zeitwerk (2.6.13)
+    zeitwerk (2.6.14)
 
 PLATFORMS
   aarch64-linux
