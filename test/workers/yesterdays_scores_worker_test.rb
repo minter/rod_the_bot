@@ -1,5 +1,4 @@
 require "test_helper"
-require "minitest/autorun"
 
 class YesterdaysScoresWorkerTest < ActiveSupport::TestCase
   def setup
