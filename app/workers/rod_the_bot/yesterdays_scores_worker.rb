@@ -42,6 +42,8 @@ module RodTheBot
         score_text += (game["periodDescriptor"]["number"].to_i >= 5) ? " (#{game["periodDescriptor"]["number"].to_i - 3}OT)" : " (OT)"
       end
 
+      return score_text unless postseason?
+
       if (matchup = series_find(visitor_team["abbrev"], home_team["abbrev"]))
         series_length = matchup["neededToWin"]
         score_text += if matchup["bottomSeed"]["wins"] == series_length || matchup["topSeed"]["wins"] == series_length
@@ -63,7 +65,7 @@ module RodTheBot
 
     def series_find(your_team, their_team)
       response = HTTParty.get("https://api-web.nhle.com/v1/playoff-series/carousel/#{current_season}/")
-
+      return unless response["rounds"]
       response["rounds"].each do |round|
         matchup = round["series"].find { |series| (series["bottomSeed"]["abbrev"] == your_team && series["topSeed"]["abbrev"] == their_team) || (series["topSeed"]["abbrev"] == your_team && series["bottomSeed"]["abbrev"] == their_team) }
         return matchup if matchup
