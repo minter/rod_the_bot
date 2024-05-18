@@ -37,7 +37,7 @@ class PeriodStartWorkerTest < Minitest::Test
       @worker.perform(game_id, play)
 
       expected_output = <<~POST
-        🎬 It's time to start the 2nd period at Canada Life Centre!
+        🎬 It's time to start the 2nd Period at Canada Life Centre!
         
         We're ready for another puck drop between the Hurricanes and the Jets!
       POST
@@ -55,7 +55,7 @@ class PeriodStartWorkerTest < Minitest::Test
       @worker.perform(@game_id, play)
 
       expected_output = <<~POST
-        🎬 It's time to start the OT period at PNC Arena!
+        🎬 It's time to start the OT Period at PNC Arena!
         
         We're ready for another puck drop between the Islanders and the Hurricanes!
       POST

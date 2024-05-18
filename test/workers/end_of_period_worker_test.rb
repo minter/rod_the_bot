@@ -38,12 +38,12 @@ class EndOfPeriodWorkerTest < Minitest::Test
 
       post = @end_of_period_worker.send(:format_post, home, away, play["periodDescriptor"])
       expected_output = <<~POST
-        🛑 That's the end of the 1st period!
+        🛑 That's the end of the 1st Period!
         
         Capitals - 1 
         Kings - 1
         
-        Shots on goal after the 1st period:
+        Shots on goal after the 1st Period:
         
         Capitals: 5
         Kings: 11

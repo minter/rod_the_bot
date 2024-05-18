@@ -1,6 +1,7 @@
 module RodTheBot
   class YesterdaysScoresWorker
     include Sidekiq::Worker
+    include Seasons
 
     def perform
       scores = fetch_yesterdays_scores
@@ -61,7 +62,7 @@ module RodTheBot
     end
 
     def series_find(your_team, their_team)
-      response = HTTParty.get("https://api-web.nhle.com/v1/playoff-series/carousel/20232024/")
+      response = HTTParty.get("https://api-web.nhle.com/v1/playoff-series/carousel/#{current_season}/")
 
       response["rounds"].each do |round|
         matchup = round["series"].find { |series| (series["bottomSeed"]["abbrev"] == your_team && series["topSeed"]["abbrev"] == their_team) || (series["topSeed"]["abbrev"] == your_team && series["bottomSeed"]["abbrev"] == their_team) }
