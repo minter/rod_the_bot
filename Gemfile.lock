@@ -254,9 +254,9 @@ GEM
       rufus-scheduler (~> 3.2)
       sidekiq (>= 6, < 8)
       tilt (>= 1.4.0)
-    sqlite3 (2.0.2-aarch64-linux-gnu)
-    sqlite3 (2.0.2-arm64-darwin)
-    sqlite3 (2.0.2-x86_64-linux-gnu)
+    sqlite3 (1.7.3-aarch64-linux)
+    sqlite3 (1.7.3-arm64-darwin)
+    sqlite3 (1.7.3-x86_64-linux)
     standard (1.36.0)
       language_server-protocol (~> 3.17.0.2)
       lint_roller (~> 1.0)
@@ -312,7 +312,7 @@ DEPENDENCIES
   redis (~> 5)
   sidekiq (~> 7)
   sidekiq-scheduler (~> 5)
-  sqlite3 (~> 2.0)
+  sqlite3 (~> 1.4)
   standard
   timecop
   tzinfo-data
