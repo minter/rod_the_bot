@@ -312,7 +312,7 @@ DEPENDENCIES
   redis (~> 5)
   sidekiq (~> 7)
   sidekiq-scheduler (~> 5)
-  sqlite3 (~> 1.4)
+  sqlite3 (~> 1.x)
   standard
   timecop
   tzinfo-data
