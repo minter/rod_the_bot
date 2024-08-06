@@ -177,7 +177,7 @@ GEM
     public_suffix (5.0.5)
     raabro (1.4.0)
     racc (1.8.0)
-    rack (3.1.6)
+    rack (3.1.7)
     rack-session (2.0.0)
       rack (>= 3.0.0)
     rack-test (2.1.0)
@@ -252,7 +252,7 @@ GEM
       logger
       rack (>= 2.2.4)
       redis-client (>= 0.22.2)
-    sidekiq-scheduler (5.0.5)
+    sidekiq-scheduler (5.0.6)
       rufus-scheduler (~> 3.2)
       sidekiq (>= 6, < 8)
       tilt (>= 1.4.0, < 3)
