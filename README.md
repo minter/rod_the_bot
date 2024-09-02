@@ -94,7 +94,6 @@ Every NHL franchise has an ID and official three-letter abbreviation in the stat
 | Team Name             | Team ID | Abbrev. |
 | --------------------- | ------- | ------- |
 | Anaheim Ducks         | 24      | ANA     |
-| Arizona Coyotes       | 53      | ARI     |
 | Boston Bruins         | 6       | BOS     |
 | Buffalo Sabres        | 7       | BUF     |
 | Calgary Flames        | 20      | CGY     |
@@ -121,6 +120,7 @@ Every NHL franchise has an ID and official three-letter abbreviation in the stat
 | Seattle Kraken        | 55      | SEA     |
 | Tampa Bay Lightning   | 14      | TBL     |
 | Toronto Maple Leafs   | 10      | TOR     |
+| Utah                  | 59      | UTA     |
 | Vancouver Canucks     | 23      | VAN     |
 | Vegas Golden Knights  | 54      | VGK     |
 | Washington Capitals   | 15      | WSH     |
