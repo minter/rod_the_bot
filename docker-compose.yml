@@ -4,6 +4,8 @@ services:
     command: redis-server --appendonly yes
     volumes:
       - "redis:/data"
+    restart: unless-stopped  # Add restart policy
+
 
   sidekiq:
     depends_on:
@@ -17,6 +19,7 @@ services:
       RUBY_YJIT_ENABLE: 1
     volumes:
       - ./:/app
+    restart: unless-stopped  # Add restart policy
 
 volumes:
   redis:
