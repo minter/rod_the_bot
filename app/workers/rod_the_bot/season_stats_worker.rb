@@ -3,6 +3,7 @@ module RodTheBot
     include Sidekiq::Worker
     include ActionView::Helpers::TextHelper
     include ActiveSupport::Inflector
+    include Seasons
 
     def perform(your_team)
       @season = nil
@@ -103,6 +104,8 @@ module RodTheBot
       when 3
         "Playoff"
       end
+
+      @season_type = "#{@season[0..3]}-#{@season[4..7]} #{@season_type}" if @season != current_season
 
       roster["skaters"].each do |player|
         skater_stats[player["playerId"]] = {
