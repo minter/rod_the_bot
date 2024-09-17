@@ -10,6 +10,7 @@ module RodTheBot
     def perform
       Time.zone = TZInfo::Timezone.get(ENV["TIME_ZONE"])
       today = Time.now.strftime("%Y-%m-%d")
+      today = "2024-09-27"
       @week = HTTParty.get("https://api-web.nhle.com/v1/club-schedule/#{ENV["NHL_TEAM_ABBREVIATION"]}/week/#{today}")
 
       RodTheBot::YesterdaysScoresWorker.perform_in(15.minutes)
