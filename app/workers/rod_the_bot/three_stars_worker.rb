@@ -61,7 +61,7 @@ module RodTheBot
     end
 
     def format_player_info(player, stats)
-      "#{player["teamAbbrev"]} ##{player["sweaterNo"]} #{player["name"]} #{stats}\n"
+      "#{player["teamAbbrev"]} ##{player["sweaterNo"]} #{player["name"]["default"]} #{stats}\n"
     end
 
     def post_three_stars(post)
