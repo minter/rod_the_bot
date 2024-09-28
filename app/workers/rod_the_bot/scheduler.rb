@@ -45,21 +45,37 @@ module RodTheBot
       end
 
       if away["id"].to_i == ENV["NHL_TEAM_ID"].to_i || home["id"].to_i == ENV["NHL_TEAM_ID"].to_i
-        gameday_post = <<~POST
-          🗣️ It's a #{your_standings[:team_name]} Gameday!
+        gameday_post = if preseason?(your_standings[:season_id])
+          <<~POST
+            🗣️ It's a #{your_standings[:team_name]} Preseason Gameday!
 
-          #{away_standings[:team_name]}
-          #{record(away_standings)}
+            #{away_standings[:team_name]}
 
-          at 
+            at 
 
-          #{home_standings[:team_name]}
-          #{record(home_standings)}
-          
-          ⏰ #{time_string}
-          📍 #{venue["default"]}
-          📺 #{tv}
-        POST
+            #{home_standings[:team_name]}
+            
+            ⏰ #{time_string}
+            📍 #{venue["default"]}
+            📺 #{tv}
+          POST
+        else
+          <<~POST
+            🗣️ It's a #{your_standings[:team_name]} Gameday!
+
+            #{away_standings[:team_name]}
+            #{record(away_standings)}
+
+            at 
+
+            #{home_standings[:team_name]}
+            #{record(home_standings)}
+            
+            ⏰ #{time_string}
+            📍 #{venue["default"]}
+            📺 #{tv}
+          POST
+        end
 
         RodTheBot::GameStream.perform_at(time - 15.minutes, game_id)
         RodTheBot::Post.perform_async(gameday_post)

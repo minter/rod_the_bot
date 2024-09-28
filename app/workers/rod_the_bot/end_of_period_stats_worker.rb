@@ -95,6 +95,7 @@ module RodTheBot
     end
 
     def get_game_splits_stats
+      # TODO: Game splits do not appear to be available in the API
       splits = {}
       @game_stats.each do |stat|
         splits[stat["category"].to_sym] = {home: stat["homeValue"], away: stat["awayValue"]}

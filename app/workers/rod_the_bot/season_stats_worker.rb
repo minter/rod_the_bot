@@ -10,6 +10,7 @@ module RodTheBot
       @season_type = nil
       @season_type_id = nil
       skater_stats, goalie_stats = collect_roster_stats
+      return if preseason?(@season)
 
       goalie_post = <<~POST
         🥅 #{@season_type} goaltending stats for the #{your_team}
@@ -70,24 +71,15 @@ module RodTheBot
         Points Percentage: #{season_stats_with_rank[:points_percentage][:value]} (Rank: #{season_stats_with_rank[:points_percentage][:rank]})
       POST
 
-      # RodTheBot::Post.perform_in(30.minutes, goalie_post)
-      # RodTheBot::Post.perform_in(45.minutes, time_on_ice_leader_post)
-      # RodTheBot::Post.perform_in(46.minutes, pim_leader_post)
-      # RodTheBot::Post.perform_in(60.minutes, skater_points_leader_post)
-      # RodTheBot::Post.perform_in(61.minutes, goal_leader_post)
-      # RodTheBot::Post.perform_in(62.minutes, assist_leader_post)
-      # RodTheBot::Post.perform_in(75.minutes, team_season_stats_post_1)
-      # RodTheBot::Post.perform_in(76.minutes, team_season_stats_post_2)
-      # RodTheBot::Post.perform_in(77.minutes, team_season_stats_post_3)
-      RodTheBot::Post.perform_in(1.minutes, goalie_post)
-      RodTheBot::Post.perform_in(2.minutes, time_on_ice_leader_post)
-      RodTheBot::Post.perform_in(3.minutes, pim_leader_post)
-      RodTheBot::Post.perform_in(4.minutes, skater_points_leader_post)
-      RodTheBot::Post.perform_in(5.minutes, goal_leader_post)
-      RodTheBot::Post.perform_in(6.minutes, assist_leader_post)
-      RodTheBot::Post.perform_in(7.minutes, team_season_stats_post_1)
-      RodTheBot::Post.perform_in(8.minutes, team_season_stats_post_2)
-      RodTheBot::Post.perform_in(9.minutes, team_season_stats_post_3)
+      RodTheBot::Post.perform_in(30.minutes, goalie_post)
+      RodTheBot::Post.perform_in(45.minutes, time_on_ice_leader_post)
+      RodTheBot::Post.perform_in(46.minutes, pim_leader_post)
+      RodTheBot::Post.perform_in(60.minutes, skater_points_leader_post)
+      RodTheBot::Post.perform_in(61.minutes, goal_leader_post)
+      RodTheBot::Post.perform_in(62.minutes, assist_leader_post)
+      RodTheBot::Post.perform_in(75.minutes, team_season_stats_post_1)
+      RodTheBot::Post.perform_in(76.minutes, team_season_stats_post_2)
+      RodTheBot::Post.perform_in(77.minutes, team_season_stats_post_3)
     end
 
     def collect_roster_stats

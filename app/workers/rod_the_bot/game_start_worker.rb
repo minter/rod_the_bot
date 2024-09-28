@@ -8,7 +8,8 @@ module RodTheBot
       home_goalie_record = find_goalie_record(home_goalie["playerId"])
       away_goalie = find_starting_goalie("awayTeam")
       away_goalie_record = find_goalie_record(away_goalie["playerId"])
-      officials = find_officials(game_id)
+      # officials = find_officials(game_id)
+      officials = "" # TODO: Officials do not appear to be available in the API
       post = format_post(@feed, officials, home_goalie, home_goalie_record, away_goalie, away_goalie_record)
       RodTheBot::Post.perform_async(post)
     end
@@ -31,6 +32,7 @@ module RodTheBot
     end
 
     def find_officials(game_id)
+      # TODO: Officials do not appear to be available in the API
       landing_feed = fetch_data("https://api-web.nhle.com/v1/gamecenter/#{game_id}/landing")
       officials = {}
       officials[:referees] = landing_feed["summary"]["gameInfo"]["referees"]
@@ -46,8 +48,8 @@ module RodTheBot
         #{feed["homeTeam"]["abbrev"]}: ##{home_goalie["sweaterNumber"]} #{home_goalie["name"]["default"]} #{home_goalie_record}
         #{feed["awayTeam"]["abbrev"]}: ##{away_goalie["sweaterNumber"]} #{away_goalie["name"]["default"]} #{away_goalie_record}
 
-        Refs: #{officials[:referees].map { |r| r["default"] }.join(", ")}
-        Lines: #{officials[:lines].map { |r| r["default"] }.join(", ")}
+        #{"# Refs: #{officials[:referees].map { |r| r["default"] }.join(", ")}"}
+        #{"# Lines: #{officials[:lines].map { |r| r["default"] }.join(", ")}"}
       POST
     end
   end
