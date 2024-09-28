@@ -47,9 +47,6 @@ module RodTheBot
         Starting Goalies:
         #{feed["homeTeam"]["abbrev"]}: ##{home_goalie["sweaterNumber"]} #{home_goalie["name"]["default"]} #{home_goalie_record}
         #{feed["awayTeam"]["abbrev"]}: ##{away_goalie["sweaterNumber"]} #{away_goalie["name"]["default"]} #{away_goalie_record}
-
-        #{"# Refs: #{officials[:referees].map { |r| r["default"] }.join(", ")}"}
-        #{"# Lines: #{officials[:lines].map { |r| r["default"] }.join(", ")}"}
       POST
     end
   end
