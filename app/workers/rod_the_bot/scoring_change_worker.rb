@@ -46,7 +46,7 @@ module RodTheBot
       end
       post += "🍎🍎 #{players[@play["details"]["assist2PlayerId"]][:name]} (#{@play["details"]["assist2PlayerTotal"]})\n" if @play["details"]["assist2PlayerId"].present?
 
-      RodTheBot::Post.perform_async(post)
+      RodTheBot::Post.perform_async(post, "#{game_id}:#{play_id}")
     end
 
     def build_players(feed)

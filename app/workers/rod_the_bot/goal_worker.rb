@@ -60,7 +60,7 @@ module RodTheBot
 
       post += "⏱️  #{@play["timeInPeriod"]} #{period_name}\n\n"
       post += "#{away["abbrev"]} #{@play["details"]["awayScore"]} - #{home["abbrev"]} #{@play["details"]["homeScore"]}\n"
-      RodTheBot::Post.perform_async(post)
+      RodTheBot::Post.perform_async(post, "#{game_id}:#{@play_id}")
       RodTheBot::ScoringChangeWorker.perform_in(600, game_id, play["eventId"], original_play)
     end
 

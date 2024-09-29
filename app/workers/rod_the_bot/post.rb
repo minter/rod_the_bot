@@ -2,10 +2,16 @@ module RodTheBot
   class Post
     include Sidekiq::Worker
 
-    def perform(post)
+    def perform(post, key = nil)
       session = create_session
       post = append_team_hashtags(post)
-      create_post(session, post)
+      reply_uri = REDIS.get(key) if key
+      if reply_uri
+        create_reply(reply_uri, post)
+      else
+        post_uri = create_post(session, post)["uri"]
+        REDIS.set(key, post_uri, ex: 172800) if key
+      end
       log_post(post)
     end
 
