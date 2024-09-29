@@ -1,3 +1,14 @@
+GIT
+  remote: https://github.com/minter/bskyrb.git
+  revision: 67ce437f110ac8157df9de9082d676dc5c82899e
+  branch: add_hashtags
+  specs:
+    bskyrb (0.5.3)
+      date (>= 3.3.3)
+      httparty (>= 0.21.0)
+      json (>= 2.0)
+      xrpc (>= 0.1.5)
+
 GEM
   remote: https://rubygems.org/
   specs:
@@ -78,11 +89,6 @@ GEM
     bigdecimal (3.1.8)
     bootsnap (1.18.4)
       msgpack (~> 1.2)
-    bskyrb (0.5.3)
-      date (>= 3.3.3)
-      httparty (>= 0.21.0)
-      json (>= 2.0)
-      xrpc (>= 0.0.4)
     builder (3.3.0)
     bundler-audit (0.9.2)
       bundler (>= 1.2.0, < 3)
@@ -298,12 +304,13 @@ PLATFORMS
 
 DEPENDENCIES
   bootsnap
-  bskyrb (~> 0.5.3)
+  bskyrb!
   bundler-audit
   debug
   dotenv-rails (~> 3)
   httparty (~> 0)
   minitest
+  nokogiri
   ostruct
   pry-rails
   rails (~> 7.2.1)

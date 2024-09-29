@@ -14,10 +14,11 @@ gem "tzinfo-data", platforms: %i[windows jruby]
 # Reduces boot times through caching; required in config/boot.rb
 gem "bootsnap", require: false
 
-gem "bskyrb", "~> 0.5.3"
+gem "bskyrb", github: "minter/bskyrb", branch: "add_hashtags"
 gem "dotenv-rails", "~> 3", require: "dotenv/load"
 gem "httparty", "~> 0"
 gem "ostruct"
+gem "nokogiri"
 gem "pry-rails"
 gem "redis", "~>5"
 gem "sidekiq", "~> 7"
