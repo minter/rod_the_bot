@@ -1,10 +1,9 @@
 module RodTheBot
   class PostseasonSeriesWorker
     include Sidekiq::Worker
-    include Seasons
 
     def perform
-      carousel = HTTParty.get("https://api-web.nhle.com/v1/playoff-series/carousel/#{current_season}/")
+      carousel = HTTParty.get("https://api-web.nhle.com/v1/playoff-series/carousel/#{NhlApicurrent_season}/")
       rounds = carousel["rounds"]
       current_round = carousel["currentRound"]
       current_series = fetch_current_series(rounds, current_round)

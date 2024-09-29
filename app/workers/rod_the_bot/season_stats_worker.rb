@@ -96,7 +96,7 @@ module RodTheBot
         "Playoff"
       end
 
-      @season_type = "#{@season[0..3]}-#{@season[4..7]} #{@season_type}" if @season != current_season
+      @season_type = "#{@season[0..3]}-#{@season[4..7]} #{@season_type}" if @season != NhlApi.current_season
 
       roster["skaters"].each do |player|
         skater_stats[player["playerId"]] = {

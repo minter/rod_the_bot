@@ -7,10 +7,6 @@ module RodTheBot
     include ActiveSupport::Inflector
 
     def perform
-      Time.zone = TZInfo::Timezone.get(ENV["TIME_ZONE"])
-      today = Time.now.strftime("%Y-%m-%d")
-      @week = HTTParty.get("https://api-web.nhle.com/v1/club-schedule/#{ENV["NHL_TEAM_ABBREVIATION"]}/week/#{today}")
-
       RodTheBot::YesterdaysScoresWorker.perform_in(15.minutes)
       if NhlApi.postseason?
         # Postseason
@@ -18,7 +14,7 @@ module RodTheBot
       else
         RodTheBot::DivisionStandingsWorker.perform_in(16.minutes)
       end
-      @game = @week["games"].find { |game| game["gameDate"] == today }
+      @game = NhlApi.todays_game
 
       return if @game.nil?
 
@@ -32,8 +28,8 @@ module RodTheBot
 
       game_id = @game["id"]
 
-      away_standings = fetch_standings_info(away["abbrev"])
-      home_standings = fetch_standings_info(home["abbrev"])
+      away_standings = NhlApi.fetch_team_standings(away["abbrev"])
+      home_standings = NhlApi.fetch_team_standings(home["abbrev"])
       media = media(your_team)
       tv = media[:broadcast].empty? ? "None" : media[:broadcast].join(", ")
 
@@ -96,21 +92,6 @@ module RodTheBot
       record = "(#{team[:wins]}-#{team[:losses]}-#{team[:ot]}, #{team[:points]} #{"point".pluralize(team[:points])})\n"
       record += "#{ordinalize team[:division_rank]} in the #{team[:division_name]}" unless team[:division_name] == "Unknown"
       record
-    end
-
-    def fetch_standings_info(team_abbreviation)
-      response = HTTParty.get("https://api-web.nhle.com/v1/standings/now")
-      team = response["standings"].find { |team| team["teamAbbrev"]["default"] == team_abbreviation }
-
-      {
-        division_name: team["divisionName"],
-        division_rank: team["divisionSequence"],
-        points: team["points"],
-        wins: team["wins"],
-        losses: team["losses"],
-        ot: team["otLosses"],
-        team_name: team["teamName"]["default"]
-      }
     end
   end
 end

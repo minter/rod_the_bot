@@ -23,11 +23,16 @@ class NhlApi
       get("/gamecenter/#{game_id}/right-rail")
     end
 
-    def fetch_schedule(date)
-      get("/schedule/#{date}")
+    def fetch_schedule(date: Time.now.strftime("%Y-%m-%d"))
+      Time.zone = TZInfo::Timezone.get(ENV["TIME_ZONE"])
+      get("/club-schedule/#{ENV["NHL_TEAM_ABBREVIATION"]}/week/#{date}")
     end
 
-    def fetch_standings_info(team_abbreviation)
+    def todays_game(date: Time.now.strftime("%Y-%m-%d"))
+      fetch_schedule(date: date)["games"].find { |game| game["gameDate"] == date }
+    end
+
+    def fetch_team_standings(team_abbreviation)
       response = get("/standings/now")
       team = response["standings"].find { |t| t["teamAbbrev"]["default"] == team_abbreviation }
 
@@ -64,6 +69,10 @@ class NhlApi
       end
     end
 
+    def current_season
+      get("/season").last
+    end
+
     def postseason?
       season = current_season
       begin
@@ -83,10 +92,6 @@ class NhlApi
       response = super
       raise APIError, "API request failed: #{response.code}" unless response.success?
       response.parsed_response
-    end
-
-    def current_season
-      get("/season").last
     end
 
     def format_value(value, category)
