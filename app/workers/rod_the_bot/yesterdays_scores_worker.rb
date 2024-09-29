@@ -42,7 +42,7 @@ module RodTheBot
         score_text += (game["periodDescriptor"]["number"].to_i >= 5) ? " (#{game["periodDescriptor"]["number"].to_i - 3}OT)" : " (OT)"
       end
 
-      return score_text unless postseason?
+      return score_text unless NhlApi.postseason?
 
       if (matchup = series_find(visitor_team["abbrev"], home_team["abbrev"]))
         series_length = matchup["neededToWin"]

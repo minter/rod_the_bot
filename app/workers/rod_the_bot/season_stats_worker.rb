@@ -3,14 +3,13 @@ module RodTheBot
     include Sidekiq::Worker
     include ActionView::Helpers::TextHelper
     include ActiveSupport::Inflector
-    include Seasons
 
     def perform(your_team)
       @season = nil
       @season_type = nil
       @season_type_id = nil
       skater_stats, goalie_stats = collect_roster_stats
-      return if preseason?(@season)
+      return if NhlApi.preseason?(@season)
 
       goalie_post = <<~POST
         🥅 #{@season_type} goaltending stats for the #{your_team}

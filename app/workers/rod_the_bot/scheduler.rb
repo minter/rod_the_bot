@@ -5,7 +5,6 @@ module RodTheBot
     include Sidekiq::Worker
     include ActionView::Helpers::TextHelper
     include ActiveSupport::Inflector
-    include Seasons
 
     def perform
       Time.zone = TZInfo::Timezone.get(ENV["TIME_ZONE"])
@@ -13,7 +12,7 @@ module RodTheBot
       @week = HTTParty.get("https://api-web.nhle.com/v1/club-schedule/#{ENV["NHL_TEAM_ABBREVIATION"]}/week/#{today}")
 
       RodTheBot::YesterdaysScoresWorker.perform_in(15.minutes)
-      if postseason?
+      if NhlApi.postseason?
         # Postseason
         RodTheBot::PostseasonSeriesWorker.perform_in(16.minutes)
       else
@@ -45,7 +44,7 @@ module RodTheBot
       end
 
       if away["id"].to_i == ENV["NHL_TEAM_ID"].to_i || home["id"].to_i == ENV["NHL_TEAM_ID"].to_i
-        gameday_post = if preseason?(your_standings[:season_id])
+        gameday_post = if NhlApi.preseason?(your_standings[:season_id])
           <<~POST
             🗣️ It's a #{your_standings[:team_name]} Preseason Gameday!
 

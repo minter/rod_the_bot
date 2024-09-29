@@ -35,7 +35,7 @@ module RodTheBot
       period_toi_post = format_post(time_on_ice_leaders, "⏱️ Time on ice leaders", period_state)
       shots_on_goal_post = format_post(shots_on_goal_leaders, "🏒 Shots on goal leaders", period_state)
 
-      game_splits_stats = get_game_splits_stats
+      game_splits_stats = NhlApi.splits(@game_id)
       game_split_stats_post = format_game_split_stats_post(game_splits_stats, period_state)
       RodTheBot::Post.perform_in(180, game_split_stats_post)
 
@@ -57,7 +57,7 @@ module RodTheBot
       <<~POST
         📄 Game comparison #{period_state}
 
-        Faceoffs: #{visitor_code} - #{sprintf("%.2f", game_splits_stats[:faceoffWinningPctg][:away] * 100)}% | #{home_code} - #{sprintf("%.2f", game_splits_stats[:faceoffWinningPctg][:home] * 100)}%
+        Faceoffs: #{visitor_code} - #{game_splits_stats[:faceoffWinningPctg][:away]} | #{home_code} - #{game_splits_stats[:faceoffWinningPctg][:home]}
         PIMs: #{visitor_code} - #{game_splits_stats[:pim][:away]} | #{home_code} - #{game_splits_stats[:pim][:home]}
         Blocks: #{visitor_code} - #{game_splits_stats[:blockedShots][:away]} | #{home_code} - #{game_splits_stats[:blockedShots][:home]}
         Hits: #{visitor_code} - #{game_splits_stats[:hits][:away]} | #{home_code} - #{game_splits_stats[:hits][:home]}
@@ -92,15 +92,6 @@ module RodTheBot
     def shots_on_goal_leaders
       players = create_players("shots")
       players.sort_by { |k, v| [v[:stat], v[:name]] }.last(5).reverse
-    end
-
-    def get_game_splits_stats
-      # TODO: Game splits do not appear to be available in the API
-      splits = {}
-      @game_stats.each do |stat|
-        splits[stat["category"].to_sym] = {home: stat["homeValue"], away: stat["awayValue"]}
-      end
-      splits
     end
   end
 end
