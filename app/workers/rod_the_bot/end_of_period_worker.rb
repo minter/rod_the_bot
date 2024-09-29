@@ -6,7 +6,7 @@ module RodTheBot
     attr_reader :feed, :game_final
 
     def perform(game_id, play)
-      @feed = HTTParty.get("https://api-web.nhle.com/v1/gamecenter/#{game_id}/play-by-play")
+      @feed = NhlApi.fetch_pbp_feed(game_id)
       @game_final = feed["plays"].any? { |play| play["typeDescKey"] == "game-end" }
       return if game_final
       return if play["periodDescriptor"]["periodType"] == "SO"

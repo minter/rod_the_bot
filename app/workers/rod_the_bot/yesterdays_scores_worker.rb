@@ -3,19 +3,12 @@ module RodTheBot
     include Sidekiq::Worker
 
     def perform
-      scores = fetch_yesterdays_scores
+      scores = NhlApi.fetch_scores
       scores_post = format_scores(scores)
       post_scores(scores_post)
     end
 
     private
-
-    def fetch_yesterdays_scores
-      Time.zone = TZInfo::Timezone.get(ENV["TIME_ZONE"])
-      yesterday = Date.yesterday.strftime("%Y-%m-%d")
-      response = HTTParty.get("https://api-web.nhle.com/v1/score/#{yesterday}")["games"]
-      response.find_all { |game| game["gameDate"] == yesterday }
-    end
 
     def format_scores(yesterday_scores)
       scores_post = "🙌 Final scores from last night's games:\n\n"

@@ -3,7 +3,7 @@ module RodTheBot
     include Sidekiq::Worker
 
     def perform(game_id)
-      @feed = fetch_data("https://api-web.nhle.com/v1/gamecenter/#{game_id}/play-by-play")
+      @feed = NhlApi.fetch_pbp_feed(game_id)
       home_goalie = find_starting_goalie("homeTeam")
       home_goalie_record = find_goalie_record(home_goalie["playerId"])
       away_goalie = find_starting_goalie("awayTeam")
@@ -15,17 +15,13 @@ module RodTheBot
 
     private
 
-    def fetch_data(url)
-      HTTParty.get(url)
-    end
-
     def find_starting_goalie(team)
       @feed["summary"]["iceSurface"][team]["goalies"].first
     end
 
     def find_goalie_record(player_id)
       season = (@feed["gameType"] == 3) ? "playoffs" : "regularSeason"
-      player = fetch_data("https://api-web.nhle.com/v1/player/#{player_id}/landing")
+      player = NhlApi.fetch_player_landing_feed(player_id)
       stats = player["featuredStats"][season]["subSeason"]
       "(#{stats["wins"]}-#{stats["losses"]}-#{stats["otLosses"]}, #{sprintf("%.2f", stats["goalsAgainstAvg"].round(2))} GAA, #{sprintf("%.3f", stats["savePctg"].round(3))} SV%)"
     end

@@ -3,24 +3,15 @@ module RodTheBot
     include Sidekiq::Worker
 
     def perform
-      standings = fetch_standings
+      standings = NhlApi.fetch_standings["standings"]
       return if NhlApi.preseason?(standings.first["seasonId"])
-      my_division = find_my_division(standings)
+      my_division = NhlApi.team_standings(ENV["NHL_TEAM_ABBREVIATION"])[:division_name]
       division_teams = sort_teams_in_division(standings, my_division)
       post = format_standings(my_division, division_teams)
       RodTheBot::Post.perform_async(post)
     end
 
     private
-
-    def fetch_standings
-      HTTParty.get("https://api-web.nhle.com/v1/standings/now")["standings"]
-    end
-
-    def find_my_division(standings)
-      my_team = standings.find { |team| team["teamAbbrev"]["default"] == ENV["NHL_TEAM_ABBREVIATION"] }
-      my_team["divisionName"]
-    end
 
     def sort_teams_in_division(standings, my_division)
       standings.select { |team| team["divisionName"] == my_division }.sort_by { |team| [team["pointPctg"], team["points"], team["gamesPlayed"]] }.reverse

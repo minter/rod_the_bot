@@ -6,7 +6,7 @@ module RodTheBot
 
     def perform(game_id)
       @game_id = game_id
-      @feed = HTTParty.get("https://api-web.nhle.com/v1/gamecenter/#{game_id}/play-by-play")
+      @feed = NhlApi.fetch_pbp_feed(game_id)
       game_final = feed["plays"].find { |play| play["typeDescKey"] == "game-end" }.present?
 
       @feed["plays"].each do |play|

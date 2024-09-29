@@ -28,8 +28,8 @@ module RodTheBot
 
       game_id = @game["id"]
 
-      away_standings = NhlApi.fetch_team_standings(away["abbrev"])
-      home_standings = NhlApi.fetch_team_standings(home["abbrev"])
+      away_standings = NhlApi.team_standings(away["abbrev"])
+      home_standings = NhlApi.team_standings(home["abbrev"])
       media = media(your_team)
       tv = media[:broadcast].empty? ? "None" : media[:broadcast].join(", ")
 

@@ -7,7 +7,7 @@ module RodTheBot
 
     def perform(game_id, period_number)
       @game_id = game_id
-      @feed = HTTParty.get("https://api-web.nhle.com/v1/gamecenter/#{game_id}/landing")
+      @feed = NhlApi.fetch_landing_feed(game_id)
       # return if @feed["gameState"] == "OFF"
 
       @home = feed.fetch("homeTeam", {})

@@ -6,7 +6,7 @@ module RodTheBot
     attr_reader :feed
 
     def perform(game_id, play)
-      @feed = HTTParty.get("https://api-web.nhle.com/v1/gamecenter/#{game_id}/play-by-play")
+      @feed = NhlApi.fetch_pbp_feed(game_id)
       home = feed.fetch("homeTeam", {})
       away = feed.fetch("awayTeam", {})
 

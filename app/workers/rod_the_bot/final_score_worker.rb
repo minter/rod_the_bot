@@ -5,7 +5,7 @@ module RodTheBot
     attr_reader :feed
 
     def perform(game_id)
-      @feed = HTTParty.get("https://api-web.nhle.com/v1/gamecenter/#{game_id}/boxscore")
+      @feed = NhlApi.fetch_boxscore_feed(game_id)
       home = feed.fetch("homeTeam", {})
       visitor = feed.fetch("awayTeam", {})
       home_team_is_yours = home.fetch("id", "").to_i == ENV["NHL_TEAM_ID"].to_i

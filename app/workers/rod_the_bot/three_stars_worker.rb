@@ -5,7 +5,7 @@ module RodTheBot
     attr_reader :feed
 
     def perform(game_id)
-      @feed = fetch_game_data(game_id)
+      @feed = NhlApi.fetch_landing_feed(game_id)
 
       if feed["summary"].present? && feed["summary"]["threeStars"].present?
         post = format_three_stars(feed["summary"]["threeStars"])
@@ -16,10 +16,6 @@ module RodTheBot
     end
 
     private
-
-    def fetch_game_data(game_id)
-      HTTParty.get("https://api-web.nhle.com/v1/gamecenter/#{game_id}/landing")
-    end
 
     def format_three_stars(three_stars)
       <<~POST

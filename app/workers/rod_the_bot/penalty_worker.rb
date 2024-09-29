@@ -14,7 +14,7 @@ module RodTheBot
     }.freeze
 
     def perform(game_id, play)
-      @feed = HTTParty.get("https://api-web.nhle.com/v1/gamecenter/#{game_id}/play-by-play")
+      @feed = NhlApi.fetch_pbp_feed(game_id)
       @play = play
       return if @play.nil?
 

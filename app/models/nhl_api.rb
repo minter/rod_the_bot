@@ -7,11 +7,16 @@ class NhlApi
       get("/gamecenter/#{game_id}/play-by-play")
     end
 
+    def fetch_play(game_id, play_id)
+      feed = fetch_pbp_feed(game_id)
+      feed["plays"].find { |play| play["eventId"] == @play_id }
+    end
+
     def fetch_boxscore_feed(game_id)
       get("/gamecenter/#{game_id}/boxscore")
     end
 
-    def fetch_game_landing_feed(game_id)
+    def fetch_landing_feed(game_id)
       get("/gamecenter/#{game_id}/landing")
     end
 
@@ -28,13 +33,55 @@ class NhlApi
       get("/club-schedule/#{ENV["NHL_TEAM_ABBREVIATION"]}/week/#{date}")
     end
 
+    def fetch_roster(team_abbreviation)
+      get("/roster/#{team_abbreviation}/current")
+    end
+
+    def fetch_standings
+      get("/standings/now")
+    end
+
+    def fetch_scores(date: Date.yesterday.strftime("%Y-%m-%d"))
+      response = get("/score/#{date}")["games"]
+      response.find_all { |game| game["gameDate"] == date }
+    end
+
     def todays_game(date: Time.now.strftime("%Y-%m-%d"))
       fetch_schedule(date: date)["games"].find { |game| game["gameDate"] == date }
     end
 
-    def fetch_team_standings(team_abbreviation)
-      response = get("/standings/now")
-      team = response["standings"].find { |t| t["teamAbbrev"]["default"] == team_abbreviation }
+    def roster(team_abbreviation)
+      Rails.cache.fetch("team_roster_#{team_abbreviation}", expires_in: 5.hours) do
+        roster_data = fetch_roster(team_abbreviation)
+        players = {}
+
+        %w[forwards defensemen goalies].each do |position_group|
+          roster_data[position_group].each do |player|
+            player_data = symbolize_keys(player)
+            players[player_data[:id]] = clean_player_data(player_data)
+          end
+        end
+
+        players
+      end
+    end
+
+    def teams
+      Rails.cache.fetch("teams", expires_in: 30.days) do
+        teams = {}
+        response = HTTParty.get("https://api.nhle.com/stats/rest/en/team")
+        raise APIError, "API request failed: #{response.code}" unless response.success?
+
+        response.parsed_response["data"].each do |team|
+          team_data = symbolize_keys(team)
+          teams[team_data[:id]] = team_data
+        end
+        teams
+      end
+    end
+
+    def team_standings(team_abbreviation)
+      team = fetch_standings["standings"].find { |t| t["teamAbbrev"]["default"] == team_abbreviation }
 
       return nil unless team
 
@@ -69,6 +116,19 @@ class NhlApi
       end
     end
 
+    def game_rosters(game_id)
+      feed = fetch_pbp_feed(game_id)
+      players = {}
+      feed["rosterSpots"].each do |player|
+        players[player["playerId"]] = {
+          team_id: player["teamId"],
+          number: player["sweaterNumber"],
+          name: player["firstName"]["default"] + " " + player["lastName"]["default"]
+        }
+      end
+      players
+    end
+
     def current_season
       get("/season").last
     end
@@ -101,6 +161,24 @@ class NhlApi
       else
         value
       end
+    end
+
+    def symbolize_keys(hash)
+      hash.each_with_object({}) do |(key, value), result|
+        new_key = key.to_sym
+        new_value = value.is_a?(Hash) ? symbolize_keys(value) : value
+        result[new_key] = new_value
+      end
+    end
+
+    def clean_player_data(player)
+      player[:firstName] = player[:firstName][:default]
+      player[:lastName] = player[:lastName][:default]
+      player[:fullName] = "#{player[:firstName]} #{player[:lastName]}"
+      player[:birthCity] = player[:birthCity][:default] || player[:birthCity].values.first if player[:birthCity]
+      player[:birthStateProvince] = player[:birthStateProvince][:default] || player[:birthStateProvince]&.values&.first if player[:birthStateProvince]
+      player[:name_number] = "##{player[:sweaterNumber]} #{player[:fullName]}"
+      player
     end
   end
 

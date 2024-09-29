@@ -4,9 +4,9 @@ module RodTheBot
     include ActiveSupport::Inflector
 
     def perform(game_id, play)
-      @feed = HTTParty.get("https://api-web.nhle.com/v1/gamecenter/#{game_id}/play-by-play")
+      @feed = NhlApi.fetch_pbp_feed(game_id)
       @play_id = play["eventId"]
-      @play = @feed["plays"].find { |play| play["eventId"] == @play_id }
+      @play = NhlApi.fetch_play(game_id, @play_id)
 
       return if @play.blank?
 
@@ -23,7 +23,7 @@ module RodTheBot
         @their_team = home
       end
 
-      players = build_players(@feed)
+      players = NhlApi.game_rosters(game_id)
 
       original_play = @play.deep_dup
 
@@ -62,18 +62,6 @@ module RodTheBot
       post += "#{away["abbrev"]} #{@play["details"]["awayScore"]} - #{home["abbrev"]} #{@play["details"]["homeScore"]}\n"
       RodTheBot::Post.perform_async(post, "#{game_id}:#{@play_id}")
       RodTheBot::ScoringChangeWorker.perform_in(600, game_id, play["eventId"], original_play)
-    end
-
-    def build_players(feed)
-      players = {}
-      feed["rosterSpots"].each do |player|
-        players[player["playerId"]] = {
-          team_id: player["teamId"],
-          number: player["sweaterNumber"],
-          name: player["firstName"]["default"] + " " + player["lastName"]["default"]
-        }
-      end
-      players
     end
 
     def modifiers(situation_code, scoring_team_id, home_id, away_id)

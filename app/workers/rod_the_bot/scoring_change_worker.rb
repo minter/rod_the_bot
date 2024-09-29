@@ -4,7 +4,7 @@ module RodTheBot
     include ActiveSupport::Inflector
 
     def perform(game_id, play_id, original_play)
-      @feed = HTTParty.get("https://api-web.nhle.com/v1/gamecenter/#{game_id}/play-by-play")
+      @feed = NhlApi.fetch_pbp_feed(game_id)
       @play = @feed["plays"].find { |play| play["eventId"].to_i == play_id.to_i }
       home = @feed["homeTeam"]
       away = @feed["awayTeam"]
