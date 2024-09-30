@@ -9,7 +9,7 @@ class NhlApi
 
     def fetch_play(game_id, play_id)
       feed = fetch_pbp_feed(game_id)
-      feed["plays"].find { |play| play["eventId"] == @play_id }
+      feed["plays"].find { |play| play["eventId"] == play_id }
     end
 
     def fetch_boxscore_feed(game_id)
@@ -44,6 +44,12 @@ class NhlApi
     def fetch_scores(date: Date.yesterday.strftime("%Y-%m-%d"))
       response = get("/score/#{date}")["games"]
       response.find_all { |game| game["gameDate"] == date }
+    end
+
+    def fetch_postseason_carousel
+      get("/playoff-series/carousel/#{current_season}/")
+    rescue NhlApi::APIError
+      nil
     end
 
     def todays_game(date: Time.now.strftime("%Y-%m-%d"))
@@ -134,12 +140,8 @@ class NhlApi
     end
 
     def postseason?
-      season = current_season
-      begin
-        get("/playoff-series/carousel/#{season}/")["rounds"].present?
-      rescue NhlApi::APIError
-        false
-      end
+      carousel = fetch_postseason_carousel
+      carousel.present? ? carousel["rounds"].present? : false
     end
 
     def preseason?(target_season)

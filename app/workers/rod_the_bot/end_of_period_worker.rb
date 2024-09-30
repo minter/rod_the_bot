@@ -14,13 +14,11 @@ module RodTheBot
       home = feed.fetch("homeTeam", {})
       away = feed.fetch("awayTeam", {})
       period_descriptor = play.fetch("periodDescriptor", {})
-      # period_number = period_descriptor.fetch("number", 1)
-      # period = (period_descriptor.fetch("periodType") == "REG") ? ordinalize(period_number) : period_descriptor.fetch("periodType")
 
       end_of_period_post = format_post(home, away, period_descriptor)
 
       RodTheBot::Post.perform_async(end_of_period_post)
-      RodTheBot::EndOfPeriodStatsWorker.perform_in(60, game_id, period)
+      RodTheBot::EndOfPeriodStatsWorker.perform_in(60, game_id, period_descriptor.fetch("number", 1))
     end
 
     private

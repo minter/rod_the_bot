@@ -67,15 +67,15 @@ module RodTheBot
       POST
     end
 
-    def create_players(stat)
-      player_feed = HTTParty.get("https://api-web.nhle.com/v1/gamecenter/#{@game_id}/boxscore")
-      team = player_feed.fetch("playerByGameStats", {}).fetch(your_team_status, {}).fetch("forwards", []) +
-        player_feed.fetch("playerByGameStats", {}).fetch(your_team_status, {}).fetch("defense", [])
+    def create_players(stat_category)
+      player_feed = NhlApi.fetch_boxscore_feed(@game_id)
+      team = player_feed.fetch("playerByGameStats", {}).fetch(@your_team_status, {}).fetch("forwards", []) +
+        player_feed.fetch("playerByGameStats", {}).fetch(@your_team_status, {}).fetch("defense", [])
       players = {}
       team.each do |player|
         players[player.fetch("playerId", "")] = {
           name: player.fetch("name", {}).fetch("default", ""),
-          stat: player.fetch(stat, 0)
+          stat: player.fetch(stat_category, 0)
         }
       end
       players
@@ -83,6 +83,11 @@ module RodTheBot
 
     def time_on_ice_leaders
       players = create_players("toi")
+      players.transform_values! do |player|
+        minutes, seconds = player[:stat].split(":").map(&:to_i)
+        player[:stat] = "#{minutes}:#{seconds.to_s.rjust(2, "0")}"
+        player
+      end
       players.sort_by do |k, v|
         toi_minutes, toi_seconds = v[:stat].split(":").map(&:to_i)
         [toi_minutes * 60 + toi_seconds, v[:name]]
@@ -90,7 +95,7 @@ module RodTheBot
     end
 
     def shots_on_goal_leaders
-      players = create_players("shots")
+      players = create_players("sog")
       players.sort_by { |k, v| [v[:stat], v[:name]] }.last(5).reverse
     end
   end

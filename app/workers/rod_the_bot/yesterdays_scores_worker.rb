@@ -56,8 +56,8 @@ module RodTheBot
     end
 
     def series_find(your_team, their_team)
-      response = HTTParty.get("https://api-web.nhle.com/v1/playoff-series/carousel/#{NhlApicurrent_season}/")
-      return unless response["rounds"]
+      response = NhlApi.fetch_postseason_carousel
+      return unless response.present? && response["rounds"].present?
       response["rounds"].each do |round|
         matchup = round["series"].find { |series| (series["bottomSeed"]["abbrev"] == your_team && series["topSeed"]["abbrev"] == their_team) || (series["topSeed"]["abbrev"] == your_team && series["bottomSeed"]["abbrev"] == their_team) }
         return matchup if matchup
