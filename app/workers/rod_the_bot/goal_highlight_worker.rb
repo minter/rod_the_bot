@@ -17,7 +17,7 @@ module RodTheBot
 
       if @landing_play["highlightClipSharingUrl"].present?
         post = format_post(@landing_play)
-        RodTheBot::Post.perform_async(post, nil, @landing_play["highlightClipSharingUrl"])
+        RodTheBot::Post.perform_async(post, "#{game_id}:#{play_id}", @landing_play["highlightClipSharingUrl"])
       else
         RodTheBot::GoalHighlightWorker.perform_in(30.seconds, game_id, play_id)
       end

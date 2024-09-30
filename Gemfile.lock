@@ -1,6 +1,6 @@
 GIT
   remote: https://github.com/minter/bskyrb.git
-  revision: fdfa3e890591dd9ae5351aeb53436b5ea098b81c
+  revision: 08a60a02089ec583ecba26ac5a2b902ea11054cb
   branch: add_hashtags
   specs:
     bskyrb (0.5.3)
