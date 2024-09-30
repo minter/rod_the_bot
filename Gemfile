@@ -15,6 +15,7 @@ gem "tzinfo-data", platforms: %i[windows jruby]
 gem "bootsnap", require: false
 
 gem "bskyrb", github: "minter/bskyrb", branch: "add_hashtags"
+# gem "bskyrb", path: "/Users/minter/git/bskyrb"
 gem "dotenv-rails", "~> 3", require: "dotenv/load"
 gem "httparty", "~> 0"
 gem "ostruct"
