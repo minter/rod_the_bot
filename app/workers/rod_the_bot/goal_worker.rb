@@ -56,7 +56,7 @@ module RodTheBot
       post += "#{away["abbrev"]} #{@play["details"]["awayScore"]} - #{home["abbrev"]} #{@play["details"]["homeScore"]}\n"
       RodTheBot::Post.perform_async(post, "#{game_id}:#{@play_id}")
       RodTheBot::ScoringChangeWorker.perform_in(600, game_id, play["eventId"], original_play)
-      RodTheBot::GoalHighlightWorker.perform_in(300, game_id, play["eventId"]) if players[@play["details"]["scoringPlayerId"]][:team_id] == ENV["NHL_TEAM_ID"].to_i
+      RodTheBot::GoalHighlightWorker.perform_in(10, game_id, play["eventId"]) if players[@play["details"]["scoringPlayerId"]][:team_id] == ENV["NHL_TEAM_ID"].to_i
     end
 
     def modifiers(situation_code, scoring_team_id, home_id, away_id)

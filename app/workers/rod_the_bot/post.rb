@@ -2,15 +2,15 @@ module RodTheBot
   class Post
     include Sidekiq::Worker
 
-    def perform(post, key = nil)
+    def perform(post, key = nil, embed_url = nil)
       create_session
       return if @bsky.nil?
       post = append_team_hashtags(post)
       reply_uri = REDIS.get(key) if key
       if reply_uri
-        create_reply(reply_uri, post)
+        create_reply(reply_uri, post, embed_url: embed_url)
       else
-        new_post = create_post(post)
+        new_post = create_post(post, embed_url: embed_url)
         post_uri = new_post["uri"] if new_post
         REDIS.set(key, post_uri, ex: 172800) if key
       end
@@ -32,12 +32,13 @@ module RodTheBot
       post
     end
 
-    def create_post(post)
-      @bsky.create_post(post) if ENV["BLUESKY_ENABLED"] == "true"
+    def create_post(post, embed_url: nil)
+      @bsky.create_post(post, embed_url: embed_url) if ENV["BLUESKY_ENABLED"] == "true"
     end
 
-    def create_reply(reply_uri, post)
-      @bsky.create_reply(reply_uri, post) if ENV["BLUESKY_ENABLED"] == "true"
+    def create_reply(reply_uri, post, embed_url: nil)
+      Rails.logger.info "Creating reply to #{reply_uri} with post #{post} and embed_url #{embed_url}"
+      @bsky.create_reply(reply_uri, post, embed_url: embed_url) if ENV["BLUESKY_ENABLED"] == "true"
     end
 
     def log_post(post)

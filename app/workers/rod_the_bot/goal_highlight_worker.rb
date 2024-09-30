@@ -17,7 +17,7 @@ module RodTheBot
 
       if @landing_play["highlightClipSharingUrl"].present?
         post = format_post(@landing_play)
-        RodTheBot::Post.perform_async(post, "#{game_id}:#{play_id}", @landing_play["highlightClipSharingUrl"])
+        RodTheBot::Post.perform_async(post, nil, @landing_play["highlightClipSharingUrl"])
       else
         RodTheBot::GoalHighlightWorker.perform_in(30.seconds, game_id, play_id)
       end
@@ -53,7 +53,10 @@ module RodTheBot
 
       assist_text = assists.present? ? " Assisted by #{assists}." : ""
 
-      "🎥 Goal highlight: #{scorer_full_name} (#{team}) scores on a #{shot_type} shot at #{time} of the #{period_name}. #{assist_text} Score: #{away_score}-#{home_score}"
+      away_team = @landing_feed["awayTeam"]["abbrev"]
+      home_team = @landing_feed["homeTeam"]["abbrev"]
+
+      "🎥 Goal highlight: #{scorer_full_name} (#{team}) scores on a #{shot_type} shot at #{time} of the #{period_name}.#{assist_text} Score: #{away_team} #{away_score} - #{home_team} #{home_score}"
     end
   end
 end
