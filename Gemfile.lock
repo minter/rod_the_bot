@@ -1,7 +1,5 @@
-GIT
-  remote: https://github.com/minter/bskyrb.git
-  revision: 0082e94d486e7e343fe9e4e03e95fb201f18f0e6
-  branch: add_hashtags
+PATH
+  remote: /Users/minter/git/bskyrb
   specs:
     bskyrb (0.5.3)
       date (>= 3.3.3)
@@ -128,7 +126,7 @@ GEM
     i18n (1.14.6)
       concurrent-ruby (~> 1.0)
     io-console (0.7.2)
-    irb (1.14.0)
+    irb (1.14.1)
       rdoc (>= 4.0.0)
       reline (>= 0.4.2)
     json (2.7.2)
@@ -162,7 +160,13 @@ GEM
     nio4r (2.7.3)
     nokogiri (1.16.7-aarch64-linux)
       racc (~> 1.4)
+    nokogiri (1.16.7-arm-linux)
+      racc (~> 1.4)
     nokogiri (1.16.7-arm64-darwin)
+      racc (~> 1.4)
+    nokogiri (1.16.7-x86-linux)
+      racc (~> 1.4)
+    nokogiri (1.16.7-x86_64-darwin)
       racc (~> 1.4)
     nokogiri (1.16.7-x86_64-linux)
       racc (~> 1.4)
@@ -229,7 +233,7 @@ GEM
     regexp_parser (2.9.2)
     reline (0.5.10)
       io-console (~> 0.5)
-    rexml (3.3.7)
+    rexml (3.3.8)
     rubocop (1.65.1)
       json (~> 2.3)
       language_server-protocol (>= 3.17.0)
@@ -299,9 +303,10 @@ GEM
 
 PLATFORMS
   aarch64-linux
-  arm64-darwin-22
-  arm64-darwin-23
-  arm64-darwin-24
+  arm-linux
+  arm64-darwin
+  x86-linux
+  x86_64-darwin
   x86_64-linux
 
 DEPENDENCIES
@@ -329,4 +334,4 @@ RUBY VERSION
    ruby 3.3.5p100
 
 BUNDLED WITH
-   2.5.10
+   2.5.16

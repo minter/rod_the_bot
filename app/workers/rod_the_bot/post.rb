@@ -36,8 +36,9 @@ module RodTheBot
       @bsky.create_post(post) if ENV["BLUESKY_ENABLED"] == "true"
     end
 
-    def create_reply(reply_uri, post)
-      @bsky.create_reply(reply_uri, post) if ENV["BLUESKY_ENABLED"] == "true"
+    def create_reply(reply_uri, post, embed_url: nil)
+      Rails.logger.info "Creating reply to #{reply_uri} with post #{post} and embed_url #{embed_url}"
+      @bsky.create_reply(reply_uri, post, embed_url: embed_url) if ENV["BLUESKY_ENABLED"] == "true"
     end
 
     def log_post(post)
