@@ -2,6 +2,7 @@ module RodTheBot
   class GoalWorker
     include Sidekiq::Worker
     include ActiveSupport::Inflector
+    include RodTheBot::PeriodFormatter
 
     def perform(game_id, play)
       @feed = NhlApi.fetch_pbp_feed(game_id)
@@ -32,14 +33,7 @@ module RodTheBot
         return
       end
 
-      period_name = case @play["periodDescriptor"]["number"]
-      when 1..3
-        "#{ordinalize(@play["periodDescriptor"]["number"])} Period"
-      when 4
-        "OT Period"
-      else
-        "#{@play["periodDescriptor"]["number"].to_i - 3}OT Period"
-      end
+      period_name = format_period_name(@play["periodDescriptor"]["number"])
 
       modifiers = modifiers(@play["situationCode"].to_s, players[@play["details"]["scoringPlayerId"]][:team_id], home["id"], away["id"])
 
@@ -62,6 +56,7 @@ module RodTheBot
       post += "#{away["abbrev"]} #{@play["details"]["awayScore"]} - #{home["abbrev"]} #{@play["details"]["homeScore"]}\n"
       RodTheBot::Post.perform_async(post, "#{game_id}:#{@play_id}")
       RodTheBot::ScoringChangeWorker.perform_in(600, game_id, play["eventId"], original_play)
+      RodTheBot::GoalHighlightWorker.perform_in(300, game_id, play["eventId"]) if players[@play["details"]["scoringPlayerId"]][:team_id] == ENV["NHL_TEAM_ID"].to_i
     end
 
     def modifiers(situation_code, scoring_team_id, home_id, away_id)

@@ -2,6 +2,7 @@ module RodTheBot
   class PeriodStartWorker
     include Sidekiq::Worker
     include ActiveSupport::Inflector
+    include RodTheBot::PeriodFormatter
 
     attr_reader :feed
 
@@ -25,14 +26,7 @@ module RodTheBot
 
     def format_post(period_descriptor, home, away)
       period_number = period_descriptor.fetch("number", 1)
-      period_name = case period_number
-      when 1..3
-        "#{ordinalize(period_number)} Period"
-      when 4
-        "OT Period"
-      else
-        "#{period_number.to_i - 3}OT Period"
-      end
+      period_name = format_period_name(period_number)
 
       <<~POST
         🎬 It's time to start the #{period_name} at #{feed.fetch("venue", {}).fetch("default", "")}!

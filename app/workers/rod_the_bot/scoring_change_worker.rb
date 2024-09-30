@@ -2,6 +2,7 @@ module RodTheBot
   class ScoringChangeWorker
     include Sidekiq::Worker
     include ActiveSupport::Inflector
+    include RodTheBot::PeriodFormatter
 
     def perform(game_id, play_id, original_play)
       @feed = NhlApi.fetch_pbp_feed(game_id)
@@ -22,14 +23,7 @@ module RodTheBot
       scoring_team_id = players[@play["details"]["scoringPlayerId"]][:team_id]
       scoring_team = (home["id"] == scoring_team_id) ? home : away
 
-      period_name = case @play["periodDescriptor"]["number"]
-      when 1..3
-        "#{ordinalize(@play["periodDescriptor"]["number"])} Period"
-      when 4
-        "OT Period"
-      else
-        "#{@play["periodDescriptor"]["number"].to_i - 3}OT Period"
-      end
+      period_name = format_period_name(@play["periodDescriptor"]["number"])
 
       post = <<~POST
         🔔 Scoring Change

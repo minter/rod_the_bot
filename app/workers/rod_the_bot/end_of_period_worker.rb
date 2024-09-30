@@ -2,6 +2,7 @@ module RodTheBot
   class EndOfPeriodWorker
     include Sidekiq::Worker
     include ActiveSupport::Inflector
+    include RodTheBot::PeriodFormatter
 
     attr_reader :feed, :game_final
 
@@ -25,14 +26,7 @@ module RodTheBot
 
     def format_post(home, away, period_descriptor)
       period_number = period_descriptor.fetch("number", 1)
-      period_name = case period_number
-      when 1..3
-        "#{ordinalize(period_number)} Period"
-      when 4
-        "OT Period"
-      else
-        "#{period_number.to_i - 3}OT Period"
-      end
+      period_name = format_period_name(period_number)
 
       <<~POST
         🛑 That's the end of the #{period_name}!

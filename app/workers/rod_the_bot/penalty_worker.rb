@@ -2,6 +2,7 @@ module RodTheBot
   class PenaltyWorker
     include Sidekiq::Worker
     include ActiveSupport::Inflector
+    include RodTheBot::PeriodFormatter
 
     SEVERITY = {
       "MIN" => "Minor",
@@ -41,14 +42,7 @@ module RodTheBot
         "🤩 #{@their_team["name"]["default"]} Penalty!\n\n"
       end
 
-      period_name = case @play["periodDescriptor"]["number"]
-      when 1..3
-        "#{ordinalize(@play["periodDescriptor"]["number"])} Period"
-      when 4
-        "OT Period"
-      else
-        "#{@play["periodDescriptor"]["number"].to_i - 3}OT Period"
-      end
+      period_name = format_period_name(@play["periodDescriptor"]["number"])
 
       post += if play["details"]["typeCode"] == "BEN"
         <<~POST

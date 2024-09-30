@@ -2,6 +2,7 @@ module RodTheBot
   class EndOfPeriodStatsWorker
     include Sidekiq::Worker
     include ActiveSupport::Inflector
+    include RodTheBot::PeriodFormatter
 
     attr_reader :feed, :home, :visitor, :your_team, :your_team_status, :home_code, :visitor_code
 
@@ -21,14 +22,7 @@ module RodTheBot
       period_state = if feed.fetch("gameState", "") == "OFF" || period_number.blank?
         "at the end of the game"
       else
-        period_name = case feed["periodDescriptor"]["number"].to_i
-        when 1..3
-          "#{ordinalize(feed["periodDescriptor"]["number"])} Period"
-        when 4
-          "OT Period"
-        else
-          "#{feed["periodDescriptor"]["number"].to_i - 3}OT Period"
-        end
+        period_name = format_period_name(feed["periodDescriptor"]["number"].to_i)
         "after the #{period_name}"
       end
 
