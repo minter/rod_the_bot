@@ -25,5 +25,6 @@ jobs:
         env: 
           RAILS_ENV: test
           REDIS_URL: redis://localhost:6379
+          TIME_ZONE: America/New_York
         run: |
           bundle exec rails test
