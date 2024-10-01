@@ -1,12 +1,6 @@
 require "test_helper"
-require "vcr"
 
-VCR.configure do |config|
-  config.cassette_library_dir = "fixtures/vcr_cassettes"
-  config.hook_into :webmock
-end
-
-class RodTheBot::GoalWorkerTest < Minitest::Test
+class RodTheBot::GoalWorkerTest < ActiveSupport::TestCase
   def setup
     Sidekiq::Worker.clear_all
     @goal_worker = RodTheBot::GoalWorker.new

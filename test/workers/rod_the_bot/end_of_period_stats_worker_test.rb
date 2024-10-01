@@ -1,12 +1,6 @@
-require "minitest/autorun"
-require "vcr"
+require "test_helper"
 
-VCR.configure do |config|
-  config.cassette_library_dir = "fixtures/vcr_cassettes"
-  config.hook_into :webmock
-end
-
-class RodTheBot::EndOfPeriodStatsWorkerTest < Minitest::Test
+class RodTheBot::EndOfPeriodStatsWorkerTest < ActiveSupport::TestCase
   def setup
     Sidekiq::Worker.clear_all
     @worker = RodTheBot::EndOfPeriodStatsWorker.new
