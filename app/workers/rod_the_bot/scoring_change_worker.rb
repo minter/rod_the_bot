@@ -16,6 +16,7 @@ module RodTheBot
       # If nothing has changed on this scoring play, exit
       original_scorers = [original_play["details"]["scoringPlayerId"], original_play["details"]["assist1PlayerId"], original_play["details"]["assist2PlayerId"]]
       new_scorers = [@play["details"]["scoringPlayerId"], @play["details"]["assist1PlayerId"], @play["details"]["assist2PlayerId"]]
+
       return if new_scorers == original_scorers
 
       players = build_players(@feed)

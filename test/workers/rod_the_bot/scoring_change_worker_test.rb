@@ -16,8 +16,15 @@ class RodTheBot::ScoringChangeWorkerTest < ActiveSupport::TestCase
 
   def test_perform_with_scoring_change
     VCR.use_cassette("nhl_game_#{@game_id}_scoring_change", record: :new_episodes) do
+      feed = NhlApi.fetch_pbp_feed(@game_id)
+      actual_goal_play = feed["plays"].find { |play| play["typeDescKey"] == "goal" }
+
+      return skip("No goal play found in the feed") unless actual_goal_play
+
+      @play_id = actual_goal_play["eventId"].to_s
+
       # Modify the original play to ensure a change is detected
-      modified_original_play = @original_play.deep_dup
+      modified_original_play = actual_goal_play.deep_dup
       modified_original_play["details"]["assist1PlayerId"] = "8000000"  # Use a non-existent player ID
 
       RodTheBot::Post.expects(:perform_async).once
