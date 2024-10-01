@@ -7,24 +7,16 @@ on:
 jobs:
   run-minitest:
     runs-on: ubuntu-latest
-    services: 
-      redis:
-        image: redis:alpine
-        ports: ["6379:6379"]
-        options: --entrypoint redis-server
     steps:
       - uses: actions/checkout@v4
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
         with:
-          # Not needed with a .ruby-version file
-          ruby-version: 3.3.5
           # runs 'bundle install' and caches installed gems automatically
           bundler-cache: true
       - name: Run tests
         env: 
           RAILS_ENV: test
-          REDIS_URL: redis://localhost:6379
           TIME_ZONE: America/New_York
           NHL_TEAM_ABBREVIATION: CAR
         run: |
