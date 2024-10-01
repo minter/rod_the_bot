@@ -6,7 +6,7 @@ module RodTheBot
 
     def perform(game_id, play_id, original_play)
       @feed = NhlApi.fetch_pbp_feed(game_id)
-      @play = @feed["plays"].find { |play| play["eventId"].to_i == play_id.to_i }
+      @play = @feed["plays"].find { |play| play["eventId"].to_s == play_id.to_s }
       home = @feed["homeTeam"]
       away = @feed["awayTeam"]
 
@@ -20,25 +20,12 @@ module RodTheBot
 
       players = build_players(@feed)
 
-      scoring_team_id = players[@play["details"]["scoringPlayerId"]][:team_id]
+      scoring_team_id = players[@play["details"]["scoringPlayerId"].to_s][:team_id]
       scoring_team = (home["id"] == scoring_team_id) ? home : away
 
       period_name = format_period_name(@play["periodDescriptor"]["number"])
 
-      post = <<~POST
-        🔔 Scoring Change
-
-        The #{scoring_team["name"]["default"]} goal at #{@play["timeInPeriod"]} of the #{period_name} now reads:
-
-      POST
-      post += "🚨 #{players[@play["details"]["scoringPlayerId"]][:name]} (#{@play["details"]["scoringPlayerTotal"]})\n"
-
-      post += if @play["details"]["assist1PlayerId"].present?
-        "🍎 #{players[@play["details"]["assist1PlayerId"]][:name]} (#{@play["details"]["assist1PlayerTotal"]})\n"
-      else
-        "🍎 Unassisted\n"
-      end
-      post += "🍎🍎 #{players[@play["details"]["assist2PlayerId"]][:name]} (#{@play["details"]["assist2PlayerTotal"]})\n" if @play["details"]["assist2PlayerId"].present?
+      post = format_post(scoring_team, period_name, players)
 
       RodTheBot::Post.perform_async(post, "#{game_id}:#{play_id}")
     end
@@ -46,13 +33,32 @@ module RodTheBot
     def build_players(feed)
       players = {}
       feed["rosterSpots"].each do |player|
-        players[player["playerId"]] = {
+        players[player["playerId"].to_s] = {
           team_id: player["teamId"],
-          number: player["sweaterNumber"],
-          name: player["firstName"]["default"] + " " + player["lastName"]["default"]
+          number: player["sweaterNumber"].to_s,
+          name: "#{player["firstName"]["default"]} #{player["lastName"]["default"]}"
         }
       end
       players
+    end
+
+    def format_post(scoring_team, period_name, players)
+      post = <<~POST
+        🔔 Scoring Change
+
+        The #{scoring_team["name"]["default"]} goal at #{@play["timeInPeriod"]} of the #{period_name} now reads:
+
+      POST
+      post += "🚨 #{players[@play["details"]["scoringPlayerId"].to_s]&.dig(:name)} (#{@play["details"]["scoringPlayerTotal"]})\n"
+
+      post += if @play["details"]["assist1PlayerId"].present?
+        "🍎 #{players[@play["details"]["assist1PlayerId"].to_s]&.dig(:name)} (#{@play["details"]["assist1PlayerTotal"]})\n"
+      else
+        "🍎 Unassisted\n"
+      end
+      post += "🍎🍎 #{players[@play["details"]["assist2PlayerId"].to_s]&.dig(:name)} (#{@play["details"]["assist2PlayerTotal"]})\n" if @play["details"]["assist2PlayerId"].present?
+
+      post
     end
   end
 end
