@@ -1,0 +1,66 @@
+---
+http_interactions:
+- request:
+    method: get
+    uri: https://api-web.nhle.com/v1/gamecenter/2023020339/landing
+    body:
+      encoding: US-ASCII
+      string: ''
+    headers:
+      Accept-Encoding:
+      - gzip;q=1.0,deflate;q=0.6,identity;q=0.3
+      Accept:
+      - "*/*"
+      User-Agent:
+      - Ruby
+  response:
+    status:
+      code: 200
+      message: OK
+    headers:
+      Date:
+      - Tue, 01 Oct 2024 18:10:29 GMT
+      Content-Type:
+      - application/json
+      Content-Length:
+      - '6637'
+      Connection:
+      - keep-alive
+      Cache-Control:
+      - no-transform, max-age=0, s-maxage=0
+      Etag:
+      - W/"66fc3b16--gzip"
+      Vary:
+      - Accept-Encoding
+      Cf-Cache-Status:
+      - EXPIRED
+      Accept-Ranges:
+      - bytes
+      Server:
+      - cloudflare
+      Cf-Ray:
+      - 8cbe68e51bfa20a2-IAD
+    body:
+      encoding: ASCII-8BIT
+      string: '{"id":2023020339,"season":20232024,"gameType":2,"limitedScoring":false,"gameDate":"2023-11-29","venue":{"default":"Crypto.com
+        Arena"},"venueLocation":{"default":"Los Angeles"},"startTimeUTC":"2023-11-30T03:30:00Z","easternUTCOffset":"-05:00","venueUTCOffset":"-08:00","venueTimezone":"America/Los_Angeles","periodDescriptor":{"number":3,"periodType":"REG","maxRegulationPeriods":3},"tvBroadcasts":[{"id":355,"market":"H","countryCode":"US","network":"BSW","sequenceNumber":57},{"id":517,"market":"A","countryCode":"US","network":"MNMT","sequenceNumber":67},{"id":520,"market":"A","countryCode":"US","network":"MNMT2","sequenceNumber":98},{"id":282,"market":"N","countryCode":"CA","network":"SN","sequenceNumber":101},{"id":281,"market":"N","countryCode":"CA","network":"TVAS","sequenceNumber":109}],"gameState":"OFF","gameScheduleState":"OK","awayTeam":{"id":15,"name":{"default":"Capitals"},"abbrev":"WSH","placeName":{"default":"Washington"},"placeNameWithPreposition":{"default":"Washington","fr":"de
+        Washington"},"score":2,"sog":15,"logo":"https://assets.nhle.com/logos/nhl/svg/WSH_secondary_light.svg"},"homeTeam":{"id":26,"name":{"default":"Kings"},"abbrev":"LAK","placeName":{"default":"Los
+        Angeles"},"placeNameWithPreposition":{"default":"Los Angeles","fr":"de Los
+        Angeles"},"score":1,"sog":39,"logo":"https://assets.nhle.com/logos/nhl/svg/LAK_20192020-20232024_light.svg"},"shootoutInUse":true,"maxPeriods":5,"regPeriods":3,"otInUse":true,"tiesInUse":false,"summary":{"scoring":[{"periodDescriptor":{"number":1,"periodType":"REG","maxRegulationPeriods":3},"goals":[{"situationCode":"1551","strength":"ev","playerId":8481560,"firstName":{"default":"Arthur"},"lastName":{"default":"Kaliyev"},"name":{"default":"A.
+        Kaliyev"},"teamAbbrev":{"default":"LAK"},"headshot":"https://assets.nhle.com/mugs/nhl/20232024/LAK/8481560.png","highlightClipSharingUrl":"https://nhl.com/video/wsh-lak-kaliyev-scores-goal-against-charlie-lindgren-6342034497112","highlightClipSharingUrlFr":"https://nhl.com/fr/video/wsh-lak-kaliyev-scores-goal-against-charlie-lindgren-6342035370112","highlightClip":6342034497112,"highlightClipFr":6342035370112,"goalsToDate":5,"awayScore":0,"homeScore":1,"leadingTeamAbbrev":{"default":"LAK"},"timeInPeriod":"09:04","shotType":"wrist","goalModifier":"none","assists":[{"playerId":8477971,"firstName":{"default":"Andreas"},"lastName":{"default":"Englund"},"name":{"default":"A.
+        Englund"},"assistsToDate":6},{"playerId":8481606,"firstName":{"default":"Jordan"},"lastName":{"default":"Spence"},"name":{"default":"J.
+        Spence"},"assistsToDate":9}],"pptReplayUrl":"https://wsr.nhle.com/sprites/20232024/2023020339/ev240.json"},{"situationCode":"1551","strength":"ev","playerId":8477511,"firstName":{"default":"Anthony"},"lastName":{"default":"Mantha"},"name":{"default":"A.
+        Mantha"},"teamAbbrev":{"default":"WSH"},"headshot":"https://assets.nhle.com/mugs/nhl/20232024/WSH/8477511.png","highlightClipSharingUrl":"https://nhl.com/video/anthony-mantha-with-a-goal-vs-los-angeles-kings-6342036445112","highlightClipSharingUrlFr":"https://nhl.com/fr/video/anthony-mantha-with-a-goal-vs-los-angeles-kings-6342036257112","highlightClip":6342036445112,"highlightClipFr":6342036257112,"goalsToDate":4,"awayScore":1,"homeScore":1,"timeInPeriod":"12:12","shotType":"wrist","goalModifier":"none","assists":[{"playerId":8481580,"firstName":{"default":"Connor"},"lastName":{"default":"McMichael"},"name":{"default":"C.
+        McMichael"},"assistsToDate":5},{"playerId":8481656,"firstName":{"default":"Aliaksei","cs":"Alexej","de":"Alexei","es":"Alexei","fi":"Alexei","sk":"Alexej","sv":"Alexei"},"lastName":{"default":"Protas"},"name":{"default":"A.
+        Protas"},"assistsToDate":6}],"pptReplayUrl":"https://wsr.nhle.com/sprites/20232024/2023020339/ev323.json"}]},{"periodDescriptor":{"number":2,"periodType":"REG","maxRegulationPeriods":3},"goals":[{"situationCode":"1551","strength":"ev","playerId":8481580,"firstName":{"default":"Connor"},"lastName":{"default":"McMichael"},"name":{"default":"C.
+        McMichael"},"teamAbbrev":{"default":"WSH"},"headshot":"https://assets.nhle.com/mugs/nhl/20232024/WSH/8481580.png","highlightClipSharingUrl":"https://nhl.com/video/wsh-lak-mcmichael-scores-goal-against-cam-talbot-6342044784112","highlightClipSharingUrlFr":"https://nhl.com/fr/video/wsh-lak-mcmichael-scores-goal-against-cam-talbot-6342044292112","highlightClip":6342044784112,"highlightClipFr":6342044292112,"goalsToDate":5,"awayScore":2,"homeScore":1,"leadingTeamAbbrev":{"default":"WSH"},"timeInPeriod":"18:30","shotType":"bat","goalModifier":"none","assists":[{"playerId":8477511,"firstName":{"default":"Anthony"},"lastName":{"default":"Mantha"},"name":{"default":"A.
+        Mantha"},"assistsToDate":2},{"playerId":8481656,"firstName":{"default":"Aliaksei","cs":"Alexej","de":"Alexei","es":"Alexei","fi":"Alexei","sk":"Alexej","sv":"Alexei"},"lastName":{"default":"Protas"},"name":{"default":"A.
+        Protas"},"assistsToDate":7}],"pptReplayUrl":"https://wsr.nhle.com/sprites/20232024/2023020339/ev722.json"}]},{"periodDescriptor":{"number":3,"periodType":"REG","maxRegulationPeriods":3},"goals":[]}],"shootout":[],"threeStars":[{"star":1,"playerId":8479292,"teamAbbrev":"WSH","headshot":"https://assets.nhle.com/mugs/nhl/20232024/WSH/8479292.png","name":{"default":"C.
+        Lindgren"},"sweaterNo":79,"position":"G","goalsAgainstAverage":1.0,"savePctg":0.974},{"star":2,"playerId":8481560,"teamAbbrev":"LAK","headshot":"https://assets.nhle.com/mugs/nhl/20232024/LAK/8481560.png","name":{"default":"A.
+        Kaliyev"},"sweaterNo":34,"position":"R","goals":1,"assists":0,"points":1},{"star":3,"playerId":8477511,"teamAbbrev":"WSH","headshot":"https://assets.nhle.com/mugs/nhl/20232024/WSH/8477511.png","name":{"default":"A.
+        Mantha"},"sweaterNo":39,"position":"R","goals":1,"assists":1,"points":2}],"penalties":[{"periodDescriptor":{"number":1,"periodType":"REG","maxRegulationPeriods":3},"penalties":[{"timeInPeriod":"18:25","type":"MIN","duration":2,"committedByPlayer":"Dylan
+        Strome","teamAbbrev":{"default":"WSH"},"drawnBy":"Kevin Fiala","descKey":"slashing"}]},{"periodDescriptor":{"number":2,"periodType":"REG","maxRegulationPeriods":3},"penalties":[{"timeInPeriod":"13:26","type":"MIN","duration":2,"committedByPlayer":"John
+        Carlson","teamAbbrev":{"default":"WSH"},"drawnBy":"Pierre-Luc Dubois","descKey":"slashing"}]},{"periodDescriptor":{"number":3,"periodType":"REG","maxRegulationPeriods":3},"penalties":[{"timeInPeriod":"11:53","type":"MIN","duration":2,"committedByPlayer":"Nic
+        Dowd","teamAbbrev":{"default":"WSH"},"drawnBy":"Adrian Kempe","descKey":"tripping"}]}]},"clock":{"timeRemaining":"00:00","secondsRemaining":0,"running":false,"inIntermission":false}}'
+  recorded_at: Tue, 01 Oct 2024 18:10:29 GMT
+recorded_with: VCR 6.3.1

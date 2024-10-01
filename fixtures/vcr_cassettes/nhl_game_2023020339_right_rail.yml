@@ -1,0 +1,50 @@
+---
+http_interactions:
+- request:
+    method: get
+    uri: https://api-web.nhle.com/v1/gamecenter/2023020339/right-rail
+    body:
+      encoding: US-ASCII
+      string: ''
+    headers:
+      Accept-Encoding:
+      - gzip;q=1.0,deflate;q=0.6,identity;q=0.3
+      Accept:
+      - "*/*"
+      User-Agent:
+      - Ruby
+  response:
+    status:
+      code: 200
+      message: OK
+    headers:
+      Date:
+      - Tue, 01 Oct 2024 18:10:30 GMT
+      Content-Type:
+      - application/json
+      Content-Length:
+      - '3862'
+      Connection:
+      - keep-alive
+      Cache-Control:
+      - no-transform, max-age=14, s-maxage=14
+      Etag:
+      - W/"66fc3b25--gzip"
+      Vary:
+      - Accept-Encoding
+      Cf-Cache-Status:
+      - EXPIRED
+      Accept-Ranges:
+      - bytes
+      Server:
+      - cloudflare
+      Cf-Ray:
+      - 8cbe68ea7af1392e-IAD
+    body:
+      encoding: ASCII-8BIT
+      string: '{"seasonSeries":[{"id":2023020339,"season":20232024,"gameType":2,"gameDate":"2023-11-29","startTimeUTC":"2023-11-30T03:30:00Z","easternUTCOffset":"-05:00","venueUTCOffset":"-08:00","gameState":"OFF","gameScheduleState":"OK","awayTeam":{"id":15,"abbrev":"WSH","logo":"https://assets.nhle.com/logos/nhl/svg/WSH_secondary_light.svg","score":2},"homeTeam":{"id":26,"abbrev":"LAK","logo":"https://assets.nhle.com/logos/nhl/svg/LAK_20192020-20232024_light.svg","score":1},"gameCenterLink":"/gamecenter/lak-vs-wsh/2023/11/29/2023020339"},{"id":2023020618,"season":20232024,"gameType":2,"gameDate":"2024-01-07","startTimeUTC":"2024-01-07T20:00:00Z","easternUTCOffset":"-05:00","venueUTCOffset":"-05:00","gameState":"OFF","gameScheduleState":"OK","awayTeam":{"id":26,"abbrev":"LAK","logo":"https://assets.nhle.com/logos/nhl/svg/LAK_20192020-20232024_light.svg","score":3},"homeTeam":{"id":15,"abbrev":"WSH","logo":"https://assets.nhle.com/logos/nhl/svg/WSH_secondary_light.svg","score":4},"gameCenterLink":"/gamecenter/wsh-vs-lak/2024/01/07/2023020618"}],"seasonSeriesWins":{"awayTeamWins":2,"homeTeamWins":0},"gameInfo":{"referees":[{"default":"Brian
+        Pochmara"},{"default":"Jake Brenk"}],"linesmen":[{"default":"Tyson Baker"},{"default":"Ben
+        O''Quinn"}],"awayTeam":{"headCoach":{"default":"Spencer Carbery"},"scratches":[{"id":8479321,"firstName":{"default":"Lucas"},"lastName":{"default":"Johansen"}},{"id":8480823,"firstName":{"default":"Alexander","cs":"Alexandr","sk":"Alexandr"},"lastName":{"default":"Alexeyev","cs":"Alexejev","sk":"Alexejev"}},{"id":8482148,"firstName":{"default":"Hendrix"},"lastName":{"default":"Lapierre"}}]},"homeTeam":{"headCoach":{"default":"Todd
+        McLellan"},"scratches":[{"id":8479421,"firstName":{"default":"Jacob"},"lastName":{"default":"Moverare"}},{"id":8481481,"firstName":{"default":"Blake"},"lastName":{"default":"Lizotte"}}]}},"gameVideo":{"threeMinRecap":6342049144112},"linescore":{"byPeriod":[{"periodDescriptor":{"number":1,"periodType":"REG","maxRegulationPeriods":3},"away":1,"home":1},{"periodDescriptor":{"number":2,"periodType":"REG","maxRegulationPeriods":3},"away":1,"home":0},{"periodDescriptor":{"number":3,"periodType":"REG","maxRegulationPeriods":3},"away":0,"home":0}],"totals":{"away":2,"home":1}},"shotsByPeriod":[{"periodDescriptor":{"number":1,"periodType":"REG","maxRegulationPeriods":3},"away":5,"home":11},{"periodDescriptor":{"number":2,"periodType":"REG","maxRegulationPeriods":3},"away":7,"home":13},{"periodDescriptor":{"number":3,"periodType":"REG","maxRegulationPeriods":3},"away":3,"home":15}],"teamGameStats":[{"category":"sog","awayValue":15,"homeValue":39},{"category":"faceoffWinningPctg","awayValue":0.400000,"homeValue":0.600000},{"category":"powerPlay","awayValue":"0/0","homeValue":"0/3"},{"category":"powerPlayPctg","awayValue":0.000000,"homeValue":0.000000},{"category":"pim","awayValue":6,"homeValue":0},{"category":"hits","awayValue":26,"homeValue":20},{"category":"blockedShots","awayValue":18,"homeValue":10},{"category":"giveaways","awayValue":6,"homeValue":9},{"category":"takeaways","awayValue":3,"homeValue":6}],"gameReports":{"gameSummary":"https://www.nhl.com/scores/htmlreports/20232024/GS020339.HTM","eventSummary":"https://www.nhl.com/scores/htmlreports/20232024/ES020339.HTM","playByPlay":"https://www.nhl.com/scores/htmlreports/20232024/PL020339.HTM","faceoffSummary":"https://www.nhl.com/scores/htmlreports/20232024/FS020339.HTM","faceoffComparison":"https://www.nhl.com/scores/htmlreports/20232024/FC020339.HTM","rosters":"https://www.nhl.com/scores/htmlreports/20232024/RO020339.HTM","shotSummary":"https://www.nhl.com/scores/htmlreports/20232024/SS020339.HTM","shiftChart":"https://www.nhl.com/stats/shiftcharts?id=2023020339","toiAway":"https://www.nhl.com/scores/htmlreports/20232024/TV020339.HTM","toiHome":"https://www.nhl.com/scores/htmlreports/20232024/TH020339.HTM"}}'
+  recorded_at: Tue, 01 Oct 2024 18:10:30 GMT
+recorded_with: VCR 6.3.1

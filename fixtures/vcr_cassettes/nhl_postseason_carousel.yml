@@ -1,0 +1,106 @@
+---
+http_interactions:
+- request:
+    method: get
+    uri: https://api-web.nhle.com/v1/season
+    body:
+      encoding: US-ASCII
+      string: ''
+    headers:
+      Accept-Encoding:
+      - gzip;q=1.0,deflate;q=0.6,identity;q=0.3
+      Accept:
+      - "*/*"
+      User-Agent:
+      - Ruby
+  response:
+    status:
+      code: 200
+      message: OK
+    headers:
+      Date:
+      - Tue, 01 Oct 2024 18:10:30 GMT
+      Content-Type:
+      - application/json
+      Content-Length:
+      - '964'
+      Connection:
+      - keep-alive
+      Cache-Control:
+      - no-transform, max-age=14, s-maxage=14
+      Etag:
+      - W/"66fc3b25--gzip"
+      Vary:
+      - Accept-Encoding
+      Cf-Cache-Status:
+      - EXPIRED
+      Accept-Ranges:
+      - bytes
+      Server:
+      - cloudflare
+      Cf-Ray:
+      - 8cbe68ecc80f3adb-IAD
+    body:
+      encoding: ASCII-8BIT
+      string: "[19171918,19181919,19191920,19201921,19211922,19221923,19231924,19241925,19251926,19261927,19271928,19281929,19291930,19301931,19311932,19321933,19331934,19341935,19351936,19361937,19371938,19381939,19391940,19401941,19411942,19421943,19431944,19441945,19451946,19461947,19471948,19481949,19491950,19501951,19511952,19521953,19531954,19541955,19551956,19561957,19571958,19581959,19591960,19601961,19611962,19621963,19631964,19641965,19651966,19661967,19671968,19681969,19691970,19701971,19711972,19721973,19731974,19741975,19751976,19761977,19771978,19781979,19791980,19801981,19811982,19821983,19831984,19841985,19851986,19861987,19871988,19881989,19891990,19901991,19911992,19921993,19931994,19941995,19951996,19961997,19971998,19981999,19992000,20002001,20012002,20022003,20032004,20052006,20062007,20072008,20082009,20092010,20102011,20112012,20122013,20132014,20142015,20152016,20162017,20172018,20182019,20192020,20202021,20212022,20222023,20232024,20242025]"
+  recorded_at: Tue, 01 Oct 2024 18:10:30 GMT
+- request:
+    method: get
+    uri: https://api-web.nhle.com/v1/playoff-series/carousel/20242025/
+    body:
+      encoding: US-ASCII
+      string: ''
+    headers:
+      Accept-Encoding:
+      - gzip;q=1.0,deflate;q=0.6,identity;q=0.3
+      Accept:
+      - "*/*"
+      User-Agent:
+      - Ruby
+  response:
+    status:
+      code: 500
+      message: Server Error
+    headers:
+      Date:
+      - Tue, 01 Oct 2024 18:10:30 GMT
+      Content-Type:
+      - text/html;charset=iso-8859-1
+      Transfer-Encoding:
+      - chunked
+      Connection:
+      - keep-alive
+      Cache-Control:
+      - must-revalidate,no-cache,no-store
+      Ntcoent-Length:
+      - '416'
+      Cneonction:
+      - close
+      Cf-Cache-Status:
+      - MISS
+      Vary:
+      - Accept-Encoding
+      Server:
+      - cloudflare
+      Cf-Ray:
+      - 8cbe68ee4ece1fce-IAD
+    body:
+      encoding: UTF-8
+      string: |
+        <html>
+        <head>
+        <meta http-equiv="Content-Type" content="text/html;charset=ISO-8859-1"/>
+        <title>Error 500 Request failed.</title>
+        </head>
+        <body><h2>HTTP ERROR 500 Request failed.</h2>
+        <table>
+        <tr><th>URI:</th><td>/v1/playoff-series/carousel/20242025/</td></tr>
+        <tr><th>STATUS:</th><td>500</td></tr>
+        <tr><th>MESSAGE:</th><td>Request failed.</td></tr>
+        <tr><th>SERVLET:</th><td>jersey</td></tr>
+        </table>
+
+        </body>
+        </html>
+  recorded_at: Tue, 01 Oct 2024 18:10:30 GMT
+recorded_with: VCR 6.3.1

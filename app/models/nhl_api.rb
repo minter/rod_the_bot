@@ -9,7 +9,8 @@ class NhlApi
 
     def fetch_play(game_id, play_id)
       feed = fetch_pbp_feed(game_id)
-      feed["plays"].find { |play| play["eventId"] == play_id }
+      return nil unless feed && feed["plays"].is_a?(Array)
+      feed["plays"].find { |play| play["eventId"].to_s == play_id.to_s }
     end
 
     def fetch_boxscore_feed(game_id)
@@ -136,7 +137,7 @@ class NhlApi
     end
 
     def current_season
-      get("/season").last
+      get("/season").last.to_s
     end
 
     def postseason?

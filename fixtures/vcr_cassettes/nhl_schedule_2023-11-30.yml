@@ -1,0 +1,60 @@
+---
+http_interactions:
+- request:
+    method: get
+    uri: https://api-web.nhle.com/v1/club-schedule/CAR/week/2023-11-30
+    body:
+      encoding: US-ASCII
+      string: ''
+    headers:
+      Accept-Encoding:
+      - gzip;q=1.0,deflate;q=0.6,identity;q=0.3
+      Accept:
+      - "*/*"
+      User-Agent:
+      - Ruby
+  response:
+    status:
+      code: 200
+      message: OK
+    headers:
+      Date:
+      - Tue, 01 Oct 2024 18:10:28 GMT
+      Content-Type:
+      - application/json
+      Content-Length:
+      - '6924'
+      Connection:
+      - keep-alive
+      Cache-Control:
+      - no-transform, max-age=1, s-maxage=1
+      Etag:
+      - W/"66fc3b16--gzip"
+      Vary:
+      - Accept-Encoding
+      Cf-Cache-Status:
+      - MISS
+      Accept-Ranges:
+      - bytes
+      Server:
+      - cloudflare
+      Cf-Ray:
+      - 8cbe68e0a9dc206a-IAD
+    body:
+      encoding: ASCII-8BIT
+      string: '{"previousStartDate":"2023-11-23","nextStartDate":"2023-12-07","calendarUrl":"https://nhl.ecal.com/hurricanes","clubTimezone":"US/Eastern","clubUTCOffset":"-04:00","games":[{"id":2023020341,"season":20232024,"gameType":2,"gameDate":"2023-11-30","venue":{"default":"PNC
+        Arena"},"neutralSite":false,"startTimeUTC":"2023-12-01T00:30:00Z","easternUTCOffset":"-05:00","venueUTCOffset":"-05:00","venueTimezone":"US/Eastern","gameState":"OFF","gameScheduleState":"OK","tvBroadcasts":[{"id":329,"market":"N","countryCode":"US","network":"ESPN+","sequenceNumber":6},{"id":391,"market":"N","countryCode":"US","network":"HULU","sequenceNumber":7}],"awayTeam":{"id":2,"placeName":{"default":"New
+        York"},"placeNameWithPreposition":{"default":"New York","fr":"de New York"},"abbrev":"NYI","logo":"https://assets.nhle.com/logos/nhl/svg/NYI_light.svg","darkLogo":"https://assets.nhle.com/logos/nhl/svg/NYI_dark.svg","awaySplitSquad":false,"score":5},"homeTeam":{"id":12,"placeName":{"default":"Carolina","fr":"Caroline"},"placeNameWithPreposition":{"default":"Carolina","fr":"de
+        la Caroline"},"abbrev":"CAR","logo":"https://assets.nhle.com/logos/nhl/svg/CAR_light.svg","darkLogo":"https://assets.nhle.com/logos/nhl/svg/CAR_dark.svg","homeSplitSquad":false,"score":4},"periodDescriptor":{"number":4,"periodType":"OT","maxRegulationPeriods":3},"gameOutcome":{"lastPeriodType":"OT"},"winningGoalie":{"playerId":8473575,"firstInitial":{"default":"S."},"lastName":{"default":"Varlamov"}},"winningGoalScorer":{"playerId":8478445,"firstInitial":{"default":"M."},"lastName":{"default":"Barzal"}},"threeMinRecap":"/video/recap-islanders-at-hurricanes-11-30-23-6342131736112","gameCenterLink":"/gamecenter/nyi-vs-car/2023/11/30/2023020341"},{"id":2023020360,"season":20232024,"gameType":2,"gameDate":"2023-12-02","venue":{"default":"PNC
+        Arena"},"neutralSite":false,"startTimeUTC":"2023-12-03T00:00:00Z","easternUTCOffset":"-05:00","venueUTCOffset":"-05:00","venueTimezone":"US/Eastern","gameState":"OFF","gameScheduleState":"OK","tvBroadcasts":[{"id":375,"market":"H","countryCode":"US","network":"BSSO","sequenceNumber":70},{"id":28,"market":"A","countryCode":"US","network":"MSG-B","sequenceNumber":62}],"awayTeam":{"id":7,"placeName":{"default":"Buffalo"},"placeNameWithPreposition":{"default":"Buffalo","fr":"de
+        Buffalo"},"abbrev":"BUF","logo":"https://assets.nhle.com/logos/nhl/svg/BUF_light.svg","darkLogo":"https://assets.nhle.com/logos/nhl/svg/BUF_dark.svg","awaySplitSquad":false,"score":2},"homeTeam":{"id":12,"placeName":{"default":"Carolina","fr":"Caroline"},"placeNameWithPreposition":{"default":"Carolina","fr":"de
+        la Caroline"},"abbrev":"CAR","logo":"https://assets.nhle.com/logos/nhl/svg/CAR_light.svg","darkLogo":"https://assets.nhle.com/logos/nhl/svg/CAR_dark.svg","homeSplitSquad":false,"score":6},"periodDescriptor":{"number":3,"periodType":"REG","maxRegulationPeriods":3},"gameOutcome":{"lastPeriodType":"REG"},"winningGoalie":{"playerId":8481611,"firstInitial":{"default":"P."},"lastName":{"default":"Kochetkov"}},"winningGoalScorer":{"playerId":8478427,"firstInitial":{"default":"S."},"lastName":{"default":"Aho"}},"threeMinRecap":"/video/recap-sabres-at-hurricanes-12-2-23-6342271817112","gameCenterLink":"/gamecenter/buf-vs-car/2023/12/02/2023020360"},{"id":2023020377,"season":20232024,"gameType":2,"gameDate":"2023-12-04","venue":{"default":"Canada
+        Life Centre"},"neutralSite":false,"startTimeUTC":"2023-12-05T00:30:00Z","easternUTCOffset":"-05:00","venueUTCOffset":"-06:00","venueTimezone":"America/Winnipeg","gameState":"OFF","gameScheduleState":"OK","tvBroadcasts":[{"id":289,"market":"N","countryCode":"CA","network":"SNW","sequenceNumber":34},{"id":375,"market":"A","countryCode":"US","network":"BSSO","sequenceNumber":70}],"awayTeam":{"id":12,"placeName":{"default":"Carolina","fr":"Caroline"},"placeNameWithPreposition":{"default":"Carolina","fr":"de
+        la Caroline"},"abbrev":"CAR","logo":"https://assets.nhle.com/logos/nhl/svg/CAR_light.svg","darkLogo":"https://assets.nhle.com/logos/nhl/svg/CAR_dark.svg","awaySplitSquad":false,"score":1},"homeTeam":{"id":52,"placeName":{"default":"Winnipeg"},"placeNameWithPreposition":{"default":"Winnipeg","fr":"de
+        Winnipeg"},"abbrev":"WPG","logo":"https://assets.nhle.com/logos/nhl/svg/WPG_light.svg","darkLogo":"https://assets.nhle.com/logos/nhl/svg/WPG_dark.svg","homeSplitSquad":false,"score":2},"periodDescriptor":{"number":3,"periodType":"REG","maxRegulationPeriods":3},"gameOutcome":{"lastPeriodType":"REG"},"winningGoalie":{"playerId":8476316,"firstInitial":{"default":"L."},"lastName":{"default":"Brossoit"}},"winningGoalScorer":{"playerId":8477940,"firstInitial":{"default":"N."},"lastName":{"default":"Ehlers"}},"threeMinRecap":"/video/recap-hurricanes-at-jets-12-4-23-6342369587112","gameCenterLink":"/gamecenter/car-vs-wpg/2023/12/04/2023020377"},{"id":2023020391,"season":20232024,"gameType":2,"gameDate":"2023-12-06","venue":{"default":"Rogers
+        Place"},"neutralSite":false,"startTimeUTC":"2023-12-07T02:30:00Z","easternUTCOffset":"-05:00","venueUTCOffset":"-07:00","venueTimezone":"America/Edmonton","gameState":"OFF","gameScheduleState":"OK","tvBroadcasts":[{"id":385,"market":"N","countryCode":"US","network":"TNT","sequenceNumber":2},{"id":519,"market":"N","countryCode":"US","network":"MAX","sequenceNumber":8},{"id":282,"market":"N","countryCode":"CA","network":"SN","sequenceNumber":101},{"id":284,"market":"N","countryCode":"CA","network":"SN1","sequenceNumber":102},{"id":281,"market":"N","countryCode":"CA","network":"TVAS","sequenceNumber":109}],"awayTeam":{"id":12,"placeName":{"default":"Carolina","fr":"Caroline"},"placeNameWithPreposition":{"default":"Carolina","fr":"de
+        la Caroline"},"abbrev":"CAR","logo":"https://assets.nhle.com/logos/nhl/svg/CAR_light.svg","darkLogo":"https://assets.nhle.com/logos/nhl/svg/CAR_dark.svg","awaySplitSquad":false,"score":1},"homeTeam":{"id":22,"placeName":{"default":"Edmonton"},"placeNameWithPreposition":{"default":"Edmonton","fr":"d''Edmonton"},"abbrev":"EDM","logo":"https://assets.nhle.com/logos/nhl/svg/EDM_light.svg","darkLogo":"https://assets.nhle.com/logos/nhl/svg/EDM_dark.svg","homeSplitSquad":false,"airlineLink":"https://www.aircanada.com/ca/en/aco/home.html","airlineDesc":"AIR
+        CANADA FLIGHTS","hotelLink":"https://edmontonsbesthotels.com/hoteldeals?utm_source&#x3D;referral&amp;utm_medium&#x3D;social_media&amp;utm_campaign&#x3D;explore_edmonton_Q42022&amp;utm_content&#x3D;content_creator","hotelDesc":"HOTEL
+        DEALS IN EDMONTON","score":6},"periodDescriptor":{"number":3,"periodType":"REG","maxRegulationPeriods":3},"gameOutcome":{"lastPeriodType":"REG"},"winningGoalie":{"playerId":8479973,"firstInitial":{"default":"S."},"lastName":{"default":"Skinner"}},"winningGoalScorer":{"playerId":8475218,"firstInitial":{"default":"M."},"lastName":{"default":"Ekholm"}},"threeMinRecap":"/video/recap-hurricanes-at-oilers-12-6-23-6342507792112","gameCenterLink":"/gamecenter/car-vs-edm/2023/12/06/2023020391"}]}'
+  recorded_at: Tue, 01 Oct 2024 18:10:28 GMT
+recorded_with: VCR 6.3.1
