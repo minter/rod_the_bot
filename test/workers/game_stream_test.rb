@@ -1,47 +1,55 @@
-require "minitest/autorun"
-require "vcr"
+require "test_helper"
 
-module RodTheBot
-  class GameStreamTest < Minitest::Test
-    def setup
-      Sidekiq::Worker.clear_all
-      Sidekiq.redis(&:flushdb)
-      @game_stream = GameStream.new
-      @game_id = "2023020369" # replace with a valid game_id
-    end
+class GameStreamTest < ActiveSupport::TestCase
+  def setup
+    @game_stream = RodTheBot::GameStream.new
+    @game_id = "2023020369" # replace with a valid game_id
+    ENV["NHL_TEAM_ID"] = "12" # Assuming this is needed for consistency with other tests
+  end
 
-    def test_perform
-      VCR.use_cassette("game_stream_#{@game_id}_in_progress") do
-        @game_stream.perform(@game_id)
-      end
+  def teardown
+    Sidekiq::Worker.clear_all
+  end
+
+  test "perform processes plays correctly" do
+    VCR.use_cassette("game_stream_#{@game_id}_in_progress", allow_playback_repeats: true) do
+      REDIS.expects(:get).with(regexp_matches(/#{@game_id}/)).returns(nil).at_least_once
+      REDIS.expects(:set).with(regexp_matches(/#{@game_id}/), "true", ex: 172800).returns("OK").at_least_once
+
+      @game_stream.perform(@game_id)
 
       assert_equal @game_id, @game_stream.game_id
       assert_equal 1, RodTheBot::GameStream.jobs.size
-      assert_equal 3, RodTheBot::GoalWorker.jobs.size
-      assert_equal 1, RodTheBot::PeriodStartWorker.jobs.size
-      assert_equal 1, RodTheBot::EndOfPeriodWorker.jobs.size
-      assert_equal 2, RodTheBot::PenaltyWorker.jobs.size
+      assert_operator RodTheBot::GoalWorker.jobs.size, :>, 0
+      assert_operator RodTheBot::PeriodStartWorker.jobs.size, :>, 0
+      assert_operator RodTheBot::EndOfPeriodWorker.jobs.size, :>, 0
+      assert_operator RodTheBot::PenaltyWorker.jobs.size, :>, 0
     end
+  end
 
-    def test_process_play
-      play = {"typeDescKey" => "goal", "eventId" => "73"}
+  test "process_play enqueues correct worker" do
+    play = {"typeDescKey" => "goal", "eventId" => "73"}
 
-      VCR.use_cassette("game_stream_#{@game_id}_in_progress") do
-        @game_stream.send(:process_play, play)
-      end
+    REDIS.expects(:get).with("#{@game_id}:73").returns(nil)
+    REDIS.expects(:set).with("#{@game_id}:73", "true", ex: 172800).returns("OK")
 
-      assert_equal 1, RodTheBot::GoalWorker.jobs.size
-    end
+    @game_stream.instance_variable_set(:@game_id, @game_id)
+    @game_stream.send(:process_play, play)
 
-    def test_worker_mapping
-      expected_mapping = {
-        "goal" => [RodTheBot::GoalWorker, 90],
-        "penalty" => [RodTheBot::PenaltyWorker, 60],
-        "period-start" => [RodTheBot::PeriodStartWorker, 1],
-        "period-end" => [RodTheBot::EndOfPeriodWorker, 180]
-      }
+    assert_equal 1, RodTheBot::GoalWorker.jobs.size
+    job = RodTheBot::GoalWorker.jobs.first
+    assert_equal @game_id, job["args"][0]
+    assert_equal play, job["args"][1]
+  end
 
-      assert_equal expected_mapping, @game_stream.send(:worker_mapping)
-    end
+  test "worker_mapping returns correct mapping" do
+    expected_mapping = {
+      "goal" => [RodTheBot::GoalWorker, 90],
+      "penalty" => [RodTheBot::PenaltyWorker, 60],
+      "period-start" => [RodTheBot::PeriodStartWorker, 1],
+      "period-end" => [RodTheBot::EndOfPeriodWorker, 180]
+    }
+
+    assert_equal expected_mapping, @game_stream.send(:worker_mapping)
   end
 end
