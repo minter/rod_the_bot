@@ -1,6 +1,6 @@
 require "test_helper"
 
-class ThreeStarsWorkerTest < ActiveSupport::TestCase
+class RodTheBot::ThreeStarsWorkerTest < ActiveSupport::TestCase
   def setup
     @worker = RodTheBot::ThreeStarsWorker.new
     VCR.configure do |config|

@@ -2,7 +2,7 @@ require "test_helper"
 require "vcr"
 require "sidekiq/testing"
 
-class PenaltyWorkerTest < ActiveSupport::TestCase
+class RodTheBot::PenaltyWorkerTest < ActiveSupport::TestCase
   def setup
     @worker = RodTheBot::PenaltyWorker.new
     ENV["NHL_TEAM_ID"] = "12"  # Assuming this is the Carolina Hurricanes

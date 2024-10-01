@@ -1,7 +1,7 @@
 require "test_helper"
 require "timecop"
 
-class SchedulerTest < Minitest::Test
+class RodTheBot::SchedulerTest < Minitest::Test
   def setup
     Sidekiq::Worker.clear_all
     @worker = RodTheBot::Scheduler.new

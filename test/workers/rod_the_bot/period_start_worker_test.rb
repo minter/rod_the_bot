@@ -1,7 +1,7 @@
 require "test_helper"
 require "vcr"
 
-class PeriodStartWorkerTest < ActiveSupport::TestCase
+class RodTheBot::PeriodStartWorkerTest < ActiveSupport::TestCase
   def setup
     @worker = RodTheBot::PeriodStartWorker.new
   end

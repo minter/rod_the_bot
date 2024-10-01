@@ -1,6 +1,6 @@
 require "test_helper"
 
-class FinalScoreWorkerTest < ActiveSupport::TestCase
+class RodTheBot::FinalScoreWorkerTest < ActiveSupport::TestCase
   def setup
     ENV["NHL_TEAM_ID"] = "12"
     ENV["WIN_CELEBRATION"] = "Canes Win"

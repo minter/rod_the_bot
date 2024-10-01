@@ -1,6 +1,6 @@
 require "test_helper"
 
-class PostTest < ActiveSupport::TestCase
+class RodTheBot::PostTest < ActiveSupport::TestCase
   def setup
     @post = RodTheBot::Post.new
     @bsky = mock("bsky")

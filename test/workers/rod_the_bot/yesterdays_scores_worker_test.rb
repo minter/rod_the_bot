@@ -1,6 +1,6 @@
 require "test_helper"
 
-class YesterdaysScoresWorkerTest < ActiveSupport::TestCase
+class RodTheBot::YesterdaysScoresWorkerTest < ActiveSupport::TestCase
   def setup
     Time.zone = TZInfo::Timezone.get(ENV["TIME_ZONE"])
     @worker = RodTheBot::YesterdaysScoresWorker.new

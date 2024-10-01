@@ -1,6 +1,6 @@
 require "test_helper"
 
-class GameStreamTest < ActiveSupport::TestCase
+class RodTheBot::GameStreamTest < ActiveSupport::TestCase
   def setup
     @game_stream = RodTheBot::GameStream.new
     @game_id = "2023020369" # replace with a valid game_id

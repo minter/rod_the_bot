@@ -6,7 +6,7 @@ VCR.configure do |config|
   config.hook_into :webmock
 end
 
-class EndOfPeriodWorkerTest < Minitest::Test
+class RodTheBot::EndOfPeriodWorkerTest < Minitest::Test
   def setup
     Sidekiq::Worker.clear_all
     @end_of_period_worker = RodTheBot::EndOfPeriodWorker.new

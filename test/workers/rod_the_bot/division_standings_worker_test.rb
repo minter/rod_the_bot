@@ -5,7 +5,7 @@ VCR.configure do |config|
   config.hook_into :webmock
 end
 
-class DivisionStandingsWorkerTest < Minitest::Test
+class RodTheBot::DivisionStandingsWorkerTest < Minitest::Test
   def setup
     ENV["NHL_TEAM_ABBREVIATION"] = "CAR"
     Sidekiq::Worker.clear_all

@@ -1,6 +1,6 @@
 require "test_helper"
 
-class GameStartWorkerTest < ActiveSupport::TestCase
+class RodTheBot::GameStartWorkerTest < ActiveSupport::TestCase
   def setup
     @game_start_worker = RodTheBot::GameStartWorker.new
     @game_id = "2023030246"
