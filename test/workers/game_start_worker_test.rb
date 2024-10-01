@@ -1,88 +1,78 @@
 require "test_helper"
-require "vcr"
 
-VCR.configure do |config|
-  config.cassette_library_dir = "fixtures/vcr_cassettes"
-  config.hook_into :webmock
-end
-
-class GameStartWorkerTest < Minitest::Test
+class GameStartWorkerTest < ActiveSupport::TestCase
   def setup
     @game_start_worker = RodTheBot::GameStartWorker.new
     @game_id = "2023030246"
   end
 
-  def test_find_starting_goalie_home
-    skip("Not currently working")
-    # VCR.use_cassette("nhl_game_#{@game_id}_gamecenter_pbp_game_start") do
-    feed = HTTParty.get("https://api-web.nhle.com/v1/gamecenter/#{@game_id}/play-by-play")
-    @game_start_worker.instance_variable_set(:@feed, feed)
-    goalie = @game_start_worker.send(:find_starting_goalie, feed["homeTeam"])
+  test "find_starting_goalie" do
+    VCR.use_cassette("nhl_game_#{@game_id}_gamecenter_pbp_game_start") do
+      feed = NhlApi.fetch_pbp_feed(@game_id)
+      @game_start_worker.instance_variable_set(:@feed, feed)
+      goalie = @game_start_worker.send(:find_starting_goalie, "homeTeam")
 
-    assert_equal "G", goalie[:position]
-    assert_equal "Stuart Skinner", goalie[:name]
-    # end
-  end
-
-  def test_find_home_goalie_record
-    skip("Not currently working")
-    # VCR.use_cassette("nhl_player_8479973_landing") do
-    player_id = "8479973"
-    record = @game_start_worker.send(:find_goalie_record, player_id)
-
-    assert_match(/\(\d+-\d+-\d+, \d+\.\d+ GAA, \d+\.\d+ SV%\)/, record)
-    assert_equal "(10-3-1, 2.02 GAA, 0.931 SV%)", record
-    # end
-  end
-
-  def test_find_away_goalie_record
-    skip("Not currently working")
-    # VCR.use_cassette("nhl_player_8481668_landing") do
-    player_id = "8481668"
-    record = @game_start_worker.send(:find_goalie_record, player_id)
-
-    assert_match(/\(\d+-\d+-\d+, \d+\.\d+ GAA, \d+\.\d+ SV%\)/, record)
-    assert_equal "(4-2-0, 2.51 GAA, 0.926 SV%)", record
-    # end
-  end
-
-  def test_find_officials
-    skip("Not currently working")
-    VCR.use_cassette("nhl_game_#{@game_id}_gamecenter_landing") do
-      officials = @game_start_worker.send(:find_officials, @game_id)
-
-      assert_equal 2, officials[:referees].size
-      assert_equal 2, officials[:lines].size
+      assert_not_nil goalie
+      assert_equal "S. Skinner", goalie["name"]["default"]
     end
   end
 
-  def test_post
-    skip("Not currently working")
-    VCR.insert_cassette("nhl_game_#{@game_id}_gamecenter_pbp_game_start")
-    VCR.insert_cassette("nhl_game_#{@game_id}_gamecenter_landing")
-    VCR.insert_cassette("nhl_player_8479973_landing")
-    VCR.insert_cassette("nhl_player_8481668_landing")
-    @feed = HTTParty.get("https://api-web.nhle.com/v1/gamecenter/#{@game_id}/play-by-play")
-    home_goalie = @game_start_worker.send(:find_starting_goalie, @feed["homeTeam"])
-    away_goalie = @game_start_worker.send(:find_starting_goalie, @feed["awayTeam"])
-    home_goalie_record = @game_start_worker.send(:find_goalie_record, home_goalie[:id])
-    away_goalie_record = @game_start_worker.send(:find_goalie_record, away_goalie[:id])
-    officials = @game_start_worker.send(:find_officials, @game_id)
-    post = @game_start_worker.send(:format_post, @feed, home_goalie, away_goalie, officials, home_goalie_record, away_goalie_record)
-    expected_output = <<~POST
-      🚦 It's puck drop at Rogers Place for Canucks at Oilers!
+  test "find_goalie_record" do
+    VCR.use_cassette("nhl_player_8479973_landing") do
+      player_id = "8479973"
+      feed = NhlApi.fetch_pbp_feed(@game_id)
+      @game_start_worker.instance_variable_set(:@feed, feed)
+      record = @game_start_worker.send(:find_goalie_record, player_id)
 
-      Starting Goalies:
-      EDM: #74 S. Skinner (5-3-0, 3.22 GAA, 0.877 SV%)
-      VAN: #31 A. Silovs (5-3-0, 2.62 GAA, 0.907 SV%)
-      
-      Refs: Garrett Rank, Jean Hebert
-      Lines: Shandor Alphonso, Jonny Murray
-    POST
-    assert_equal expected_output, post
-    VCR.eject_cassette(name: "nhl_game_#{@game_id}_gamecenter_pbp")
-    VCR.eject_cassette(name: "nhl_game_#{@game_id}_gamecenter_landing")
-    VCR.eject_cassette(name: "nhl_player_8479973_landing")
-    VCR.eject_cassette(name: "nhl_player_8481668_landing")
+      assert_match(/\(\d+-\d+-\d+, \d+\.\d+ GAA, \d+\.\d+ SV%\)/, record)
+    end
+  end
+
+  test "format_post" do
+    VCR.use_cassette("nhl_game_#{@game_id}_gamecenter_pbp_game_start") do
+      feed = NhlApi.fetch_pbp_feed(@game_id)
+      officials = {referees: ["Garrett Rank", "Jean Hebert"], linesmen: ["Shandor Alphonso", "Jonny Murray"]}
+      home_goalie = {"sweaterNumber" => "74", "name" => {"default" => "S. Skinner"}}
+      away_goalie = {"sweaterNumber" => "31", "name" => {"default" => "A. Silovs"}}
+      home_goalie_record = "(5-3-0, 3.22 GAA, 0.877 SV%)"
+      away_goalie_record = "(5-3-0, 2.62 GAA, 0.907 SV%)"
+
+      post = @game_start_worker.send(:format_post, feed, officials, home_goalie, home_goalie_record, away_goalie, away_goalie_record)
+
+      assert_match(/🚦 It's puck drop at .+ for .+ at .+!/, post)
+      assert_match(/Starting Goalies:/, post)
+      assert_match(/EDM: #74 S. Skinner \(5-3-0, 3.22 GAA, 0.877 SV%\)/, post)
+      assert_match(/VAN: #31 A. Silovs \(5-3-0, 2.62 GAA, 0.907 SV%\)/, post)
+      assert_match(/Referees: Garrett Rank, Jean Hebert/, post)
+      assert_match(/Lines: Shandor Alphonso, Jonny Murray/, post)
+    end
+  end
+
+  test "perform" do
+    VCR.use_cassette("nhl_game_#{@game_id}_game_start_worker_perform") do
+      NhlApi.expects(:fetch_pbp_feed).returns({
+        "summary" => {
+          "iceSurface" => {
+            "homeTeam" => {"goalies" => [{"playerId" => "123", "name" => {"default" => "Home Goalie"}}]},
+            "awayTeam" => {"goalies" => [{"playerId" => "456", "name" => {"default" => "Away Goalie"}}]}
+          }
+        },
+        "gameType" => 2,
+        "venue" => {"default" => "Test Arena"},
+        "homeTeam" => {"name" => {"default" => "Home Team"}, "abbrev" => "HOME"},
+        "awayTeam" => {"name" => {"default" => "Away Team"}, "abbrev" => "AWAY"}
+      })
+      NhlApi.expects(:officials).returns({referees: ["Ref1", "Ref2"], linesmen: ["Lines1", "Lines2"]})
+      NhlApi.expects(:fetch_player_landing_feed).twice.returns({
+        "featuredStats" => {
+          "regularSeason" => {
+            "subSeason" => {"wins" => 10, "losses" => 5, "otLosses" => 2, "goalsAgainstAvg" => 2.5, "savePctg" => 0.915}
+          }
+        }
+      })
+      RodTheBot::Post.expects(:perform_async).once
+
+      @game_start_worker.perform(@game_id)
+    end
   end
 end
