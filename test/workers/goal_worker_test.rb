@@ -17,7 +17,7 @@ class GoalWorkerTest < Minitest::Test
     @game_id = "2023020702"
     @play_id = "157"
     VCR.use_cassette("nhl_game_#{@game_id}_goal_play_#{@play_id}", allow_playback_repeats: true) do
-      feed = HTTParty.get("https://api-web.nhle.com/v1/gamecenter/#{@game_id}/play-by-play")
+      feed = NhlApi.fetch_pbp_feed(@game_id)
       play = feed["plays"].find { |play| play["eventId"].to_i == @play_id.to_i }
 
       @goal_worker.perform(@game_id, play)
@@ -42,7 +42,7 @@ class GoalWorkerTest < Minitest::Test
     @game_id = "2023020702"
     @play_id = "159"
     VCR.use_cassette("nhl_game_#{@game_id}_goal_play_#{@play_id}", allow_playback_repeats: true) do
-      feed = HTTParty.get("https://api-web.nhle.com/v1/gamecenter/#{@game_id}/play-by-play")
+      feed = NhlApi.fetch_pbp_feed(@game_id)
       play = feed["plays"].find { |play| play["eventId"].to_i == @play_id.to_i }
 
       @goal_worker.perform(@game_id, play)
@@ -67,7 +67,7 @@ class GoalWorkerTest < Minitest::Test
     @game_id = "2023020702"
     @play_id = "390"
     VCR.use_cassette("nhl_game_#{@game_id}_goal_play_#{@play_id}", allow_playback_repeats: true) do
-      feed = HTTParty.get("https://api-web.nhle.com/v1/gamecenter/#{@game_id}/play-by-play")
+      feed = NhlApi.fetch_pbp_feed(@game_id)
       play = feed["plays"].find { |play| play["eventId"].to_i == @play_id.to_i }
 
       @goal_worker.perform(@game_id, play)
@@ -92,7 +92,7 @@ class GoalWorkerTest < Minitest::Test
     @game_id = "2023020360"
     @play_id = "739"
     VCR.use_cassette("nhl_game_#{@game_id}_goal_play_#{@play_id}", allow_playback_repeats: true) do
-      feed = HTTParty.get("https://api-web.nhle.com/v1/gamecenter/#{@game_id}/play-by-play")
+      feed = NhlApi.fetch_pbp_feed(@game_id)
       play = feed["plays"].find { |play| play["eventId"].to_i == @play_id.to_i }
 
       @goal_worker.perform(@game_id, play)
@@ -116,7 +116,7 @@ class GoalWorkerTest < Minitest::Test
     @game_id = "2023020702"
     @play_id = "859"
     VCR.use_cassette("nhl_game_#{@game_id}_goal_play_#{@play_id}", allow_playback_repeats: true) do
-      feed = HTTParty.get("https://api-web.nhle.com/v1/gamecenter/#{@game_id}/play-by-play")
+      feed = NhlApi.fetch_pbp_feed(@game_id)
       play = feed["plays"].find { |play| play["eventId"].to_i == @play_id.to_i }
 
       @goal_worker.perform(@game_id, play)
@@ -141,7 +141,7 @@ class GoalWorkerTest < Minitest::Test
     @game_id = "2023020542"
     @play_id = "92"
     VCR.use_cassette("nhl_game_#{@game_id}_goal_play_#{@play_id}", allow_playback_repeats: true) do
-      feed = HTTParty.get("https://api-web.nhle.com/v1/gamecenter/#{@game_id}/play-by-play")
+      feed = NhlApi.fetch_pbp_feed(@game_id)
       play = feed["plays"].find { |play| play["eventId"].to_i == @play_id.to_i }
 
       @goal_worker.perform(@game_id, play)
@@ -159,19 +159,6 @@ class GoalWorkerTest < Minitest::Test
         MTL 3 - CAR 5
       POST
       assert_equal expected_output, RodTheBot::Post.jobs.first["args"].first
-    end
-  end
-
-  def test_build_players
-    @game_id = "2023020702"
-    @play_id = "157"
-    VCR.use_cassette("nhl_game_#{@game_id}_goal_play_#{@play_id}") do
-      feed = HTTParty.get("https://api-web.nhle.com/v1/gamecenter/#{@game_id}/play-by-play")
-      players = @goal_worker.send(:build_players, feed)
-
-      assert players.any?
-      assert_equal players.first, [8470613, {team_id: 12, number: 8, name: "Brent Burns"}]
-      assert players.values.all? { |player| player[:team_id] && player[:number] && player[:name] }
     end
   end
 end
