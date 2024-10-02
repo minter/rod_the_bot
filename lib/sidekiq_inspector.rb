@@ -78,6 +78,35 @@ module SidekiqInspector
       end
     end
 
+    def recurring_jobs
+      if defined?(Sidekiq::Scheduler)
+        config_file = Rails.root.join("config", "sidekiq.yml")
+        if File.exist?(config_file)
+          yaml_content = YAML.load_file(config_file)
+          schedule = yaml_content.dig(:scheduler, :schedule)
+          if schedule.nil? || schedule.empty?
+            "No recurring jobs found in config/sidekiq.yml. Make sure you have defined some in the :scheduler::schedule section."
+          else
+            schedule.map do |name, config|
+              {
+                name: name,
+                class: config["class"],
+                cron: config["cron"],
+                every: config["every"],
+                args: config["args"],
+                queue: config["queue"],
+                description: config["description"]
+              }
+            end
+          end
+        else
+          "Sidekiq configuration file (config/sidekiq.yml) not found."
+        end
+      else
+        "Sidekiq::Scheduler is not available. Make sure sidekiq-scheduler is installed and configured."
+      end
+    end
+
     private
 
     def find_job(jid)
