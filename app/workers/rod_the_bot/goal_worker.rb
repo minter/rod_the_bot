@@ -34,49 +34,85 @@ module RodTheBot
       end
 
       period_name = format_period_name(@play["periodDescriptor"]["number"])
-
       modifiers = modifiers(@play["situationCode"].to_s, players[@play["details"]["scoringPlayerId"]][:team_id], home["id"], away["id"])
 
-      post = if players[@play["details"]["scoringPlayerId"]][:team_id] == ENV["NHL_TEAM_ID"].to_i
-        "🎉 #{@your_team["name"]["default"]}#{modifiers} GOOOOOOOAL!\n\n"
-      else
-        "👎 #{@their_team["name"]["default"]}#{modifiers} Goal\n\n"
-      end
+      scoring_team = (players[@play["details"]["scoringPlayerId"]][:team_id] == ENV["NHL_TEAM_ID"].to_i) ? @your_team : @their_team
 
-      post += "🚨 #{players[@play["details"]["scoringPlayerId"]][:name]} (#{@play["details"]["scoringPlayerTotal"]})\n"
+      post = build_post(
+        scoring_team: scoring_team,
+        modifiers: modifiers,
+        players: players,
+        play: @play,
+        period_name: period_name,
+        away: away,
+        home: home
+      )
 
-      post += if @play["details"]["assist1PlayerId"].present?
-        "🍎 #{players[@play["details"]["assist1PlayerId"]][:name]} (#{@play["details"]["assist1PlayerTotal"]})\n"
-      else
-        "🍎 Unassisted\n"
-      end
-      post += "🍎🍎 #{players[@play["details"]["assist2PlayerId"]][:name]} (#{@play["details"]["assist2PlayerTotal"]})\n" if @play["details"]["assist2PlayerId"].present?
-
-      post += "⏱️  #{@play["timeInPeriod"]} #{period_name}\n\n"
-      post += "#{away["abbrev"]} #{@play["details"]["awayScore"]} - #{home["abbrev"]} #{@play["details"]["homeScore"]}\n"
       RodTheBot::Post.perform_async(post, "#{game_id}:#{@play_id}")
       RodTheBot::ScoringChangeWorker.perform_in(600, game_id, play["eventId"], original_play)
-      RodTheBot::GoalHighlightWorker.perform_in(10, game_id, play["eventId"]) if players[@play["details"]["scoringPlayerId"]][:team_id] == ENV["NHL_TEAM_ID"].to_i
+      RodTheBot::GoalHighlightWorker.perform_in(10, game_id, play["eventId"]) if scoring_team == @your_team
+    end
+
+    def build_post(scoring_team:, modifiers:, players:, play:, period_name:, away:, home:)
+      [
+        goal_header(scoring_team, modifiers),
+        "",
+        goal_details(players, play),
+        time_and_score(play, period_name, away, home),
+        ""  # Add an extra empty line at the end
+      ].join("\n")
+    end
+
+    def goal_header(scoring_team, modifiers)
+      if scoring_team == @your_team
+        "🎉 #{scoring_team["name"]["default"]}#{modifiers} GOOOOOOOAL!"
+      else
+        "👎 #{scoring_team["name"]["default"]}#{modifiers} Goal"
+      end
+    end
+
+    def goal_details(players, play)
+      details = []
+      details << "🚨 #{players[play["details"]["scoringPlayerId"]][:name]} (#{play["details"]["scoringPlayerTotal"]})"
+
+      details << if play["details"]["assist1PlayerId"].present?
+        "🍎 #{players[play["details"]["assist1PlayerId"]][:name]} (#{play["details"]["assist1PlayerTotal"]})"
+      else
+        "🍎 Unassisted"
+      end
+
+      if play["details"]["assist2PlayerId"].present?
+        details << "🍎🍎 #{players[play["details"]["assist2PlayerId"]][:name]} (#{play["details"]["assist2PlayerTotal"]})"
+      end
+
+      details.join("\n")
+    end
+
+    def time_and_score(play, period_name, away, home)
+      [
+        "⏱️  #{play["timeInPeriod"]} #{period_name}",
+        "",
+        "#{away["abbrev"]} #{play["details"]["awayScore"]} - #{home["abbrev"]} #{play["details"]["homeScore"]}"
+      ].join("\n")
     end
 
     def modifiers(situation_code, scoring_team_id, home_id, away_id)
-      away_goalies = situation_code[0].to_i
-      away_skaters = situation_code[1].to_i
-      home_skaters = situation_code[2].to_i
-      home_goalies = situation_code[3].to_i
+      away_goalies, away_skaters, home_skaters, home_goalies = situation_code.chars.map(&:to_i)
       away_players = away_goalies + away_skaters
       home_players = home_goalies + home_skaters
-      modifiers = []
 
-      if scoring_team_id == home_id
-        modifiers << "Shorthanded" if away_players > home_players
-        modifiers << "Power Play" if away_players < home_players
-        modifiers << "Empty Net" if away_goalies == 0
-      else
-        modifiers << "Shorthanded" if home_players > away_players
-        modifiers << "Power Play" if home_players < away_players
-        modifiers << "Empty Net" if home_goalies == 0
-      end
+      scoring_team_players, opposing_team_players, opposing_team_goalies =
+        if scoring_team_id == home_id
+          [home_players, away_players, away_goalies]
+        else
+          [away_players, home_players, home_goalies]
+        end
+
+      modifiers = []
+      modifiers << "Shorthanded" if scoring_team_players < opposing_team_players
+      modifiers << "Power Play" if scoring_team_players > opposing_team_players
+      modifiers << "Empty Net" if opposing_team_goalies == 0
+
       modifiers.empty? ? "" : " " + modifiers.join(", ")
     end
   end
