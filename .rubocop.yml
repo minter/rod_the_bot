@@ -29,9 +29,6 @@ Style/Documentation:
 Metrics/ModuleLength:
   Enabled: false
 
-Style/FrozenStringLiteralComment:
-  Enabled: false
-
 Metrics/MethodLength:
   Enabled: false
 
