@@ -37,26 +37,21 @@ module RodTheBot
     end
 
     def format_post(landing_play)
-      scorer_first_name = landing_play["firstName"]["default"]
-      scorer_last_name = landing_play["lastName"]["default"]
-      scorer_full_name = "#{scorer_first_name} #{scorer_last_name}"
+      scorer_full_name = "#{landing_play["firstName"]["default"]} #{landing_play["lastName"]["default"]}"
       team = landing_play["teamAbbrev"]["default"]
       time = landing_play["timeInPeriod"]
-      away_score = landing_play["awayScore"]
-      home_score = landing_play["homeScore"]
       shot_type = landing_play["shotType"]
       period_name = format_period_name(@pbp_play["periodDescriptor"]["number"])
 
-      assists = landing_play["assists"].map do |a|
-        "#{a["firstName"]["default"]} #{a["lastName"]["default"]}"
-      end.join(", ")
-
-      assist_text = assists.present? ? " Assisted by #{assists}." : ""
+      assists = landing_play["assists"].map { |a| "#{a["firstName"]["default"]} #{a["lastName"]["default"]}" }
+      assist_text = assists.empty? ? "" : " Assisted by #{assists.join(", ")}."
 
       away_team = @landing_feed["awayTeam"]["abbrev"]
       home_team = @landing_feed["homeTeam"]["abbrev"]
+      score = format("%s %d - %s %d", away_team, landing_play["awayScore"], home_team, landing_play["homeScore"])
 
-      "🎥 Goal highlight: #{scorer_full_name} (#{team}) scores on a #{shot_type} shot at #{time} of the #{period_name}.#{assist_text} Score: #{away_team} #{away_score} - #{home_team} #{home_score}"
+      "🎥 Goal highlight: #{scorer_full_name} (#{team}) scores on a #{shot_type} shot at #{time} of the #{period_name}." \
+      "#{assist_text} Score: #{score}"
     end
   end
 end
