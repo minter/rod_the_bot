@@ -9,14 +9,21 @@ module RodTheBot
       return if @bsky.nil?
       post = append_team_hashtags(post)
       reply_uri = REDIS.get(key) if key
-      if reply_uri
+
+      new_post = if reply_uri
         create_reply(reply_uri, post, embed_url: embed_url)
       else
-        new_post = create_post(post, embed_url: embed_url)
-        post_uri = new_post["uri"] if new_post
-        REDIS.set(key, post_uri, ex: 172800) if key && post_uri
+        Rails.logger.info "No existing post found for key: #{key}. Creating new post."
+        create_post(post, embed_url: embed_url)
       end
-      log_post(post)
+
+      if new_post && new_post["uri"]
+        post_uri = new_post["uri"]
+        REDIS.set(key, post_uri, ex: 172800) if key
+        log_post(post)
+      else
+        Rails.logger.error "Failed to create post or reply: #{post}"
+      end
     end
 
     private

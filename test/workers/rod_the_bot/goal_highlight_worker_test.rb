@@ -5,12 +5,14 @@ class RodTheBot::GoalHighlightWorkerTest < ActiveSupport::TestCase
 
   setup do
     @game_id = "2024010043"
+    @redis_key = "game:#{@game_id}:goal:157"
     VCR.use_cassette("nhl_api_#{@game_id}") do
       @pbp_feed = NhlApi.fetch_pbp_feed(@game_id)
       @landing_feed = NhlApi.fetch_landing_feed(@game_id)
     end
     @goal_play = @pbp_feed["plays"].find { |play| play["typeDescKey"] == "goal" }
     @play_id = @goal_play["eventId"]
+    Sidekiq::Worker.clear_all
   end
 
   teardown do
@@ -22,7 +24,7 @@ class RodTheBot::GoalHighlightWorkerTest < ActiveSupport::TestCase
       RodTheBot::Post.expects(:perform_async).once
 
       assert_no_enqueued_jobs(only: RodTheBot::GoalHighlightWorker) do
-        RodTheBot::GoalHighlightWorker.new.perform(@game_id, @play_id)
+        RodTheBot::GoalHighlightWorker.new.perform(@game_id, @play_id, @redis_key)
       end
     end
   end
@@ -48,17 +50,15 @@ class RodTheBot::GoalHighlightWorkerTest < ActiveSupport::TestCase
 
       # Run the worker
       worker = RodTheBot::GoalHighlightWorker.new
-      worker.perform(@game_id, @play_id)
 
-      # Check if the job was re-enqueued
-      jobs = Sidekiq::Worker.jobs
-      re_enqueued_job = jobs.find { |job| job["class"] == "RodTheBot::GoalHighlightWorker" && job["args"] == [@game_id, @play_id] }
-
-      if re_enqueued_job
-        assert_equal 30.seconds.from_now.to_i, re_enqueued_job["at"].to_i
-      else
-        flunk "Job was not re-enqueued. Jobs in queue: #{jobs.inspect}"
+      assert_difference -> { RodTheBot::GoalHighlightWorker.jobs.size }, 1 do
+        worker.perform(@game_id, @play_id, @redis_key)
       end
+
+      job = RodTheBot::GoalHighlightWorker.jobs.last
+      assert_equal [@game_id, @play_id, @redis_key], job["args"][0..2]
+      assert_in_delta Time.now.to_i, job["args"][3], 1
+      assert_in_delta 3.minutes.from_now.to_i, job["at"], 1
     end
   end
 
@@ -69,8 +69,8 @@ class RodTheBot::GoalHighlightWorkerTest < ActiveSupport::TestCase
 
       RodTheBot::Post.expects(:perform_async).never
 
-      assert_no_enqueued_jobs do
-        RodTheBot::GoalHighlightWorker.new.perform(@game_id, non_goal_play_id)
+      assert_no_difference -> { RodTheBot::GoalHighlightWorker.jobs.size } do
+        RodTheBot::GoalHighlightWorker.new.perform(@game_id, non_goal_play_id, @redis_key)
       end
     end
   end
@@ -94,9 +94,20 @@ class RodTheBot::GoalHighlightWorkerTest < ActiveSupport::TestCase
 
       expected_post += " Score: #{@landing_feed["awayTeam"]["abbrev"]} #{landing_play["awayScore"]} - #{@landing_feed["homeTeam"]["abbrev"]} #{landing_play["homeScore"]}"
 
-      RodTheBot::Post.expects(:perform_async).with(expected_post, "#{@game_id}:#{@play_id}", landing_play["highlightClipSharingUrl"])
+      RodTheBot::Post.expects(:perform_async).with(expected_post, @redis_key, landing_play["highlightClipSharingUrl"])
 
-      worker.perform(@game_id, @play_id)
+      worker.perform(@game_id, @play_id, @redis_key)
+    end
+  end
+
+  test "stops retrying after 6 hours" do
+    initial_run_time = 7.hours.ago.to_i
+
+    RodTheBot::Post.expects(:perform_async).never
+
+    assert_no_difference -> { RodTheBot::GoalHighlightWorker.jobs.size } do
+      worker = RodTheBot::GoalHighlightWorker.new
+      worker.perform(@game_id, @play_id, @redis_key, initial_run_time)
     end
   end
 end

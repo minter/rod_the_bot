@@ -48,9 +48,10 @@ module RodTheBot
         home: home
       )
 
-      RodTheBot::Post.perform_async(post, "#{game_id}:#{@play_id}")
-      RodTheBot::ScoringChangeWorker.perform_in(600, game_id, play["eventId"], original_play)
-      RodTheBot::GoalHighlightWorker.perform_in(10, game_id, play["eventId"]) if scoring_team == @your_team
+      redis_key = "game:#{game_id}:goal:#{@play_id}"
+      RodTheBot::Post.perform_async(post, redis_key)
+      RodTheBot::ScoringChangeWorker.perform_in(600, game_id, play["eventId"], original_play, redis_key)
+      RodTheBot::GoalHighlightWorker.perform_in(10, game_id, play["eventId"], redis_key) if scoring_team == @your_team
     end
 
     def build_post(scoring_team:, modifiers:, players:, play:, period_name:, away:, home:)

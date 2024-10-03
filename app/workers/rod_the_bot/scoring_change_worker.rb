@@ -4,7 +4,7 @@ module RodTheBot
     include ActiveSupport::Inflector
     include RodTheBot::PeriodFormatter
 
-    def perform(game_id, play_id, original_play)
+    def perform(game_id, play_id, original_play, redis_key)
       @feed = NhlApi.fetch_pbp_feed(game_id)
       @play = @feed["plays"].find { |play| play["eventId"].to_s == play_id.to_s }
       home = @feed["homeTeam"]
@@ -28,7 +28,7 @@ module RodTheBot
 
       post = format_post(scoring_team, period_name, players)
 
-      RodTheBot::Post.perform_async(post, "#{game_id}:#{play_id}")
+      RodTheBot::Post.perform_async(post, redis_key)
     end
 
     def build_players(feed)

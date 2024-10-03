@@ -12,6 +12,7 @@ class RodTheBot::ScoringChangeWorkerTest < ActiveSupport::TestCase
         "assist2PlayerId" => nil
       }
     }
+    @redis_key = "game:#{@game_id}:goal:#{@play_id}"
   end
 
   def test_perform_with_scoring_change
@@ -29,7 +30,7 @@ class RodTheBot::ScoringChangeWorkerTest < ActiveSupport::TestCase
 
       RodTheBot::Post.expects(:perform_async).once
 
-      @worker.perform(@game_id, @play_id, modified_original_play)
+      @worker.perform(@game_id, @play_id, modified_original_play, @redis_key)
     end
   end
 
@@ -41,7 +42,7 @@ class RodTheBot::ScoringChangeWorkerTest < ActiveSupport::TestCase
 
       RodTheBot::Post.expects(:perform_async).never
 
-      @worker.perform(@game_id, @play_id, actual_play)
+      @worker.perform(@game_id, @play_id, actual_play, @redis_key)
     end
   end
 
@@ -52,7 +53,7 @@ class RodTheBot::ScoringChangeWorkerTest < ActiveSupport::TestCase
 
       RodTheBot::Post.expects(:perform_async).never
 
-      @worker.perform(@game_id, non_goal_play["eventId"].to_s, @original_play)
+      @worker.perform(@game_id, non_goal_play["eventId"].to_s, @original_play, @redis_key)
     end
   end
 

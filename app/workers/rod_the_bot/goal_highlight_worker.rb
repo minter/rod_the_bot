@@ -4,7 +4,15 @@ module RodTheBot
     include ActiveSupport::Inflector
     include RodTheBot::PeriodFormatter
 
-    def perform(game_id, play_id)
+    def perform(game_id, play_id, redis_key, initial_run_time = nil)
+      initial_run_time ||= Time.now.to_i
+
+      # Check if 6 hours have passed since the initial run
+      if Time.now.to_i - initial_run_time > 6.hours.to_i
+        logger.info "Job for game_id: #{game_id}, play_id: #{play_id} exceeded 6 hours limit. Exiting."
+        return
+      end
+
       @pbp_feed = NhlApi.fetch_pbp_feed(game_id)
       @landing_feed = NhlApi.fetch_landing_feed(game_id)
       @pbp_play = NhlApi.fetch_play(game_id, play_id)
@@ -17,9 +25,9 @@ module RodTheBot
 
       if @landing_play["highlightClipSharingUrl"].present?
         post = format_post(@landing_play)
-        RodTheBot::Post.perform_async(post, "#{game_id}:#{play_id}", @landing_play["highlightClipSharingUrl"])
+        RodTheBot::Post.perform_async(post, redis_key, @landing_play["highlightClipSharingUrl"])
       else
-        RodTheBot::GoalHighlightWorker.perform_in(30.seconds, game_id, play_id)
+        self.class.perform_in(3.minutes, game_id, play_id, redis_key, initial_run_time)
       end
     end
 
