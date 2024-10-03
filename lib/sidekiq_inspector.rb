@@ -51,9 +51,20 @@ module SidekiqInspector
       end
     end
 
-    # Get Sidekiq stats as JSON
+    # Get Sidekiq stats in a readable format
     def stats
-      Sidekiq::Stats.new.to_json
+      stats = Sidekiq::Stats.new
+      {
+        processed: stats.processed,
+        failed: stats.failed,
+        scheduled_size: stats.scheduled_size,
+        retry_size: stats.retry_size,
+        dead_size: stats.dead_size,
+        processes_size: stats.processes_size,
+        default_queue_latency: stats.default_queue_latency,
+        workers_size: stats.workers_size,
+        enqueued: stats.enqueued
+      }
     end
 
     # Clear all Sidekiq queues, including retry, scheduled, and dead sets
@@ -138,6 +149,72 @@ module SidekiqInspector
       end
       puts "\nUsage: SidekiqInspector.command_name"
       puts "For methods that require arguments, use: SidekiqInspector.command_name(arg1, arg2, ...)"
+    end
+
+    # Inspect a specific queue by name
+    # @param queue_name [String] The name of the queue to inspect
+    def inspect_queue(queue_name)
+      queue = Sidekiq::Queue.new(queue_name)
+      {
+        name: queue.name,
+        size: queue.size,
+        latency: queue.latency.round(2),
+        jobs: queue.map do |job|
+          {
+            jid: job.jid,
+            class: job.klass,
+            args: job.args,
+            enqueued_at: job.enqueued_at
+          }
+        end
+      }
+    end
+
+    # Pause or unpause a specific queue
+    # @param queue_name [String] The name of the queue to pause or unpause
+    # @param pause [Boolean] True to pause, false to unpause
+    def toggle_queue_pause(queue_name, pause)
+      queue = Sidekiq::Queue.new(queue_name)
+      if pause
+        queue.pause!
+        "Queue #{queue_name} has been paused."
+      else
+        queue.unpause!
+        "Queue #{queue_name} has been unpaused."
+      end
+    end
+
+    # Search for jobs across all queues
+    # @param search_term [String] The term to search for in job class names or arguments
+    def search_jobs(search_term)
+      results = []
+      Sidekiq::Queue.all.each do |queue|
+        queue.each do |job|
+          if job.klass.downcase.include?(search_term.downcase) || job.args.to_s.downcase.include?(search_term.downcase)
+            results << {
+              queue: queue.name,
+              jid: job.jid,
+              class: job.klass,
+              args: job.args
+            }
+          end
+        end
+      end
+      results
+    end
+
+    # Get information about current Sidekiq processes
+    def processes
+      Sidekiq::ProcessSet.new.map do |process|
+        {
+          identity: process["identity"],
+          started_at: Time.at(process["started_at"]),
+          queues: process["queues"],
+          labels: process["labels"],
+          concurrency: process["concurrency"],
+          busy: process["busy"]
+        }
+      end
     end
 
     private
