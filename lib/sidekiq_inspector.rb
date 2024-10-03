@@ -1,5 +1,6 @@
 module SidekiqInspector
   class << self
+    # List all Sidekiq queues with their size and latency
     def queues
       Sidekiq::Queue.all.map do |queue|
         {
@@ -10,6 +11,7 @@ module SidekiqInspector
       end
     end
 
+    # List all jobs in the retry queue
     def retries
       Sidekiq::RetrySet.new.map do |job|
         {
@@ -23,6 +25,7 @@ module SidekiqInspector
       end
     end
 
+    # List all scheduled jobs
     def scheduled_jobs
       Sidekiq::ScheduledSet.new.map do |job|
         {
@@ -34,6 +37,7 @@ module SidekiqInspector
       end
     end
 
+    # List all jobs in the dead queue (errors)
     def errors
       Sidekiq::DeadSet.new.map do |job|
         {
@@ -47,10 +51,12 @@ module SidekiqInspector
       end
     end
 
+    # Get Sidekiq stats as JSON
     def stats
       Sidekiq::Stats.new.to_json
     end
 
+    # Clear all Sidekiq queues, including retry, scheduled, and dead sets
     def clear_all
       Sidekiq::Queue.all.each(&:clear)
       Sidekiq::RetrySet.new.clear
@@ -58,6 +64,8 @@ module SidekiqInspector
       Sidekiq::DeadSet.new.clear
     end
 
+    # Retry a specific job by its JID
+    # @param jid [String] The job ID to retry
     def retry_job(jid)
       job = find_job(jid)
       if job
@@ -68,6 +76,8 @@ module SidekiqInspector
       end
     end
 
+    # Delete a specific job by its JID
+    # @param jid [String] The job ID to delete
     def delete_job(jid)
       job = find_job(jid)
       if job
@@ -78,6 +88,7 @@ module SidekiqInspector
       end
     end
 
+    # List all recurring jobs defined in config/sidekiq.yml
     def recurring_jobs
       if defined?(Sidekiq::Scheduler)
         config_file = Rails.root.join("config", "sidekiq.yml")
@@ -105,6 +116,28 @@ module SidekiqInspector
       else
         "Sidekiq::Scheduler is not available. Make sure sidekiq-scheduler is installed and configured."
       end
+    end
+
+    # Display help information for all public methods
+    def help
+      puts "Available SidekiqInspector commands:"
+      methods(false).sort.each do |method_name|
+        next if method_name == :help
+        method = method(method_name)
+        doc = method.comment
+        if doc
+          description, *param_docs = doc.strip.split("\n")
+          puts "  #{method_name}: #{description.strip}"
+          if param_docs.any?
+            param_docs.each do |param_doc|
+              param, desc = param_doc.strip.match(/@param\s+(\w+)\s+\[[\w\[\]]+\]\s+(.+)/)&.captures
+              puts "    - #{param}: #{desc}" if param && desc
+            end
+          end
+        end
+      end
+      puts "\nUsage: SidekiqInspector.command_name"
+      puts "For methods that require arguments, use: SidekiqInspector.command_name(arg1, arg2, ...)"
     end
 
     private
