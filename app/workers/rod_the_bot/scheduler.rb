@@ -7,7 +7,7 @@ module RodTheBot
     include ActiveSupport::Inflector
 
     def perform
-      RodTheBot::YesterdaysScoresWorker.perform_in(15.minutes)
+      RodTheBot::YesterdaysScoresWorker.perform_async
       if NhlApi.postseason?
         # Postseason
         RodTheBot::PostseasonSeriesWorker.perform_in(16.minutes)
