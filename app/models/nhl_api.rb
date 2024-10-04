@@ -22,7 +22,9 @@ class NhlApi
     end
 
     def fetch_player_landing_feed(player_id)
-      get("/player/#{player_id}/landing")
+      Rails.cache.fetch("player_landing_feed_#{player_id}", expires_in: 8.hours) do
+        get("/player/#{player_id}/landing")
+      end
     end
 
     def fetch_right_rail_feed(game_id)
@@ -31,7 +33,9 @@ class NhlApi
 
     def fetch_schedule(date: Time.now.strftime("%Y-%m-%d"))
       Time.zone = TZInfo::Timezone.get(ENV["TIME_ZONE"])
-      get("/club-schedule/#{ENV["NHL_TEAM_ABBREVIATION"]}/week/#{date}")
+      Rails.cache.fetch("schedule_#{date}", expires_in: 12.hours) do
+        get("/club-schedule/#{ENV["NHL_TEAM_ABBREVIATION"]}/week/#{date}")
+      end
     end
 
     def fetch_roster(team_abbreviation)
@@ -39,12 +43,16 @@ class NhlApi
     end
 
     def fetch_standings
-      get("/standings/now")
+      Rails.cache.fetch("standings", expires_in: 8.hours) do
+        get("/standings/now")
+      end
     end
 
     def fetch_scores(date: Date.yesterday.strftime("%Y-%m-%d"))
-      response = get("/score/#{date}")["games"]
-      response.find_all { |game| game["gameDate"] == date }
+      Rails.cache.fetch("scores_#{date}", expires_in: 18.hours) do
+        response = get("/score/#{date}")["games"]
+        response.find_all { |game| game["gameDate"] == date }
+      end
     end
 
     def fetch_postseason_carousel
