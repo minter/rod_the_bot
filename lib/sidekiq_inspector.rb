@@ -20,8 +20,8 @@ module SidekiqInspector
           args: job.args,
           error_class: job.item["error_class"],
           error_message: job.item["error_message"],
-          retry_count: job.retry_count,
-          next_retry: job.at
+          retry_count: job.item["retry_count"],
+          next_retry: Time.at(job.item["at"])
         }
       end
     end
