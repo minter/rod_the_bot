@@ -21,7 +21,7 @@ module SidekiqInspector
           error_class: job.item["error_class"],
           error_message: job.item["error_message"],
           retry_count: job.item["retry_count"],
-          next_retry: job.item["at"] ? Time.at(job.item["at"]) : nil
+          next_retry: parse_time(job.item["at"])
         }.compact
       end
     end
@@ -225,6 +225,13 @@ module SidekiqInspector
         Sidekiq::ScheduledSet.new.find_job(jid) ||
         Sidekiq::DeadSet.new.find_job(jid) ||
         Sidekiq::Queue.all.flat_map { |q| q.find_job(jid) }.compact.first
+    end
+
+    def parse_time(timestamp)
+      return nil if timestamp.nil?
+      Time.at(timestamp.to_f)
+    rescue ArgumentError, TypeError
+      nil
     end
   end
 end
