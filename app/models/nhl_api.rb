@@ -120,6 +120,30 @@ class NhlApi
       }
     end
 
+    def scratches(game_id)
+      boxscore = fetch_boxscore_feed(game_id)
+      game_data = fetch_right_rail_feed(game_id)
+      game_info = game_data["gameInfo"]
+      away_team = boxscore["awayTeam"]["abbrev"]
+      home_team = boxscore["homeTeam"]["abbrev"]
+
+      scratches_data = {}
+      ["awayTeam", "homeTeam"].each do |team|
+        team_scratches = game_info[team]["scratches"]
+        formatted_scratches = team_scratches.map do |player|
+          "#{player["firstName"]["default"][0]}. #{player["lastName"]["default"]}"
+        end
+        scratches_data[team] = formatted_scratches
+      end
+
+      return nil if scratches_data["homeTeam"].count > 3 || scratches_data["awayTeam"].count > 3
+
+      away_scratches = scratches_data["awayTeam"].empty? ? "None" : scratches_data["awayTeam"].join(", ")
+      home_scratches = scratches_data["homeTeam"].empty? ? "None" : scratches_data["homeTeam"].join(", ")
+
+      "#{away_team}: #{away_scratches}\n#{home_team}: #{home_scratches}"
+    end
+
     def splits(game_id)
       splits = fetch_right_rail_feed(game_id)["teamGameStats"]
       splits.each_with_object({}) do |split, result|

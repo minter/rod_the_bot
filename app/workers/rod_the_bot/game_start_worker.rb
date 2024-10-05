@@ -9,7 +9,8 @@ module RodTheBot
       away_goalie = find_starting_goalie("awayTeam")
       away_goalie_record = find_goalie_record(away_goalie["playerId"])
       officials = NhlApi.officials(game_id)
-      post = format_post(@feed, officials, home_goalie, home_goalie_record, away_goalie, away_goalie_record)
+      scratches = NhlApi.scratches(game_id)
+      post = format_post(@feed, officials, home_goalie, home_goalie_record, away_goalie, away_goalie_record, scratches)
       RodTheBot::Post.perform_async(post)
     end
 
@@ -26,8 +27,8 @@ module RodTheBot
       "(#{stats["wins"]}-#{stats["losses"]}-#{stats["otLosses"]}, #{sprintf("%.2f", stats["goalsAgainstAvg"].round(2))} GAA, #{sprintf("%.3f", stats["savePctg"].round(3))} SV%)"
     end
 
-    def format_post(feed, officials, home_goalie, home_goalie_record, away_goalie, away_goalie_record)
-      <<~POST
+    def format_post(feed, officials, home_goalie, home_goalie_record, away_goalie, away_goalie_record, scratches)
+      post = <<~POST
         🚦 It's puck drop at #{feed["venue"]["default"]} for #{feed["awayTeam"]["name"]["default"]} at #{feed["homeTeam"]["name"]["default"]}!
         
         Starting Goalies:
@@ -37,6 +38,8 @@ module RodTheBot
         Referees: #{officials[:referees].join(", ")}
         Lines: #{officials[:linesmen].join(", ")}
       POST
+      post += "\n\nScratches:\n#{scratches}" if scratches
+      post
     end
   end
 end
