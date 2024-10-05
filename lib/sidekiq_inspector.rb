@@ -18,7 +18,8 @@ module SidekiqInspector
           jid: job.jid,
           class: job.klass,
           args: job.args,
-          error: job.error_class,
+          error_class: job.item["error_class"],
+          error_message: job.item["error_message"],
           retry_count: job.retry_count,
           next_retry: job.at
         }
