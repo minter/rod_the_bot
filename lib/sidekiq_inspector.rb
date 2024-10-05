@@ -21,8 +21,8 @@ module SidekiqInspector
           error_class: job.item["error_class"],
           error_message: job.item["error_message"],
           retry_count: job.item["retry_count"],
-          next_retry: Time.at(job.item["at"])
-        }
+          next_retry: job.item["at"] ? Time.at(job.item["at"]) : nil
+        }.compact
       end
     end
 
