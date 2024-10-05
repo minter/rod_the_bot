@@ -10,6 +10,7 @@ module RodTheBot
       @season_type_id = nil
       skater_stats, goalie_stats = collect_roster_stats
       return if NhlApi.preseason?(@season)
+      return if skater_stats.empty? || goalie_stats.empty?
 
       goalie_post = <<~POST
         🥅 #{@season_type} goaltending stats for the #{your_team}
