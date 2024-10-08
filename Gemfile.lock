@@ -1,6 +1,7 @@
 GIT
   remote: https://github.com/minter/bskyrb.git
-  revision: a4d3f02f1a70b0990470396016afcc4e260cc2b7
+  revision: f29b0b54f46d35e00f2ce3b0b152ec28b6559336
+  branch: main
   specs:
     bskyrb (0.5.3)
       date (>= 3.3.3)
