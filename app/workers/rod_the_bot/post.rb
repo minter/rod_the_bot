@@ -4,17 +4,21 @@ module RodTheBot
 
     attr_writer :bsky
 
-    def perform(post, key = nil, embed_url = nil)
+    def perform(post, key = nil, parent_key = nil, embed_url = nil)
       create_session
       return if @bsky.nil?
       post = append_team_hashtags(post)
-      reply_uri = REDIS.get(key) if key
+
+      parent_uri = REDIS.get(parent_key) if parent_key
+      reply_uri = REDIS.get(key) if key && !parent_key
 
       if ENV["BLUESKY_ENABLED"] == "true"
-        new_post = if reply_uri
+        new_post = if parent_uri
+          create_reply(parent_uri, post, embed_url: embed_url)
+        elsif reply_uri
           create_reply(reply_uri, post, embed_url: embed_url)
         else
-          Rails.logger.info "No existing post found for key: #{key}. Creating new post."
+          Rails.logger.info "No parent post found. Creating new post."
           create_post(post, embed_url: embed_url)
         end
       end

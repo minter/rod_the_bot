@@ -21,7 +21,12 @@ class RodTheBot::GoalHighlightWorkerTest < ActiveSupport::TestCase
 
   test "performs goal highlight post when highlight is available" do
     VCR.use_cassette("nhl_api_#{@game_id}_goal_highlight") do
-      RodTheBot::Post.expects(:perform_async).once
+      RodTheBot::Post.expects(:perform_async).once.with(
+        anything,
+        @redis_key,
+        nil,
+        anything
+      )
 
       assert_no_enqueued_jobs(only: RodTheBot::GoalHighlightWorker) do
         RodTheBot::GoalHighlightWorker.new.perform(@game_id, @play_id, @redis_key)
@@ -94,7 +99,7 @@ class RodTheBot::GoalHighlightWorkerTest < ActiveSupport::TestCase
 
       expected_post += " Score: #{@landing_feed["awayTeam"]["abbrev"]} #{landing_play["awayScore"]} - #{@landing_feed["homeTeam"]["abbrev"]} #{landing_play["homeScore"]}"
 
-      RodTheBot::Post.expects(:perform_async).with(expected_post, @redis_key, landing_play["highlightClipSharingUrl"])
+      RodTheBot::Post.expects(:perform_async).with(expected_post, @redis_key, nil, landing_play["highlightClipSharingUrl"])
 
       worker.perform(@game_id, @play_id, @redis_key)
     end

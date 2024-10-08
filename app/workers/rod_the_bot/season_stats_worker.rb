@@ -71,15 +71,22 @@ module RodTheBot
         Points Percentage: #{season_stats_with_rank[:points_percentage][:value]} (Rank: #{season_stats_with_rank[:points_percentage][:rank]})
       POST
 
+      # Generate unique keys for each post
+      stats_post_1_key = "season_stats:#{@season}:#{@season_type}:1"
+      stats_post_2_key = "season_stats:#{@season}:#{@season_type}:2"
+      stats_post_3_key = "season_stats:#{@season}:#{@season_type}:3"
+
+      # Schedule the posts with delays and keys
       RodTheBot::Post.perform_in(30.minutes, goalie_post)
       RodTheBot::Post.perform_in(45.minutes, time_on_ice_leader_post)
       RodTheBot::Post.perform_in(46.minutes, pim_leader_post)
       RodTheBot::Post.perform_in(60.minutes, skater_points_leader_post)
       RodTheBot::Post.perform_in(61.minutes, goal_leader_post)
       RodTheBot::Post.perform_in(62.minutes, assist_leader_post)
-      RodTheBot::Post.perform_in(75.minutes, team_season_stats_post_1)
-      RodTheBot::Post.perform_in(76.minutes, team_season_stats_post_2)
-      RodTheBot::Post.perform_in(77.minutes, team_season_stats_post_3)
+
+      RodTheBot::Post.perform_in(75.minutes, team_season_stats_post_1, stats_post_1_key)
+      RodTheBot::Post.perform_in(76.minutes, team_season_stats_post_2, stats_post_2_key, stats_post_1_key)
+      RodTheBot::Post.perform_in(77.minutes, team_season_stats_post_3, stats_post_3_key, stats_post_2_key)
     end
 
     def collect_roster_stats
