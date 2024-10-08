@@ -19,6 +19,15 @@ module RodTheBot
 
     def format_game_score(game)
       home_team, visitor_team = game.values_at("homeTeam", "awayTeam")
+
+      if game["gameScheduleState"] == "CNCL"
+        return "#{visitor_team["abbrev"]} @ #{home_team["abbrev"]} - Canceled"
+      end
+
+      if game["gameState"] == "FUT" || !home_team["score"] || !visitor_team["score"]
+        return "#{visitor_team["abbrev"]} @ #{home_team["abbrev"]} - Not started"
+      end
+
       score_text = "#{visitor_team["abbrev"]} #{visitor_team["score"]} : #{home_team["score"]} #{home_team["abbrev"]}"
 
       score_text << format_overtime(game["periodDescriptor"])
@@ -28,6 +37,8 @@ module RodTheBot
     end
 
     def format_overtime(period_descriptor)
+      return "" unless period_descriptor
+
       case period_descriptor["periodType"]
       when "SO" then " (SO)"
       when "OT"
