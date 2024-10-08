@@ -64,10 +64,10 @@ class NhlApiTest < ActiveSupport::TestCase
     end
   end
 
-  test "fetch_schedule" do
+  test "fetch_team_schedule" do
     date = "2023-11-30"
     VCR.use_cassette("nhl_schedule_#{date}") do
-      schedule = NhlApi.fetch_schedule(date: date)
+      schedule = NhlApi.fetch_team_schedule(date: date)
       assert_kind_of Hash, schedule
       assert_includes schedule.keys, "games"
     end

@@ -31,7 +31,7 @@ class NhlApi
       get("/gamecenter/#{game_id}/right-rail")
     end
 
-    def fetch_schedule(date: Time.now.strftime("%Y-%m-%d"))
+    def fetch_team_schedule(date: Time.now.strftime("%Y-%m-%d"))
       Time.zone = TZInfo::Timezone.get(ENV["TIME_ZONE"])
       Rails.cache.fetch("schedule_#{date}", expires_in: 12.hours) do
         get("/club-schedule/#{ENV["NHL_TEAM_ABBREVIATION"]}/week/#{date}")
@@ -61,8 +61,12 @@ class NhlApi
       nil
     end
 
+    def fetch_league_schedule(date: Time.now.strftime("%Y-%m-%d"))
+      get("/schedule/#{date}")
+    end
+
     def todays_game(date: Time.now.strftime("%Y-%m-%d"))
-      fetch_schedule(date: date)["games"].find { |game| game["gameDate"] == date }
+      fetch_team_schedule(date: date)["games"].find { |game| game["gameDate"] == date }
     end
 
     def roster(team_abbreviation)
@@ -178,7 +182,7 @@ class NhlApi
     end
 
     def preseason?(target_season)
-      target_season != current_season
+      target_season.to_s != current_season.to_s
     end
 
     private

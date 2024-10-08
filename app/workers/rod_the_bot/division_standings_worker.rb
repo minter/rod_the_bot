@@ -14,13 +14,16 @@ module RodTheBot
     private
 
     def sort_teams_in_division(standings, my_division)
-      standings.select { |team| team["divisionName"] == my_division }.sort_by { |team| [team["pointPctg"], team["points"], team["gamesPlayed"]] }.reverse
+      standings
+        .select { |team| team["divisionName"] == my_division }
+        .sort_by { |team| [-team["pointPctg"].to_f, -team["points"].to_i, -team["gamesPlayed"].to_i] }
     end
 
     def format_standings(my_division, division_teams)
       post = "📋 Here are the current standings for the #{my_division} division (by PT%):\n\n"
       division_teams.each_with_index do |team, index|
-        post += "#{index + 1}. #{team["teamAbbrev"]["default"]}: #{team["points"]} pts (#{sprintf("%.3f", team["pointPctg"].round(3))}%)\n"
+        point_percentage = sprintf("%.3f", team["pointPctg"].to_f)
+        post += "#{index + 1}. #{team["teamAbbrev"]["default"]}: #{team["points"]} pts (#{point_percentage}%)\n"
       end
       post
     end

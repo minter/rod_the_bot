@@ -8,6 +8,7 @@ module RodTheBot
 
     def perform
       RodTheBot::YesterdaysScoresWorker.perform_in(5.minutes)
+      RodTheBot::TodaysScheduleWorker.perform_in(10.minutes)
       if NhlApi.postseason?
         # Postseason
         RodTheBot::PostseasonSeriesWorker.perform_in(16.minutes)
