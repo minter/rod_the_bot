@@ -62,7 +62,6 @@ DEBUG_POSTS=false
 NHL_TEAM_ID=12
 NHL_TEAM_ABBREVIATION=CAR
 REDIS_URL=redis://localhost:6379/0
-SECRET_KEY_BASE=69782b185cf994696b846e43b8e26a6c9f724905c74bf7556162c5a18cd17edc68a702ffbd0df7e855e2f4c6cf71bf68c794741c9234841f45446c3679bd8e6d 
 TEAM_HASHTAGS="#LetsGoCanes #CauseChaos"
 TIME_ZONE=America/New_York
 WIN_CELEBRATION=Canes Win!
@@ -130,10 +129,6 @@ Every NHL franchise has an ID and official three-letter abbreviation in the stat
 
 Rod The Bot uses Redis to keep track of plays that it has already seen. This is used to prevent duplicate posts. You can use any Redis instance that you want, but the default is to use a local instance on port 6379, database 0. This Redis instance must be accessible by your local system if you are running in raw source code mode. If you are using the docker compose method, this will be overridden in the `docker-compose.yml` file to point to the Dockerized Redis instance.
 
-### SECRET_KEY_BASE
-
-Rod The Bot is a Ruby on Rails app, and this is needed to run Rails. You can use the example one if you want, but it is recommended that you generate your own. You can do this by generating a 128-character random alphanumeric string and setting it as the value of this variable. To generate a string, you can use a tool like [this online random string generator](https://www.hjkeen.net/htoys/generate.htm).
-
 ### TEAM_HASHTAGS
 
 This setting controls the hashtags that will be added to each post. You can add as many as you want, but they must be separated by spaces. You can use this if your team has official hashtags that you would like to include on every post. Leave it blank if you do not want to add them.
@@ -163,6 +158,12 @@ If there is a game, it will post some team preview information (scoring, goalten
 
 To check logs from the bot when it's running under Docker, go to the directory with your `docker-compose.yml` file and run `docker compose logs -f sidekiq` (to see the background job processor logs scroll by in real time) or `docker compose logs -f redis` (to see the Redis logs). The first one will be more useful, especially if you have `DEBUG_POSTS` set to `true`. You can stop the logs by pressing `Ctrl-C`.
 
+### Sidekiq Inspector
+
+There is a `SidekiqInspector` module that can be run from within the Rails console to interact with Sidekiq. To access the console, run `docker compose exec sidekiq rails console` from the project root. Once in the console, you can Run `SidekiqInspector.help` to see the various options available. This module allows you do do things like delete bad jobs, inspect schedules, view queues, etc.
+
+Familiarity with the Rails console and Sidekiq is recommended before using this module, but it can be a very useful tool to have in your debugging arsenal.
+
 ## Ubuntu Systemd Service
 
 If you are running on Ubuntu or other Systemd-compatible Linux, you can use the following systemd service file to run the bot as a service. This will allow it to start automatically on boot, and will restart it if it crashes. This service uses the [Docker Compose - Remote Images](#docker-compose---remote-images-easiest) method to run the bot.
@@ -183,9 +184,6 @@ Key system components and dependencies:
 * Sidekiq 7+: Background job processing
 * Redis 7+: State maintenance
 * HTTParty: NHL API client
-
-## TODO
-* Fix issues with web UI in Docker
 
 ## Contributing
 
