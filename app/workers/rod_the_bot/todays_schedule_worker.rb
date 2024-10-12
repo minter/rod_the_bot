@@ -7,7 +7,7 @@ module RodTheBot
       schedule = NhlApi.fetch_league_schedule(date: date)
       formatted_schedule = format_schedule(schedule, date)
       time_zone_abbr = Time.zone.tzinfo.abbreviation
-      post_text = "🗓️  Today's NHL schedule (times #{time_zone_abbr})\n\n#{formatted_schedule}\n\n"
+      post_text = "🗓️  Today's NHL schedule (times #{time_zone_abbr})\n\n#{formatted_schedule}\n"
       RodTheBot::Post.perform_async(post_text)
     end
 
