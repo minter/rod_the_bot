@@ -16,9 +16,9 @@ class RodTheBot::TodaysScheduleWorkerTest < ActiveSupport::TestCase
         assert_equal 1, RodTheBot::Post.jobs.size
         post = RodTheBot::Post.jobs.first["args"].first
 
-        assert_match(/🗓️  Here is the NHL schedule for today \(times in EDT\)/, post)
-        assert_match(/BOS @ FLA - 7:00 PM/, post)
-        assert_match(/CHI @ UTA - 10:00 PM/, post)
+        assert_match(/🗓️  Today's NHL schedule \(times EDT\)/, post)
+        assert_match(/BOS @ FLA - 7 PM/, post)
+        assert_match(/CHI @ UTA - 10 PM/, post)
         assert_no_match(/No games scheduled/, post)
       end
     end
@@ -32,7 +32,7 @@ class RodTheBot::TodaysScheduleWorkerTest < ActiveSupport::TestCase
         assert_equal 1, RodTheBot::Post.jobs.size
         post = RodTheBot::Post.jobs.first["args"].first
 
-        assert_match(/🗓️  Here is the NHL schedule for today \(times in EDT\)/, post)
+        assert_match(/🗓️  Today's NHL schedule \(times EDT\)/, post)
         assert_match(/No games scheduled/, post)
       end
     end
@@ -45,8 +45,8 @@ class RodTheBot::TodaysScheduleWorkerTest < ActiveSupport::TestCase
 
       formatted_schedule = @worker.send(:format_schedule, schedule, date)
 
-      assert_match(/BOS @ FLA - 7:00 PM/, formatted_schedule)
-      assert_match(/CHI @ UTA - 10:00 PM/, formatted_schedule)
+      assert_match(/BOS @ FLA - 7 PM/, formatted_schedule)
+      assert_match(/CHI @ UTA - 10 PM/, formatted_schedule)
       assert_no_match(/No games scheduled/, formatted_schedule)
     end
   end
