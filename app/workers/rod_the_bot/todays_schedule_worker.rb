@@ -22,14 +22,18 @@ module RodTheBot
       today_games.map do |game|
         visitor = game["awayTeam"]["abbrev"]
         home = game["homeTeam"]["abbrev"]
-        game_time = format_game_time(game["startTimeUTC"])
+        game_time = format_game_time(game)
         "#{visitor} @ #{home} - #{game_time}"
       end.join("\n")
     end
 
-    def format_game_time(utc_time)
-      local_time = Time.zone.parse(utc_time)
-      local_time.strftime("%-I:%M %p")
+    def format_game_time(game)
+      if game["gameScheduleState"] == "OK"
+        local_time = Time.zone.parse(game["startTimeUTC"])
+        local_time.strftime("%-I:%M %p")
+      else
+        game["gameScheduleState"]
+      end
     end
   end
 end

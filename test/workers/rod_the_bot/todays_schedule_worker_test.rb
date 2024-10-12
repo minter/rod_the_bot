@@ -63,10 +63,25 @@ class RodTheBot::TodaysScheduleWorkerTest < ActiveSupport::TestCase
   end
 
   test "format_game_time" do
-    utc_time = "2024-10-08T23:00:00Z"
-    formatted_time = @worker.send(:format_game_time, utc_time)
+    VCR.use_cassette("nhl_schedule_20241006") do
+      date = "2024-10-06"
+      schedule = NhlApi.fetch_league_schedule(date: date)
+      game = schedule["gameWeek"][2]["games"].first
+      formatted_time = @worker.send(:format_game_time, game)
 
-    assert_equal "7:00 PM", formatted_time
+      assert_equal "4:30 PM", formatted_time
+    end
+  end
+
+  test "format_non_ok_game_time" do
+    VCR.use_cassette("nhl_schedule_20241006") do
+      date = "2024-10-06"
+      schedule = NhlApi.fetch_league_schedule(date: date)
+      game = schedule["gameWeek"][1]["games"].first
+      formatted_time = @worker.send(:format_game_time, game)
+
+      assert_equal "CNCL", formatted_time
+    end
   end
 
   def teardown
