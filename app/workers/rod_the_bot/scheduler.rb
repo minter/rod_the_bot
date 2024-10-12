@@ -17,7 +17,7 @@ module RodTheBot
       end
       @game = NhlApi.todays_game
 
-      return if @game.nil?
+      return if @game.nil? || @game["gameScheduleState"] != "OK"
 
       time = Time.zone.parse(@game["startTimeUTC"])
       time_string = time.strftime("%l:%M %p").strip + " " + Time.zone.tzinfo.abbreviation
