@@ -28,26 +28,33 @@ class RodTheBot::GameStartWorkerTest < ActiveSupport::TestCase
     end
   end
 
-  test "format_post" do
+  test "format_main_post" do
     VCR.use_cassette("nhl_game_#{@game_id}_gamecenter_pbp_game_start") do
       feed = NhlApi.fetch_pbp_feed(@game_id)
-      officials = {referees: ["Garrett Rank", "Jean Hebert"], linesmen: ["Shandor Alphonso", "Jonny Murray"]}
       home_goalie = {"sweaterNumber" => "74", "name" => {"default" => "S. Skinner"}}
       away_goalie = {"sweaterNumber" => "31", "name" => {"default" => "A. Silovs"}}
       home_goalie_record = "(5-3-0, 3.22 GAA, 0.877 SV%)"
       away_goalie_record = "(5-3-0, 2.62 GAA, 0.907 SV%)"
-      scratches = "EDM: Player1, Player2\nVAN: Player3, Player4"
 
-      post = @game_start_worker.send(:format_post, feed, officials, home_goalie, home_goalie_record, away_goalie, away_goalie_record, scratches)
+      post = @game_start_worker.send(:format_main_post, feed, home_goalie, home_goalie_record, away_goalie, away_goalie_record)
 
       assert_match(/🚦 It's puck drop at .+ for .+ at .+!/, post)
       assert_match(/Starting Goalies:/, post)
       assert_match(/EDM: #74 S. Skinner \(5-3-0, 3.22 GAA, 0.877 SV%\)/, post)
       assert_match(/VAN: #31 A. Silovs \(5-3-0, 2.62 GAA, 0.907 SV%\)/, post)
-      assert_match(/Referees: Garrett Rank, Jean Hebert/, post)
-      assert_match(/Lines: Shandor Alphonso, Jonny Murray/, post)
-      assert_match(/Scratches:\nEDM: Player1, Player2\nVAN: Player3, Player4/, post)
     end
+  end
+
+  test "format_reply_post" do
+    officials = {referees: ["Garrett Rank", "Jean Hebert"], linesmen: ["Shandor Alphonso", "Jonny Murray"]}
+    scratches = "EDM: Player1, Player2\nVAN: Player3, Player4"
+
+    post = @game_start_worker.send(:format_reply_post, officials, scratches)
+
+    assert_match(/Officials:/, post)
+    assert_match(/Referees: Garrett Rank, Jean Hebert/, post)
+    assert_match(/Lines: Shandor Alphonso, Jonny Murray/, post)
+    assert_match(/Scratches:\nEDM: Player1, Player2\nVAN: Player3, Player4/, post)
   end
 
   test "perform" do
@@ -73,7 +80,7 @@ class RodTheBot::GameStartWorkerTest < ActiveSupport::TestCase
         }
       })
       NhlApi.expects(:scratches).returns("HOME: Player1, Player2\nAWAY: Player3, Player4")
-      RodTheBot::Post.expects(:perform_async).once
+      RodTheBot::Post.expects(:perform_async).twice
 
       @game_start_worker.perform(@game_id)
     end
