@@ -4,47 +4,46 @@ class RodTheBot::EndOfPeriodStatsWorkerTest < ActiveSupport::TestCase
   def setup
     Sidekiq::Worker.clear_all
     @worker = RodTheBot::EndOfPeriodStatsWorker.new
-    @game_id = 2023020773
-    ENV["NHL_TEAM_ID"] = "19"
+    @game_id = 2024020038
+    ENV["NHL_TEAM_ID"] = "52"
   end
 
   def test_perform
-    skip("Not currently working")
-    VCR.use_cassette("nhl_gamecenter_2023020773_landing") do
-      period_number = "2nd"
+    VCR.use_cassette("nhl_gamecenter_2024020038_landing") do
+      period_number = "1st"
 
       @worker.perform(@game_id, period_number)
       assert_equal 3, RodTheBot::Post.jobs.size
       toi_expected_output = <<~POST
-        ⏱️ Time on ice leaders for the Blues after the 2nd period
+        ⏱️ Time on ice leaders for the Jets after the 1st Period
         
-        N. Leddy - 14:48
-        R. Thomas - 14:15
-        C. Parayko - 13:58
-        J. Kyrou - 13:27
-        T. Krug - 13:18
+        J. Morrissey - 7:48
+        N. Pionk - 7:27
+        D. Samberg - 7:19
+        D. DeMelo - 7:18
+        M. Scheifele - 6:20
       POST
 
       sog_expected_output = <<~POST
-        🏒 Shots on goal leaders for the Blues after the 2nd period
+        🏒 Shots on goal leaders for the Jets after the 1st Period
         
-        P. Buchnevich - 4
-        N. Leddy - 3
-        T. Krug - 2
-        J. Neighbours - 2
-        J. Kyrou - 2
+        V. Namestnikov - 1
+        R. Kupari - 1
+        N. Pionk - 1
+        N. Ehlers - 1
+        M. Scheifele - 1
       POST
 
       game_stats_expected_output = <<~POST
-        📄 Game comparison after the 2nd period
+        📄 Game comparison after the 1st Period
         
-        Faceoffs: LAK - 47.4% | STL - 52.6%
-        PIMs: LAK - 8 | STL - 2
-        Blocks: LAK - 9 | STL - 5
-        Hits: LAK - 14 | STL - 17
-        Power Play: LAK - 0/1 | STL - 1/4
-        Giveaways: LAK - 2 | STL - 2
-        Takeaways: LAK - 8 | STL - 4
+        Faceoffs: MIN - 42.1% | WPG - 57.9%
+        PIMs: MIN - 2 | WPG - 2
+        Blocks: MIN - 4 | WPG - 3
+        Hits: MIN - 7 | WPG - 7
+        Power Play: MIN - 0/1 | WPG - 0/1
+        Giveaways: MIN - 3 | WPG - 7
+        Takeaways: MIN - 3 | WPG - 2
       POST
 
       assert_equal toi_expected_output, RodTheBot::Post.jobs.second["args"].first
