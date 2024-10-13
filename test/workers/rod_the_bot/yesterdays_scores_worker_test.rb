@@ -47,6 +47,34 @@ class RodTheBot::YesterdaysScoresWorkerTest < ActiveSupport::TestCase
     end
   end
 
+  def test_perform_with_postponed_game
+    Timecop.freeze(Date.new(2024, 10, 13)) do
+      VCR.use_cassette("nhl_scores_scoreboard_20241012") do
+        @worker.perform
+        assert_equal 1, RodTheBot::Post.jobs.size
+        expected_output = <<~POST
+          🙌 Final scores from last night's games:
+
+          LAK 1 : 2 BOS (OT)
+          FLA 2 : 5 BUF
+          PIT 2 : 4 TOR
+          OTT 1 : 4 MTL
+          NSH 0 : 3 DET
+          CAR @ TBL - Postponed
+          UTA 6 : 5 NYR (OT)
+          NJD 5 : 3 WSH
+          NYI 0 : 3 DAL
+          SEA 5 : 4 MIN (SO)
+          CBJ 6 : 4 COL
+          PHI 3 : 6 CGY
+          CHI 5 : 2 EDM
+          ANA 2 : 0 SJS
+        POST
+        assert_equal expected_output, RodTheBot::Post.jobs.first["args"].first
+      end
+    end
+  end
+
   def teardown
     Sidekiq::Worker.clear_all  # Clear enqueued jobs after each test
   end
