@@ -6,8 +6,10 @@ module RodTheBot
       boxscore = NhlApi.fetch_boxscore_feed(game_id)
       gamedate = boxscore["gameDate"]
       game = get_game(gamedate, game_id)
+
       return if game.nil?
       return if game["gameScheduleState"] != "OK"
+
       if game["threeMinRecap"].blank?
         RodTheBot::ThreeMinuteRecapWorker.perform_in(600, game_id)
       else
@@ -19,10 +21,8 @@ module RodTheBot
     private
 
     def get_game(gamedate, game_id)
-      NhlApi.fetch_league_schedule(date: gamedate)["gameWeek"][0]["games"].find do |game|
-        return game if game["id"] == game_id
-      end
-      nil
+      schedule = NhlApi.fetch_league_schedule(date: gamedate)
+      schedule["gameWeek"][0]["games"].find { |game| game["id"] == game_id }
     end
 
     def format_recap(game)
