@@ -24,6 +24,10 @@ module RodTheBot
         return "#{visitor_team["abbrev"]} @ #{home_team["abbrev"]} - Canceled"
       end
 
+      if game["gameScheduleState"] == "PPD"
+        return "#{visitor_team["abbrev"]} @ #{home_team["abbrev"]} - Postponed"
+      end
+
       if game["gameState"] == "FUT" || !home_team["score"] || !visitor_team["score"]
         return "#{visitor_team["abbrev"]} @ #{home_team["abbrev"]} - Not started"
       end
