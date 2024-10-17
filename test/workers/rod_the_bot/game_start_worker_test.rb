@@ -80,7 +80,8 @@ class RodTheBot::GameStartWorkerTest < ActiveSupport::TestCase
         }
       })
       NhlApi.expects(:scratches).returns("HOME: Player1, Player2\nAWAY: Player3, Player4")
-      RodTheBot::Post.expects(:perform_async).twice
+      RodTheBot::Post.expects(:perform_async).once
+      RodTheBot::Post.expects(:perform_in).once
 
       @game_start_worker.perform(@game_id)
     end
