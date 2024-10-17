@@ -16,7 +16,7 @@ module RodTheBot
 
       main_post_key = "game_start_#{game_id}"
       RodTheBot::Post.perform_async(main_post, main_post_key)
-      RodTheBot::Post.perform_async(reply_post, "game_start_reply_#{game_id}", main_post_key)
+      RodTheBot::Post.perform_in(1.minute, reply_post, "game_start_reply_#{game_id}", main_post_key)
     end
 
     private
@@ -48,8 +48,9 @@ module RodTheBot
 
         Referees: #{officials[:referees].join(", ")}
         Lines: #{officials[:linesmen].join(", ")}
+
       POST
-      post += "\n\nScratches:\n#{scratches}" if scratches
+      post += "\nScratches:\n#{scratches}\n" if scratches
       post
     end
   end

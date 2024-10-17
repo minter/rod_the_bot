@@ -142,7 +142,7 @@ class NhlApi
         scratches_data[team] = formatted_scratches
       end
 
-      return nil if scratches_data["homeTeam"].count > 3 || scratches_data["awayTeam"].count > 3
+      return nil if scratches_data["homeTeam"].count > 6 || scratches_data["awayTeam"].count > 6
 
       away_scratches = scratches_data["awayTeam"].empty? ? "None" : scratches_data["awayTeam"].join(", ")
       home_scratches = scratches_data["homeTeam"].empty? ? "None" : scratches_data["homeTeam"].join(", ")
