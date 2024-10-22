@@ -21,25 +21,25 @@ module RodTheBot
       skater_points_leader_post = <<~POST
         📈 #{@season_type} points leaders for the #{your_team}
 
-        #{skater_stats.sort_by { |k, v| v[:points] }.last(4).reverse.map { |player| "#{player[1][:name]}: #{player[1][:points]} #{"point".pluralize(player[1][:points])}, (#{player[1][:goals]} #{"goal".pluralize(player[1][:goals])}, #{player[1][:assists]} #{"assist".pluralize(player[1][:assists])})" }.join("\n")}
+        #{skater_stats.sort_by { |k, v| v[:points] }.last(5).reverse.map { |player| "#{player[1][:name]}: #{player[1][:points]} #{"point".pluralize(player[1][:points])}, (#{player[1][:goals]} #{"goal".pluralize(player[1][:goals])}, #{player[1][:assists]} #{"assist".pluralize(player[1][:assists])})" }.join("\n")}
       POST
 
       time_on_ice_leader_post = <<~POST
         ⏱️ #{@season_type} time on ice leaders for the #{your_team}
 
-        #{skater_stats.sort_by { |k, v| v[:time_on_ice] }.last(4).reverse.map { |player| "#{player[1][:name]}: #{Time.at(player[1][:time_on_ice]).strftime("%M:%S")}" }.join("\n")}
+        #{skater_stats.sort_by { |k, v| v[:time_on_ice] }.last(5).reverse.map { |player| "#{player[1][:name]}: #{Time.at(player[1][:time_on_ice]).strftime("%M:%S")}" }.join("\n")}
       POST
 
       goal_leader_post = <<~POST
         🚨 #{@season_type} goal scoring leaders for the #{your_team}
 
-        #{skater_stats.sort_by { |k, v| v[:goals] }.last(4).reverse.map { |player| "#{player[1][:name]}: #{player[1][:goals]} #{"goal".pluralize(player[1][:goals])}" }.join("\n")}
+        #{skater_stats.sort_by { |k, v| v[:goals] }.last(5).reverse.map { |player| "#{player[1][:name]}: #{player[1][:goals]} #{"goal".pluralize(player[1][:goals])}" }.join("\n")}
       POST
 
       assist_leader_post = <<~POST
         🏒 #{@season_type} assist leaders for the #{your_team}
 
-        #{skater_stats.sort_by { |k, v| v[:assists] }.last(4).reverse.map { |player| "#{player[1][:name]}: #{player[1][:assists]} #{"assist".pluralize(player[1][:assists])}" }.join("\n")}
+        #{skater_stats.sort_by { |k, v| v[:assists] }.last(5).reverse.map { |player| "#{player[1][:name]}: #{player[1][:assists]} #{"assist".pluralize(player[1][:assists])}" }.join("\n")}
       POST
 
       pim_leader_post = <<~POST
