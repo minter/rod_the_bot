@@ -37,7 +37,7 @@ module RodTheBot
     def worker_mapping
       {
         "goal" => [RodTheBot::GoalWorker, 90],
-        "penalty" => [RodTheBot::PenaltyWorker, 60],
+        "penalty" => [RodTheBot::PenaltyWorker, 90],
         "period-start" => [RodTheBot::PeriodStartWorker, 1],
         "period-end" => [RodTheBot::EndOfPeriodWorker, 180]
       }

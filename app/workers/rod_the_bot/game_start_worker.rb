@@ -50,7 +50,7 @@ module RodTheBot
         Lines: #{officials[:linesmen].join(", ")}
 
       POST
-      post += "\nScratches:\n#{scratches}\n" if scratches
+      post += "\nScratches:\n\n#{scratches}\n" if scratches
       post
     end
   end
