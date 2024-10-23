@@ -54,7 +54,7 @@ class RodTheBot::GameStartWorkerTest < ActiveSupport::TestCase
     assert_match(/Officials:/, post)
     assert_match(/Referees: Garrett Rank, Jean Hebert/, post)
     assert_match(/Lines: Shandor Alphonso, Jonny Murray/, post)
-    assert_match(/Scratches:\nEDM: Player1, Player2\nVAN: Player3, Player4/, post)
+    assert_match(/Scratches:\n\nEDM: Player1, Player2\nVAN: Player3, Player4/, post)
   end
 
   test "perform" do
