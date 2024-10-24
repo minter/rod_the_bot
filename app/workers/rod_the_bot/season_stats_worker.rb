@@ -45,7 +45,7 @@ module RodTheBot
       pim_leader_post = <<~POST
         🚔 #{@season_type} penalty minute leaders for the #{your_team}
 
-        #{skater_stats.sort_by { |k, v| v[:pim] }.last(4).reverse.map { |player| "#{player[1][:name]}: #{player[1][:pim]} #{"minute".pluralize(player[1][:pim])}" }.join("\n")}
+        #{skater_stats.sort_by { |k, v| v[:pim] }.last(5).reverse.map { |player| "#{player[1][:name]}: #{player[1][:pim]} #{"min".pluralize(player[1][:pim])}" }.join("\n")}
       POST
 
       team_season_stats_post_1 = <<~POST
