@@ -21,6 +21,7 @@ gem "httparty", "~> 0"
 gem "ostruct"
 gem "nokogiri"
 gem "pry-rails"
+gem "puppeteer-ruby"
 gem "redis", "~>5"
 gem "sidekiq", "~> 7"
 gem "sidekiq-scheduler", "~> 5"
@@ -42,5 +43,4 @@ end
 group :development do
   gem "bundler-audit"
   gem "standard"
-  gem "puppeteer-ruby"
 end
