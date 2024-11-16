@@ -51,6 +51,8 @@ module RodTheBot
     def create_post(post, embed_url: nil, embed_video: nil)
       return unless ENV["BLUESKY_ENABLED"] == "true"
       @bsky.create_post(post, embed_url: embed_url, embed_video: embed_video)
+      # File.unlink(embed_video) if embed_video && File.exist?(embed_video)
+      # post
     end
 
     def create_reply(reply_uri, post, embed_url: nil, embed_video: nil)
