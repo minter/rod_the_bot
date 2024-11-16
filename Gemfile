@@ -14,7 +14,7 @@ gem "tzinfo-data", platforms: %i[windows jruby]
 # Reduces boot times through caching; required in config/boot.rb
 gem "bootsnap", require: false
 
-gem "bskyrb", github: "minter/bskyrb", branch: "main"
+gem "bskyrb", github: "minter/bskyrb", branch: "images"
 # gem "bskyrb", path: "/Users/minter/git/bskyrb"
 gem "dotenv-rails", "~> 3", require: "dotenv/load"
 gem "httparty", "~> 0"
@@ -24,6 +24,7 @@ gem "pry-rails"
 gem "redis", "~>5"
 gem "sidekiq", "~> 7"
 gem "sidekiq-scheduler", "~> 5"
+gem "streamio-ffmpeg", ">= 3.0.2"
 
 group :test do
   gem "minitest"
@@ -41,4 +42,5 @@ end
 group :development do
   gem "bundler-audit"
   gem "standard"
+  gem "puppeteer-ruby"
 end

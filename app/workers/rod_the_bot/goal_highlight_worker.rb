@@ -24,8 +24,14 @@ module RodTheBot
       return if @landing_play.blank?
 
       if @landing_play["highlightClipSharingUrl"].present?
+        output_path = download_highlight(@landing_play["highlightClipSharingUrl"])
+        print "DEBUG: Output path: #{output_path}\n"
         post = format_post(@landing_play)
-        RodTheBot::Post.perform_async(post, redis_key, nil, @landing_play["highlightClipSharingUrl"])
+        if output_path.include?("http")
+          RodTheBot::Post.perform_async(post, redis_key, nil, output_path, nil)
+        else
+          RodTheBot::Post.perform_async(post, redis_key, nil, nil, output_path)
+        end
       else
         self.class.perform_in(3.minutes, game_id, play_id, redis_key, initial_run_time)
       end
@@ -60,6 +66,21 @@ module RodTheBot
 
       "🎥 Goal highlight: #{scorer_full_name} (#{team}) scores on a #{shot_type} shot at #{time} of the #{period_name}." \
       "#{assist_text} Score: #{score}"
+    end
+
+    def download_highlight(url, output_path = nil)
+      filename = url.match(/\d+$/).present? ? "highlight_#{url.match(/\d+$/)[0]}.mp4" : "highlight.mp4"
+      service = NhlVideoDownloadService.new(
+        url,
+        "#{Rails.root}/tmp/#{filename}" # optional
+      )
+
+      begin
+        service.call
+      rescue => e
+        # Handle errors
+        logger.error "Error downloading highlight: #{e.message}"
+      end
     end
   end
 end

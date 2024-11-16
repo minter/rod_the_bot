@@ -4,7 +4,7 @@ module RodTheBot
 
     attr_writer :bsky
 
-    def perform(post, key = nil, parent_key = nil, embed_url = nil)
+    def perform(post, key = nil, parent_key = nil, embed_url = nil, file_path = nil)
       create_session
       return if @bsky.nil?
       post = append_team_hashtags(post)
@@ -14,12 +14,12 @@ module RodTheBot
 
       if ENV["BLUESKY_ENABLED"] == "true"
         new_post = if parent_uri
-          create_reply(parent_uri, post, embed_url: embed_url)
+          create_reply(parent_uri, post, embed_url: embed_url, embed_video: file_path)
         elsif reply_uri
-          create_reply(reply_uri, post, embed_url: embed_url)
+          create_reply(reply_uri, post, embed_url: embed_url, embed_video: file_path)
         else
           Rails.logger.info "No parent post found. Creating new post."
-          create_post(post, embed_url: embed_url)
+          create_post(post, embed_url: embed_url, embed_video: file_path)
         end
       end
 
@@ -48,15 +48,15 @@ module RodTheBot
       post
     end
 
-    def create_post(post, embed_url: nil)
+    def create_post(post, embed_url: nil, embed_video: nil)
       return unless ENV["BLUESKY_ENABLED"] == "true"
-      @bsky.create_post(post, embed_url: embed_url)
+      @bsky.create_post(post, embed_url: embed_url, embed_video: embed_video)
     end
 
-    def create_reply(reply_uri, post, embed_url: nil)
+    def create_reply(reply_uri, post, embed_url: nil, embed_video: nil)
       return unless ENV["BLUESKY_ENABLED"] == "true"
       Rails.logger.info "Creating reply to #{reply_uri} with post #{post} and embed_url #{embed_url}"
-      @bsky.create_reply(reply_uri, post, embed_url: embed_url)
+      @bsky.create_reply(reply_uri, post, embed_url: embed_url, embed_video: embed_video)
     end
 
     def log_post(post)
