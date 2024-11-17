@@ -4,7 +4,7 @@ module RodTheBot
 
     attr_writer :bsky
 
-    def perform(post, key = nil, parent_key = nil, embed_url = nil, file_path = nil)
+    def perform(post, key = nil, parent_key = nil, embed_url = nil, embed_images = [], video_file_path = nil)
       create_session
       return if @bsky.nil?
       post = append_team_hashtags(post)
@@ -14,12 +14,12 @@ module RodTheBot
 
       if ENV["BLUESKY_ENABLED"] == "true"
         new_post = if parent_uri
-          create_reply(parent_uri, post, embed_url: embed_url, embed_video: file_path)
+          create_reply(parent_uri, post, embed_url: embed_url, embed_images: embed_images, embed_video: video_file_path)
         elsif reply_uri
-          create_reply(reply_uri, post, embed_url: embed_url, embed_video: file_path)
+          create_reply(reply_uri, post, embed_url: embed_url, embed_images: embed_images, embed_video: video_file_path)
         else
           Rails.logger.info "No parent post found. Creating new post."
-          create_post(post, embed_url: embed_url, embed_video: file_path)
+          create_post(post, embed_url: embed_url, embed_images: embed_images, embed_video: video_file_path)
         end
       end
 
@@ -48,17 +48,19 @@ module RodTheBot
       post
     end
 
-    def create_post(post, embed_url: nil, embed_video: nil)
+    def create_post(post, embed_url: nil, embed_images: [], embed_video: nil)
       return unless ENV["BLUESKY_ENABLED"] == "true"
-      @bsky.create_post(post, embed_url: embed_url, embed_video: embed_video)
-      # File.unlink(embed_video) if embed_video && File.exist?(embed_video)
-      # post
+      post = @bsky.create_post(post, embed_url: embed_url, embed_images: embed_images, embed_video: embed_video)
+      File.unlink(embed_video) if embed_video && File.exist?(embed_video)
+      post
     end
 
-    def create_reply(reply_uri, post, embed_url: nil, embed_video: nil)
+    def create_reply(reply_uri, post, embed_url: nil, embed_images: [], embed_video: nil)
       return unless ENV["BLUESKY_ENABLED"] == "true"
       Rails.logger.info "Creating reply to #{reply_uri} with post #{post} and embed_url #{embed_url}"
-      @bsky.create_reply(reply_uri, post, embed_url: embed_url, embed_video: embed_video)
+      post = @bsky.create_reply(reply_uri, post, embed_url: embed_url, embed_images: embed_images, embed_video: embed_video)
+      File.unlink(embed_video) if embed_video && File.exist?(embed_video)
+      post
     end
 
     def log_post(post)

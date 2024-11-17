@@ -49,7 +49,7 @@ module RodTheBot
       )
 
       redis_key = "game:#{game_id}:goal:#{@play_id}"
-      RodTheBot::Post.perform_async(post, redis_key)
+      RodTheBot::Post.perform_async(post, redis_key, nil, nil, goal_images(players, @play))
       RodTheBot::ScoringChangeWorker.perform_in(600, game_id, play["eventId"], original_play, redis_key)
       RodTheBot::GoalHighlightWorker.perform_in(10, game_id, play["eventId"], redis_key) if scoring_team == @your_team
     end
@@ -87,6 +87,14 @@ module RodTheBot
       end
 
       details.join("\n")
+    end
+
+    def goal_images(players, play)
+      images = []
+      images << NhlApi.fetch_player_landing_feed(play["details"]["scoringPlayerId"])["headshot"]
+      images << NhlApi.fetch_player_landing_feed(play["details"]["assist1PlayerId"])["headshot"] if play["details"]["assist1PlayerId"].present?
+      images << NhlApi.fetch_player_landing_feed(play["details"]["assist2PlayerId"])["headshot"] if play["details"]["assist2PlayerId"].present?
+      images
     end
 
     def time_and_score(play, period_name, away, home)

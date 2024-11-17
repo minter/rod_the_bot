@@ -28,7 +28,7 @@ module RodTheBot
 
       post = format_post(scoring_team, period_name, players)
 
-      RodTheBot::Post.perform_async(post, redis_key)
+      RodTheBot::Post.perform_async(post, redis_key, nil, nil, goal_images(players, @play))
     end
 
     def build_players(feed)
@@ -41,6 +41,14 @@ module RodTheBot
         }
       end
       players
+    end
+
+    def goal_images(players, play)
+      images = []
+      images << NhlApi.fetch_player_landing_feed(play["details"]["scoringPlayerId"])["headshot"]
+      images << NhlApi.fetch_player_landing_feed(play["details"]["assist1PlayerId"])["headshot"] if play["details"]["assist1PlayerId"].present?
+      images << NhlApi.fetch_player_landing_feed(play["details"]["assist2PlayerId"])["headshot"] if play["details"]["assist2PlayerId"].present?
+      images
     end
 
     def format_post(scoring_team, period_name, players)

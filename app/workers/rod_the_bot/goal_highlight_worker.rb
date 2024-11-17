@@ -28,9 +28,9 @@ module RodTheBot
         print "DEBUG: Output path: #{output_path}\n"
         post = format_post(@landing_play)
         if output_path.include?("http")
-          RodTheBot::Post.perform_async(post, redis_key, nil, output_path, nil)
+          RodTheBot::Post.perform_async(post, redis_key, nil, output_path, [], nil)
         else
-          RodTheBot::Post.perform_async(post, redis_key, nil, nil, output_path)
+          RodTheBot::Post.perform_async(post, redis_key, nil, nil, [], output_path)
         end
       else
         self.class.perform_in(3.minutes, game_id, play_id, redis_key, initial_run_time)

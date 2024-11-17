@@ -66,7 +66,10 @@ module RodTheBot
         POST
       end
 
-      RodTheBot::Post.perform_async(post)
+      penalized_player_landing_feed = NhlApi.fetch_player_landing_feed(@play["details"]["committedByPlayerId"])
+
+      images = [penalized_player_landing_feed["headshot"]]
+      RodTheBot::Post.perform_async(post, nil, nil, nil, images)
     end
 
     def build_players(feed)
