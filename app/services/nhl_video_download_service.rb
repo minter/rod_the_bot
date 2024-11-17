@@ -36,7 +36,10 @@ class NhlVideoDownloadService
   end
 
   def get_m3u8_url
-    browser = Puppeteer.launch
+    browser = Puppeteer.launch(
+      args: ["--no-sandbox", "--disable-setuid-sandbox"],
+      headless: true
+    )
 
     begin
       page = browser.new_page

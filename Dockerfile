@@ -11,7 +11,12 @@ WORKDIR /rails
 ENV RAILS_ENV="production" \
     BUNDLE_DEPLOYMENT="1" \
     BUNDLE_PATH="/usr/local/bundle" \
-    BUNDLE_WITHOUT="test:development"
+    BUNDLE_WITHOUT="test:development" \
+    PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true \
+    CHROME_BIN=/usr/bin/chromium \
+    PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium \
+    CHROME_PATH=/usr/bin/chromium \
+    CHROME_NO_SANDBOX=true
 
 # Throw-away build stage to reduce size of final image
 FROM base as build
@@ -24,6 +29,7 @@ RUN apt-get update -qq && \
     pkg-config \
     curl \
     chromium \
+    chromium-sandbox \
     ffmpeg \
     fonts-liberation \
     libasound2 \
@@ -46,6 +52,7 @@ RUN apt-get update -qq && \
     xdg-utils \
     libxshmfence1 \
     && \
+    chmod 4755 /usr/lib/chromium/chrome-sandbox && \
     # Clean up
     rm -rf /var/lib/apt/lists/* && \
     rm -rf /var/cache/apt/archives/*
@@ -67,6 +74,7 @@ FROM base
 RUN apt-get update -qq && \
     apt-get install --no-install-recommends -y \
     chromium \
+    chromium-sandbox \
     ffmpeg \
     fonts-liberation \
     libasound2 \
@@ -89,6 +97,7 @@ RUN apt-get update -qq && \
     xdg-utils \
     libxshmfence1 \
     && \
+    chmod 4755 /usr/lib/chromium/chrome-sandbox && \
     # Clean up
     rm -rf /var/lib/apt/lists/* && \
     rm -rf /var/cache/apt/archives/*
