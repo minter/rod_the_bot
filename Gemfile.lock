@@ -275,7 +275,7 @@ GEM
     rufus-scheduler (3.9.2)
       fugit (~> 1.1, >= 1.11.1)
     securerandom (0.3.1)
-    sidekiq (7.3.5)
+    sidekiq (7.3.6)
       connection_pool (>= 2.3.0)
       logger
       rack (>= 2.2.4)
