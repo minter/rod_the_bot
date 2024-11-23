@@ -8,6 +8,7 @@ module RodTheBot
       home_goalie_record = find_goalie_record(home_goalie["playerId"])
       away_goalie = find_starting_goalie("awayTeam")
       away_goalie_record = find_goalie_record(away_goalie["playerId"])
+      goalie_images = get_goalie_images(home_goalie, away_goalie)
       officials = NhlApi.officials(game_id)
       scratches = NhlApi.scratches(game_id)
 
@@ -16,7 +17,7 @@ module RodTheBot
 
       main_post_key = "game_start_#{game_id}"
       RodTheBot::Post.perform_async(main_post, main_post_key)
-      RodTheBot::Post.perform_in(1.minute, reply_post, "game_start_reply_#{game_id}", main_post_key)
+      RodTheBot::Post.perform_in(1.minute, reply_post, "game_start_reply_#{game_id}", main_post_key, nil, goalie_images)
     end
 
     private
@@ -52,6 +53,12 @@ module RodTheBot
       POST
       post += "\nScratches:\n\n#{scratches}\n" if scratches
       post
+    end
+
+    def get_goalie_images(home_goalie, away_goalie)
+      home_goalie_image = NhlApi.fetch_player_landing_feed(home_goalie["playerId"])["headshot"]
+      away_goalie_image = NhlApi.fetch_player_landing_feed(away_goalie["playerId"])["headshot"]
+      [home_goalie_image, away_goalie_image]
     end
   end
 end

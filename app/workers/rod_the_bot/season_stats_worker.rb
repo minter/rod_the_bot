@@ -21,7 +21,7 @@ module RodTheBot
       skater_points_leader_post = <<~POST
         📈 #{@season_type} points leaders for the #{your_team}
 
-        #{skater_stats.sort_by { |k, v| v[:points] }.last(5).reverse.map { |player| "#{player[1][:name]}: #{player[1][:points]} #{"point".pluralize(player[1][:points])}, (#{player[1][:goals]} #{"goal".pluralize(player[1][:goals])}, #{player[1][:assists]} #{"assist".pluralize(player[1][:assists])})" }.join("\n")}
+        #{skater_stats.sort_by { |k, v| v[:points] }.last(5).reverse.map { |player| "#{player[1][:name]}: #{player[1][:points]} #{"point".pluralize(player[1][:points])}, (#{player[1][:goals]} G, #{player[1][:assists]} A)" }.join("\n")}
       POST
 
       time_on_ice_leader_post = <<~POST
