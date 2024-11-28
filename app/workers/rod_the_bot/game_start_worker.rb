@@ -16,7 +16,7 @@ module RodTheBot
       reply_post = format_reply_post(officials, scratches)
 
       main_post_key = "game_start_#{game_id}"
-      RodTheBot::Post.perform_async(main_post, main_post_key, nil, goalie_images)
+      RodTheBot::Post.perform_async(main_post, main_post_key, nil, nil, goalie_images)
       RodTheBot::Post.perform_in(1.minute, reply_post, "game_start_reply_#{game_id}", main_post_key)
     end
 
