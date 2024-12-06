@@ -31,7 +31,7 @@ module RodTheBot
       <<~POST
         🎬 It's time to start the #{period_name} at #{feed.fetch("venue", {}).fetch("default", "")}!
 
-        We're ready for another puck drop between the #{away.fetch("name", {}).fetch("default", "")} and the #{home.fetch("name", {}).fetch("default", "")}!
+        We're ready for another puck drop between the #{away.fetch("commonName", {}).fetch("default", "")} and the #{home.fetch("commonName", {}).fetch("default", "")}!
       POST
     end
   end

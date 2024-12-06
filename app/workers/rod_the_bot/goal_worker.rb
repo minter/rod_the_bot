@@ -66,9 +66,9 @@ module RodTheBot
 
     def goal_header(scoring_team, modifiers)
       if scoring_team == @your_team
-        "🎉 #{scoring_team["name"]["default"]}#{modifiers} GOOOOOOOAL!"
+        "🎉 #{scoring_team["commonName"]["default"]}#{modifiers} GOOOOOOOAL!"
       else
-        "👎 #{scoring_team["name"]["default"]}#{modifiers} Goal"
+        "👎 #{scoring_team["commonName"]["default"]}#{modifiers} Goal"
       end
     end
 

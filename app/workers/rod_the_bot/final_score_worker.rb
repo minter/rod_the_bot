@@ -24,8 +24,8 @@ module RodTheBot
     private
 
     def format_post(home, visitor, modifier, home_team_is_yours)
-      home_name = home.dig("name", "default") || ""
-      visitor_name = visitor.dig("name", "default") || ""
+      home_name = home.dig("commonName", "default") || ""
+      visitor_name = visitor.dig("commonName", "default") || ""
       home_score = home.fetch("score", 0)
       visitor_score = visitor.fetch("score", 0)
 

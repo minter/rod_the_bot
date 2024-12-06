@@ -55,7 +55,7 @@ module RodTheBot
       post = <<~POST
         🔔 Scoring Change
 
-        The #{scoring_team["name"]["default"]} goal at #{@play["timeInPeriod"]} of the #{period_name} now reads:
+        The #{scoring_team["commonName"]["default"]} goal at #{@play["timeInPeriod"]} of the #{period_name} now reads:
 
       POST
       post += "🚨 #{players[@play["details"]["scoringPlayerId"].to_s]&.dig(:name)} (#{@play["details"]["scoringPlayerTotal"]})\n"

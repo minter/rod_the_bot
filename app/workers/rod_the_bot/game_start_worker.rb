@@ -35,7 +35,7 @@ module RodTheBot
 
     def format_main_post(feed, home_goalie, home_goalie_record, away_goalie, away_goalie_record)
       <<~POST
-        🚦 It's puck drop at #{feed["venue"]["default"]} for #{feed["awayTeam"]["name"]["default"]} at #{feed["homeTeam"]["name"]["default"]}!
+        🚦 It's puck drop at #{feed["venue"]["default"]} for #{feed["awayTeam"]["commonName"]["default"]} at #{feed["homeTeam"]["commonName"]["default"]}!
         
         Starting Goalies:
         #{feed["homeTeam"]["abbrev"]}: ##{home_goalie["sweaterNumber"]} #{home_goalie["name"]["default"]} #{home_goalie_record}

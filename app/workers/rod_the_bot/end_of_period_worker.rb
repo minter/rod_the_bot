@@ -31,13 +31,13 @@ module RodTheBot
       <<~POST
         🛑 That's the end of the #{period_name}!
 
-        #{away.fetch("name", {}).fetch("default", "")} - #{away.fetch("score", 0)} 
-        #{home.fetch("name", {}).fetch("default", "")} - #{home.fetch("score", 0)}
+        #{away.fetch("commonName", {}).fetch("default", "")} - #{away.fetch("score", 0)} 
+        #{home.fetch("commonName", {}).fetch("default", "")} - #{home.fetch("score", 0)}
 
         Shots on goal after the #{period_name}:
 
-        #{away.fetch("name", {}).fetch("default", "")}: #{away.fetch("sog", 0)}
-        #{home.fetch("name", {}).fetch("default", "")}: #{home.fetch("sog", 0)}
+        #{away.fetch("commonName", {}).fetch("default", "")}: #{away.fetch("sog", 0)}
+        #{home.fetch("commonName", {}).fetch("default", "")}: #{home.fetch("sog", 0)}
       POST
     end
   end

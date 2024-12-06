@@ -41,7 +41,7 @@ module RodTheBot
 
     def format_post(leaders, title, period_state)
       <<~POST
-        #{title} for the #{your_team.fetch("name", {}).fetch("default", "")} #{period_state}
+        #{title} for the #{your_team.fetch("commonName", {}).fetch("default", "")} #{period_state}
 
         #{leaders.map { |player| "#{player[1][:name]} - #{player[1][:stat]}" }.join("\n")}
       POST
