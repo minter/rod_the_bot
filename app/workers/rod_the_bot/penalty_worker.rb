@@ -19,6 +19,12 @@ module RodTheBot
       @play = play
       return if @play.nil?
 
+      # Check if descKey is still "minor" and re-queue if so
+      if @play["details"]["descKey"] == "minor"
+        self.class.perform_in(10.seconds, game_id, play) # Re-queue the job after 10 seconds
+        return
+      end
+
       home = @feed["homeTeam"]
       away = @feed["awayTeam"]
 
