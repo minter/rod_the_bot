@@ -38,7 +38,9 @@ module RodTheBot
         🚦 It's puck drop at #{feed["venue"]["default"]} for #{feed["awayTeam"]["commonName"]["default"]} at #{feed["homeTeam"]["commonName"]["default"]}!
         
         Starting Goalies:
+
         #{feed["homeTeam"]["abbrev"]}: ##{home_goalie["sweaterNumber"]} #{home_goalie["name"]["default"]} #{home_goalie_record}
+        
         #{feed["awayTeam"]["abbrev"]}: ##{away_goalie["sweaterNumber"]} #{away_goalie["name"]["default"]} #{away_goalie_record}
       POST
     end
@@ -49,7 +51,6 @@ module RodTheBot
 
         Referees: #{officials[:referees].join(", ")}
         Lines: #{officials[:linesmen].join(", ")}
-
       POST
       post += "\nScratches:\n\n#{scratches}\n" if scratches
       post
