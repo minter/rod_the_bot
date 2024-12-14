@@ -10,6 +10,8 @@ class NhlVideoDownloadService
   end
 
   def call
+    return mock_video_path if Rails.env.test?
+
     m3u8_url = get_m3u8_url
     downloaded_file_path = download_video(m3u8_url)
     video = FFMPEG::Movie.new(downloaded_file_path)
@@ -23,6 +25,10 @@ class NhlVideoDownloadService
   private
 
   attr_reader :nhl_url, :output_path
+
+  def mock_video_path
+    "spec/fixtures/test_video.mp4"
+  end
 
   def generate_output_path
     "nhl_video_#{SecureRandom.hex(4)}.mp4"

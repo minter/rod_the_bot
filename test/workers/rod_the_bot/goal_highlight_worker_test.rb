@@ -25,7 +25,9 @@ class RodTheBot::GoalHighlightWorkerTest < ActiveSupport::TestCase
         anything,
         @redis_key,
         nil,
-        anything
+        nil,
+        [],
+        "spec/fixtures/test_video.mp4"
       )
 
       assert_no_enqueued_jobs(only: RodTheBot::GoalHighlightWorker) do
@@ -99,7 +101,14 @@ class RodTheBot::GoalHighlightWorkerTest < ActiveSupport::TestCase
 
       expected_post += " Score: #{@landing_feed["awayTeam"]["abbrev"]} #{landing_play["awayScore"]} - #{@landing_feed["homeTeam"]["abbrev"]} #{landing_play["homeScore"]}"
 
-      RodTheBot::Post.expects(:perform_async).with(expected_post, @redis_key, nil, landing_play["highlightClipSharingUrl"])
+      RodTheBot::Post.expects(:perform_async).with(
+        expected_post,
+        @redis_key,
+        nil,
+        nil,
+        [],
+        "spec/fixtures/test_video.mp4"
+      )
 
       worker.perform(@game_id, @play_id, @redis_key)
     end

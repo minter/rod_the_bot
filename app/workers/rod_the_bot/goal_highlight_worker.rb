@@ -25,7 +25,6 @@ module RodTheBot
 
       if @landing_play["highlightClipSharingUrl"].present?
         output_path = download_highlight(@landing_play["highlightClipSharingUrl"])
-        print "DEBUG: Output path: #{output_path}\n"
         post = format_post(@landing_play)
         if output_path.include?("http")
           RodTheBot::Post.perform_async(post, redis_key, nil, output_path, [], nil)
