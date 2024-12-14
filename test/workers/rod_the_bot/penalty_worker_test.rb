@@ -22,14 +22,16 @@ class RodTheBot::PenaltyWorkerTest < ActiveSupport::TestCase
         penalty_plays = feed["plays"].select { |play| play["typeDescKey"] == "penalty" }
 
         penalty_plays.each do |play|
-          assert_difference -> { RodTheBot::Post.jobs.size }, 1 do
-            @worker.perform(game_id, play)
-          end
+          VCR.use_cassette("nhl_api/player_#{play["details"]["committedByPlayerId"] || play["details"]["servedByPlayerId"]}_landing", allow_playback_repeats: true) do
+            assert_difference -> { RodTheBot::Post.jobs.size }, 1 do
+              @worker.perform(game_id, play)
+            end
 
-          # Verify the post content based on the play details
-          expected_content = get_expected_content(play, feed)
-          actual_content = RodTheBot::Post.jobs.last["args"].first
-          assert_match expected_content, actual_content, "Expected content doesn't match actual content for play: #{play["eventId"]}"
+            # Verify the post content based on the play details
+            expected_content = get_expected_content(play, feed)
+            actual_content = RodTheBot::Post.jobs.last["args"].first
+            assert_match expected_content, actual_content, "Expected content doesn't match actual content for play: #{play["eventId"]}"
+          end
         end
       end
     end
@@ -56,11 +58,11 @@ class RodTheBot::PenaltyWorkerTest < ActiveSupport::TestCase
 
     case play["details"]["typeCode"]
     when "BEN"
-      /#{emoji} #{penalized_team["name"]["default"]} Penalty.*Bench Minor - #{penalty_desc}.*#{play["details"]["duration"]} minute penalty at #{play["timeInPeriod"]} of the #{period_name}/m
+      /#{emoji} #{penalized_team["commonName"]["default"]} Penalty.*Bench Minor - #{penalty_desc}.*#{play["details"]["duration"]} minute penalty at #{play["timeInPeriod"]} of the #{period_name}/m
     when "PS"
-      /#{emoji} #{penalized_team["name"]["default"]} Penalty.*#{player_name} - #{penalty_desc}.*penalty shot awarded at #{play["timeInPeriod"]} of the #{period_name}/m
+      /#{emoji} #{penalized_team["commonName"]["default"]} Penalty.*#{player_name} - #{penalty_desc}.*penalty shot awarded at #{play["timeInPeriod"]} of the #{period_name}/m
     else
-      /#{emoji} #{penalized_team["name"]["default"]} Penalty.*#{player_name} - #{penalty_desc}.*#{play["details"]["duration"]} minute #{RodTheBot::PenaltyWorker::SEVERITY[play["details"]["typeCode"]]} penalty at #{play["timeInPeriod"]} of the #{period_name}/m
+      /#{emoji} #{penalized_team["commonName"]["default"]} Penalty.*#{player_name} - #{penalty_desc}.*#{play["details"]["duration"]} minute #{RodTheBot::PenaltyWorker::SEVERITY[play["details"]["typeCode"]]} penalty at #{play["timeInPeriod"]} of the #{period_name}/m
     end
   end
 end

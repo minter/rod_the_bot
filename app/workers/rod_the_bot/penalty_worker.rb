@@ -39,8 +39,8 @@ module RodTheBot
 
       players = build_players(@feed)
 
+      penalized_player_id = @play["details"]["committedByPlayerId"] || @play["details"]["servedByPlayerId"]
       penalized_player = players[@play["details"]["committedByPlayerId"]] || players[@play["details"]["servedByPlayerId"]]
-
       post = if penalized_player[:team_id] == ENV["NHL_TEAM_ID"].to_i
         "🙃 #{@your_team["commonName"]["default"]} Penalty\n\n"
       else
@@ -71,7 +71,7 @@ module RodTheBot
         POST
       end
 
-      penalized_player_landing_feed = NhlApi.fetch_player_landing_feed(@play["details"]["committedByPlayerId"])
+      penalized_player_landing_feed = NhlApi.fetch_player_landing_feed(penalized_player_id)
 
       images = [penalized_player_landing_feed["headshot"]]
       RodTheBot::Post.perform_async(post, nil, nil, nil, images)

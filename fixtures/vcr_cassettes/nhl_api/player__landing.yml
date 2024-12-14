@@ -1,0 +1,43 @@
+---
+http_interactions:
+- request:
+    method: get
+    uri: https://api-web.nhle.com/v1/player//landing
+    body:
+      encoding: US-ASCII
+      string: ''
+    headers:
+      Accept-Encoding:
+      - gzip;q=1.0,deflate;q=0.6,identity;q=0.3
+      Accept:
+      - "*/*"
+      User-Agent:
+      - Ruby
+  response:
+    status:
+      code: 400
+      message: Bad Request
+    headers:
+      Date:
+      - Sat, 14 Dec 2024 22:08:31 GMT
+      Content-Type:
+      - text/html;charset=iso-8859-1
+      Transfer-Encoding:
+      - chunked
+      Connection:
+      - keep-alive
+      Nncoection:
+      - close
+      Cf-Cache-Status:
+      - MISS
+      Vary:
+      - Accept-Encoding
+      Server:
+      - cloudflare
+      Cf-Ray:
+      - 8f218352ead3c5b3-IAD
+    body:
+      encoding: UTF-8
+      string: "<h1>Bad Message 400</h1><pre>reason: Ambiguous URI empty segment</pre>"
+  recorded_at: Sat, 14 Dec 2024 22:08:31 GMT
+recorded_with: VCR 6.3.1
