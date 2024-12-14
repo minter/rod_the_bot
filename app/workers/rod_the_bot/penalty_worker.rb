@@ -16,7 +16,8 @@ module RodTheBot
 
     def perform(game_id, play)
       @feed = NhlApi.fetch_pbp_feed(game_id)
-      @play = play
+      return if play.blank?
+      @play = NhlApi.fetch_play(game_id, play["eventId"])
       return if @play.nil?
 
       # Check if descKey is still "minor" and re-queue if so
@@ -35,8 +36,6 @@ module RodTheBot
         @your_team = away
         @their_team = home
       end
-
-      return if @feed["plays"].find { |play| play["eventId"] == @play["eventId"] }.blank?
 
       players = build_players(@feed)
 
