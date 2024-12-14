@@ -17,9 +17,16 @@ class RodTheBot::PostTest < ActiveSupport::TestCase
     ENV["BLUESKY_ENABLED"] = "true"
     ENV["TEAM_HASHTAGS"] = "#team"
 
-    @bsky.expects(:create_post).with("test post\n#team", embed_url: nil).returns({"uri" => "test_uri"})
+    @bsky.expects(:create_post).with(
+      "test post\n#team",
+      embed_url: nil,
+      embed_images: [],
+      embed_video: nil
+    ).returns({"uri" => "test_uri"})
 
-    @post.perform("test post")
+    assert_nothing_raised do
+      @post.perform("test post")
+    end
   end
 
   def test_perform_bluesky_disabled
@@ -28,7 +35,9 @@ class RodTheBot::PostTest < ActiveSupport::TestCase
 
     @bsky.expects(:create_post).never
 
-    @post.perform("test post")
+    assert_nothing_raised do
+      @post.perform("test post")
+    end
   end
 
   def test_append_team_hashtags
