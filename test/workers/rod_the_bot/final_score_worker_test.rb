@@ -12,15 +12,15 @@ class RodTheBot::FinalScoreWorkerTest < ActiveSupport::TestCase
   end
 
   def test_perform
-    VCR.use_cassette("nhl_game_boxscore_2023020328") do
-      @worker.perform(2023020328)
+    VCR.use_cassette("nhl_game_boxscore_2024020448") do
+      @worker.perform(2024020448)
       assert_not_empty @worker.feed
     end
   end
 
   def test_format_post
-    VCR.use_cassette("nhl_game_boxscore_2023020328") do
-      @worker.perform(2023020328)
+    VCR.use_cassette("nhl_game_boxscore_2024020448") do
+      @worker.perform(2024020448)
       home = @worker.feed.fetch("homeTeam", {})
       visitor = @worker.feed.fetch("awayTeam", {})
       modifier = if @worker.feed.fetch("periodDescriptor", {}).fetch("periodType", "") == "SO"
@@ -35,13 +35,13 @@ class RodTheBot::FinalScoreWorkerTest < ActiveSupport::TestCase
         
         Final Score:
         
-        Hurricanes - 4 
-        Flyers - 1
+        Sharks - 2 
+        Hurricanes - 3
         
         Shots on goal:
         
-        Hurricanes: 36
-        Flyers: 29
+        Sharks: 23
+        Hurricanes: 28
       POST
       assert_equal expected_output, post
     end
