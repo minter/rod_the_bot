@@ -3,7 +3,7 @@ require "test_helper"
 class RodTheBot::GameStartWorkerTest < ActiveSupport::TestCase
   def setup
     @game_start_worker = RodTheBot::GameStartWorker.new
-    @game_id = "2023030246"
+    @game_id = "2024020478"
   end
 
   test "find_starting_goalie" do
@@ -13,7 +13,7 @@ class RodTheBot::GameStartWorkerTest < ActiveSupport::TestCase
       goalie = @game_start_worker.send(:find_starting_goalie, "homeTeam")
 
       assert_not_nil goalie
-      assert_equal "S. Skinner", goalie["name"]["default"]
+      assert_equal "L. Ullmark", goalie["name"]["default"]
     end
   end
 
@@ -31,8 +31,8 @@ class RodTheBot::GameStartWorkerTest < ActiveSupport::TestCase
   test "format_main_post" do
     VCR.use_cassette("nhl_game_#{@game_id}_gamecenter_pbp_game_start") do
       feed = NhlApi.fetch_pbp_feed(@game_id)
-      home_goalie = {"sweaterNumber" => "74", "name" => {"default" => "S. Skinner"}}
-      away_goalie = {"sweaterNumber" => "31", "name" => {"default" => "A. Silovs"}}
+      home_goalie = {"sweaterNumber" => "35", "name" => {"default" => "L. Ullmark"}}
+      away_goalie = {"sweaterNumber" => "35", "name" => {"default" => "T. Jarry"}}
       home_goalie_record = "(5-3-0, 3.22 GAA, 0.877 SV%)"
       away_goalie_record = "(5-3-0, 2.62 GAA, 0.907 SV%)"
 
@@ -40,8 +40,8 @@ class RodTheBot::GameStartWorkerTest < ActiveSupport::TestCase
 
       assert_match(/🚦 It's puck drop at .+ for .+ at .+!/, post)
       assert_match(/Starting Goalies:/, post)
-      assert_match(/EDM: #74 S. Skinner \(5-3-0, 3.22 GAA, 0.877 SV%\)/, post)
-      assert_match(/VAN: #31 A. Silovs \(5-3-0, 2.62 GAA, 0.907 SV%\)/, post)
+      assert_match(/PIT: #35 T. Jarry \(5-3-0, 2.62 GAA, 0.907 SV%\)/, post)
+      assert_match(/OTT: #35 L. Ullmark \(5-3-0, 3.22 GAA, 0.877 SV%\)/, post)
     end
   end
 
@@ -68,10 +68,26 @@ class RodTheBot::GameStartWorkerTest < ActiveSupport::TestCase
         },
         "gameType" => 2,
         "venue" => {"default" => "Test Arena"},
-        "homeTeam" => {"name" => {"default" => "Home Team"}, "abbrev" => "HOME"},
-        "awayTeam" => {"name" => {"default" => "Away Team"}, "abbrev" => "AWAY"}
+        "homeTeam" => {
+          "name" => {"default" => "Home Team"},
+          "abbrev" => "HOME",
+          "commonName" => {"default" => "Home Team"}
+        },
+        "awayTeam" => {
+          "name" => {"default" => "Away Team"},
+          "abbrev" => "AWAY",
+          "commonName" => {"default" => "Away Team"}
+        },
+        "startTime" => "2024-02-04T19:00:00Z"
       })
       NhlApi.expects(:officials).returns({referees: ["Ref1", "Ref2"], linesmen: ["Lines1", "Lines2"]})
+      NhlApi.expects(:fetch_player_landing_feed).twice.returns({
+        "featuredStats" => {
+          "regularSeason" => {
+            "subSeason" => {"wins" => 10, "losses" => 5, "otLosses" => 2, "goalsAgainstAvg" => 2.5, "savePctg" => 0.915}
+          }
+        }
+      })
       NhlApi.expects(:fetch_player_landing_feed).twice.returns({
         "featuredStats" => {
           "regularSeason" => {
