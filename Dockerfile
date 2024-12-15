@@ -1,7 +1,7 @@
 # syntax = docker/dockerfile:1
 
 # Make sure RUBY_VERSION matches the Ruby version in .ruby-version and Gemfile
-ARG RUBY_VERSION=3.3.5
+ARG RUBY_VERSION=3.3.6
 FROM registry.docker.com/library/ruby:$RUBY_VERSION-slim as base
 
 # Rails app lives here
@@ -58,7 +58,7 @@ RUN apt-get update -qq && \
     rm -rf /var/cache/apt/archives/*
 
 # Install specific version of bundler
-ARG BUNDLER_VERSION=2.5.21
+ARG BUNDLER_VERSION=2.5.23
 RUN gem install bundler --no-document -v "${BUNDLER_VERSION}"
 
 # Install application gems
