@@ -58,7 +58,7 @@ RUN apt-get update -qq && \
     rm -rf /var/cache/apt/archives/*
 
 # Install specific version of bundler
-ARG BUNDLER_VERSION=2.5.23
+ARG BUNDLER_VERSION=2.6.2
 RUN gem install bundler --no-document -v "${BUNDLER_VERSION}"
 
 # Install application gems
