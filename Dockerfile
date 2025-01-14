@@ -44,6 +44,7 @@ RUN apt-get update -qq && \
     libnspr4 \
     libnss3 \
     libwayland-client0 \
+    libyaml-dev \
     libxcomposite1 \
     libxdamage1 \
     libxfixes3 \
