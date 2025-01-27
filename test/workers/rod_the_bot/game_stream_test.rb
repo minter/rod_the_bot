@@ -45,7 +45,7 @@ class RodTheBot::GameStreamTest < ActiveSupport::TestCase
   test "worker_mapping returns correct mapping" do
     expected_mapping = {
       "goal" => [RodTheBot::GoalWorker, 90],
-      "penalty" => [RodTheBot::PenaltyWorker, 90],
+      "penalty" => [RodTheBot::PenaltyWorker, 30],
       "period-start" => [RodTheBot::PeriodStartWorker, 1],
       "period-end" => [RodTheBot::EndOfPeriodWorker, 180]
     }
