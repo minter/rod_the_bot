@@ -348,6 +348,7 @@ DEPENDENCIES
   minitest
   mocha
   mock_redis
+  net-smtp
   nokogiri
   ostruct
   pry-rails
