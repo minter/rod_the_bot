@@ -71,10 +71,11 @@ module RodTheBot
         Points Percentage: #{season_stats_with_rank[:points_percentage][:value]} (Rank: #{season_stats_with_rank[:points_percentage][:rank]})
       POST
 
-      # Generate unique keys for each post
-      stats_post_1_key = "season_stats:#{@season}:#{@season_type}:1"
-      stats_post_2_key = "season_stats:#{@season}:#{@season_type}:2"
-      stats_post_3_key = "season_stats:#{@season}:#{@season_type}:3"
+      # Generate unique keys for each post that include the current date
+      current_date = Time.now.strftime("%Y%m%d")
+      stats_post_1_key = "season_stats:#{@season}:#{@season_type}:#{current_date}:1"
+      stats_post_2_key = "season_stats:#{@season}:#{@season_type}:#{current_date}:2"
+      stats_post_3_key = "season_stats:#{@season}:#{@season_type}:#{current_date}:3"
 
       # Schedule the posts with delays and keys
       RodTheBot::Post.perform_in(30.minutes, goalie_post)

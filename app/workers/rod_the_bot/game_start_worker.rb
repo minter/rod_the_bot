@@ -15,9 +15,11 @@ module RodTheBot
       main_post = format_main_post(@feed, home_goalie, home_goalie_record, away_goalie, away_goalie_record)
       reply_post = format_reply_post(officials, scratches)
 
-      main_post_key = "game_start_#{game_id}"
+      # Add timestamp to keys to ensure uniqueness
+      current_date = Time.now.strftime("%Y%m%d")
+      main_post_key = "game_start_#{game_id}:#{current_date}"
       RodTheBot::Post.perform_async(main_post, main_post_key, nil, nil, goalie_images)
-      RodTheBot::Post.perform_in(1.minute, reply_post, "game_start_reply_#{game_id}", main_post_key)
+      RodTheBot::Post.perform_in(1.minute, reply_post, "game_start_reply_#{game_id}:#{current_date}", main_post_key)
     end
 
     private

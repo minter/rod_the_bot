@@ -7,6 +7,9 @@ module RodTheBot
     def perform(game_id, play_id, redis_key, initial_run_time = nil)
       initial_run_time ||= Time.now.to_i
 
+      # Add timestamp to redis key to ensure uniqueness
+      redis_key = "#{redis_key}:#{Time.now.strftime("%Y%m%d")}" if redis_key
+
       # Check if 6 hours have passed since the initial run
       if Time.now.to_i - initial_run_time > 6.hours.to_i
         logger.info "Job for game_id: #{game_id}, play_id: #{play_id} exceeded 6 hours limit. Exiting."

@@ -5,6 +5,8 @@ module RodTheBot
     include RodTheBot::PeriodFormatter
 
     def perform(game_id, play_id, original_play, redis_key)
+      # Add timestamp to redis key to ensure uniqueness
+      redis_key = "#{redis_key}:#{Time.now.strftime("%Y%m%d")}" if redis_key
       @feed = NhlApi.fetch_pbp_feed(game_id)
       @play = @feed["plays"].find { |play| play["eventId"].to_s == play_id.to_s }
       home = @feed["homeTeam"]

@@ -30,8 +30,10 @@ module RodTheBot
       shots_on_goal_post = format_post(shots_on_goal_leaders, "🏒 Shots on goal leaders", period_state)
 
       game_splits_stats = NhlApi.splits(@game_id)
+      # Add timestamps to ensure uniqueness of post keys
+      current_date = Time.now.strftime("%Y%m%d")
       game_split_stats_post = format_game_split_stats_post(game_splits_stats, period_state)
-      RodTheBot::Post.perform_in(180, game_split_stats_post)
+      RodTheBot::Post.perform_in(180, game_split_stats_post, "end_period_stats:#{@game_id}:#{current_date}")
 
       RodTheBot::Post.perform_in(60, period_toi_post)
       RodTheBot::Post.perform_in(120, shots_on_goal_post)
