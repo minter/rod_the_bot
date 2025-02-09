@@ -179,8 +179,10 @@ class NhlApi
     end
 
     def postseason?
-      carousel = fetch_postseason_carousel
-      carousel.present? ? carousel["rounds"].present? : false
+      Time.zone = TZInfo::Timezone.get(ENV["TIME_ZONE"])
+      league_schedule = get("/schedule/now")
+      regular_season_end_date = Date.parse(league_schedule["regularSeasonEndDate"])
+      Date.today > regular_season_end_date
     end
 
     def preseason?(target_season)

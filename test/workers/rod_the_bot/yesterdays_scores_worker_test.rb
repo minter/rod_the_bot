@@ -48,6 +48,8 @@ class RodTheBot::YesterdaysScoresWorkerTest < ActiveSupport::TestCase
   end
 
   def test_perform_with_postponed_game
+    NhlApi.stubs(:postseason?).returns(false)
+
     Timecop.freeze(Date.new(2024, 10, 13)) do
       VCR.use_cassette("nhl_scores_scoreboard_20241012") do
         @worker.perform

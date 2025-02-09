@@ -157,7 +157,7 @@ class NhlApiTest < ActiveSupport::TestCase
   end
 
   test "postseason?" do
-    VCR.use_cassette("nhl_postseason_carousel") do
+    VCR.use_cassette("nhl_schedule_now") do
       is_postseason = NhlApi.postseason?
       assert_includes [true, false], is_postseason
     end
