@@ -5,7 +5,8 @@ class RodTheBot::GoalHighlightWorkerTest < ActiveSupport::TestCase
 
   setup do
     @game_id = "2024010043"
-    @redis_key = "game:#{@game_id}:goal:157"
+    @base_redis_key = "game:#{@game_id}:goal:157"
+    @redis_key = "#{@base_redis_key}:#{Time.now.strftime("%Y%m%d")}"
     VCR.use_cassette("nhl_api_#{@game_id}") do
       @pbp_feed = NhlApi.fetch_pbp_feed(@game_id)
       @landing_feed = NhlApi.fetch_landing_feed(@game_id)
@@ -31,7 +32,7 @@ class RodTheBot::GoalHighlightWorkerTest < ActiveSupport::TestCase
       )
 
       assert_no_enqueued_jobs(only: RodTheBot::GoalHighlightWorker) do
-        RodTheBot::GoalHighlightWorker.new.perform(@game_id, @play_id, @redis_key)
+        RodTheBot::GoalHighlightWorker.new.perform(@game_id, @play_id, @base_redis_key)
       end
     end
   end
@@ -59,11 +60,11 @@ class RodTheBot::GoalHighlightWorkerTest < ActiveSupport::TestCase
       worker = RodTheBot::GoalHighlightWorker.new
 
       assert_difference -> { RodTheBot::GoalHighlightWorker.jobs.size }, 1 do
-        worker.perform(@game_id, @play_id, @redis_key)
+        worker.perform(@game_id, @play_id, @base_redis_key)
       end
 
       job = RodTheBot::GoalHighlightWorker.jobs.last
-      assert_equal [@game_id, @play_id, @redis_key], job["args"][0..2]
+      assert_equal [@game_id, @play_id, @base_redis_key], job["args"][0..2]
       assert_in_delta Time.now.to_i, job["args"][3], 1
       assert_in_delta 3.minutes.from_now.to_i, job["at"], 1
     end
@@ -77,7 +78,7 @@ class RodTheBot::GoalHighlightWorkerTest < ActiveSupport::TestCase
       RodTheBot::Post.expects(:perform_async).never
 
       assert_no_difference -> { RodTheBot::GoalHighlightWorker.jobs.size } do
-        RodTheBot::GoalHighlightWorker.new.perform(@game_id, non_goal_play_id, @redis_key)
+        RodTheBot::GoalHighlightWorker.new.perform(@game_id, non_goal_play_id, @base_redis_key)
       end
     end
   end
@@ -110,7 +111,7 @@ class RodTheBot::GoalHighlightWorkerTest < ActiveSupport::TestCase
         "spec/fixtures/test_video.mp4"
       )
 
-      worker.perform(@game_id, @play_id, @redis_key)
+      worker.perform(@game_id, @play_id, @base_redis_key)
     end
   end
 
@@ -121,7 +122,7 @@ class RodTheBot::GoalHighlightWorkerTest < ActiveSupport::TestCase
 
     assert_no_difference -> { RodTheBot::GoalHighlightWorker.jobs.size } do
       worker = RodTheBot::GoalHighlightWorker.new
-      worker.perform(@game_id, @play_id, @redis_key, initial_run_time)
+      worker.perform(@game_id, @play_id, @base_redis_key, initial_run_time)
     end
   end
 end
