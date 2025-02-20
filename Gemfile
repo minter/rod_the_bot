@@ -22,7 +22,6 @@ gem "ostruct"
 gem "net-smtp", "~> 0.5.1"
 gem "nokogiri"
 gem "pry-rails"
-gem "puppeteer-ruby"
 gem "redis", "~>5"
 gem "sidekiq", "~> 7"
 gem "sidekiq-scheduler", "~> 5"
@@ -45,3 +44,5 @@ group :development do
   gem "bundler-audit"
   gem "standard"
 end
+
+gem "watir", "~> 7.3"

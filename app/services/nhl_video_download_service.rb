@@ -1,5 +1,5 @@
 class NhlVideoDownloadService
-  require "puppeteer-ruby"
+  require "watir"
   require "uri"
   require "open3"
   require "securerandom"
@@ -35,6 +35,7 @@ class NhlVideoDownloadService
   end
 
   def extract_media_url(metrics_url)
+    return nil unless metrics_url
     uri = URI.parse(metrics_url)
     query_params = URI.decode_www_form(uri.query).to_h
     media_url = query_params["media_url"]
@@ -42,81 +43,112 @@ class NhlVideoDownloadService
   end
 
   def get_m3u8_url
-    browser = Puppeteer.launch(
-      args: ["--no-sandbox", "--disable-setuid-sandbox"],
-      headless: true
-    )
+    retries = 0
+    max_retries = 3
 
     begin
-      page = browser.new_page
-      metrics_url = nil
-
-      page.on "response" do |response|
-        url = response.url
-        if url.include?("metrics.brightcove.com") && url.include?("media_url=")
-          Rails.logger.info "Found metrics URL: #{url}"
-          metrics_url = url
-        end
+      metrics_url = attempt_browser_launch
+      extract_media_url(metrics_url)
+    rescue => e
+      retries += 1
+      Rails.logger.error "Attempt #{retries} failed: #{e.message}"
+      if retries < max_retries
+        sleep(2**retries) # Exponential backoff
+        retry
+      else
+        raise e
       end
+    end
+  end
+
+  def attempt_browser_launch
+    browser = nil
+    metrics_url = nil
+
+    begin
+      Rails.logger.info "Launching browser..."
+      browser = Watir::Browser.new :chrome,
+        headless: true,
+        options: {
+          args: [
+            "--no-sandbox",
+            "--disable-gpu",
+            "--disable-dev-shm-usage"
+          ]
+        }
 
       Rails.logger.info "Navigating to #{nhl_url}"
-      page.goto(nhl_url, wait_until: "networkidle0", timeout: 30000)
+      browser.goto nhl_url
 
+      # Wait for video player
       Rails.logger.info "Waiting for video player..."
-      sleep 5
+      browser.wait_until(timeout: 10) { browser.video.exists? }
 
-      handle_play_button(page)
-      sleep 10
+      # Try to find and click play button
+      play_button = find_play_button(browser)
+      if play_button&.exists? && play_button.visible?
+        Rails.logger.info "Clicking play button..."
+        play_button.click
+      end
+
+      # Wait and extract video URL with timeout
+      Rails.logger.info "Waiting for metrics URL..."
+      wait_start = Time.now
+      while Time.now - wait_start < 15
+        metrics_url = browser.execute_script(<<~JS)
+          return window.performance
+            .getEntries()
+            .find(e => e.name.includes('metrics.brightcove.com') && e.name.includes('media_url='))
+            ?.name;
+        JS
+        break if metrics_url
+        sleep 0.5
+      end
 
       unless metrics_url
-        Rails.logger.error "Page content: #{page.content}"
-        raise "Could not find metrics URL"
+        raise "Could not find metrics URL after timeout"
       end
 
-      extract_media_url(metrics_url)
+      metrics_url
+    rescue => e
+      Rails.logger.error "Browser operation failed: #{e.message}"
+      raise e
     ensure
-      browser.close
+      if browser
+        begin
+          Rails.logger.info "Closing browser..."
+          browser.close
+        rescue => e
+          Rails.logger.error "Error closing browser: #{e.message}"
+          cleanup_zombie_processes
+        end
+      end
     end
-  rescue => e
-    Rails.logger.error "Error getting m3u8 URL: #{e.message}"
-    Rails.logger.error e.backtrace.join("\n")
-    raise e
   end
 
-  def handle_play_button(page)
-    play_button_selectors = [
-      ".video-player-play-button",
-      'button[aria-label="Play"]',
-      ".vjs-play-button",
-      ".vjs-big-play-button",
-      '[class*="play-button"]'
+  def find_play_button(browser)
+    selectors = [
+      {class: "video-player-play-button"},
+      {class: "vjs-play-button"},
+      {class: "vjs-big-play-button"},
+      {text: "Play"}
     ]
 
-    play_button = find_play_button(page, play_button_selectors)
-
-    if play_button
-      begin
-        page.click(play_button)
-        Rails.logger.info "Clicked play button"
-      rescue => e
-        Rails.logger.error "Error clicking play button: #{e.message}"
-      end
-    else
-      Rails.logger.warn "Could not find play button"
+    selectors.each do |selector|
+      button = browser.button(selector)
+      return button if button.exists?
     end
+
+    nil
   end
 
-  def find_play_button(page, selectors)
-    selectors.find do |selector|
-      begin
-        if page.query_selector(selector)
-          Rails.logger.info "Found play button with selector: #{selector}"
-          return selector
-        end
-      rescue => e
-        Rails.logger.error "Error checking selector #{selector}: #{e.message}"
-      end
-      false
+  def cleanup_zombie_processes
+    chrome_pids = `pgrep -f "chrome.*--headless"`.split("\n")
+    chrome_pids.each do |pid|
+      Process.kill("SIGKILL", pid.to_i)
+      Rails.logger.info "Killed zombie Chrome process: #{pid}"
+    rescue Errno::ESRCH
+      # Process already gone
     end
   end
 
