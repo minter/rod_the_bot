@@ -5,6 +5,8 @@ services:
     volumes:
       - "redis:/data"
     restart: unless-stopped  # Add restart policy
+    sysctls:
+      - vm.overcommit_memory=1
 
 
   sidekiq:
