@@ -4,10 +4,7 @@ services:
     command: redis-server --appendonly yes
     volumes:
       - "redis:/data"
-    restart: unless-stopped  # Add restart policy
-    sysctls:
-      - vm.overcommit_memory=1
-
+    restart: unless-stopped
 
   sidekiq:
     depends_on:
