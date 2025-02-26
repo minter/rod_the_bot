@@ -1,6 +1,6 @@
 GIT
   remote: https://github.com/minter/bskyrb.git
-  revision: 3a170b2729f86f6a43b7b74ddca85e5bba1b8741
+  revision: 4f35652eef22e0be6d17278edf67ed88b75df3aa
   branch: main
   specs:
     bskyrb (0.5.3)
@@ -152,7 +152,7 @@ GEM
       net-smtp
     marcel (1.0.4)
     method_source (1.1.0)
-    mini_magick (5.1.2)
+    mini_magick (5.2.0)
       benchmark
       logger
     mini_mime (1.1.5)
