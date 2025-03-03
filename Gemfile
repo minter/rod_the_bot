@@ -26,6 +26,7 @@ gem "redis", "~>5"
 gem "sidekiq", "~> 7"
 gem "sidekiq-scheduler", "~> 5"
 gem "streamio-ffmpeg", ">= 3.0.2"
+gem "uri", ">= 1.0.3"
 
 group :test do
   gem "minitest"
