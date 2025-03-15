@@ -31,6 +31,8 @@ module RodTheBot
 
       away_standings = NhlApi.team_standings(away["abbrev"])
       home_standings = NhlApi.team_standings(home["abbrev"])
+      away_logo_url = @game["awayTeam"]["logo"]
+      home_logo_url = @game["homeTeam"]["logo"]
       media = media(your_team)
       tv = media[:broadcast].empty? ? "None" : media[:broadcast].join(", ")
 
@@ -74,7 +76,7 @@ module RodTheBot
         end
 
         RodTheBot::GameStream.perform_at(time - 15.minutes, game_id)
-        RodTheBot::Post.perform_async(gameday_post)
+        RodTheBot::Post.perform_async(gameday_post, nil, nil, nil, [away_logo_url, home_logo_url])
         RodTheBot::SeasonStatsWorker.perform_async(your_standings[:team_name])
       end
     end
