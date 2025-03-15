@@ -4,17 +4,21 @@ module RodTheBot
 
     def perform(game_id)
       boxscore = NhlApi.fetch_boxscore_feed(game_id)
+      rr = NhlApi.fetch_right_rail_feed(game_id)
       gamedate = boxscore["gameDate"]
       game = get_game(gamedate, game_id)
 
       return if game.nil?
       return if game["gameScheduleState"] != "OK"
 
-      if game["threeMinRecap"].blank?
+      if rr["gameVideo"].blank? || rr["gameVideo"]["threeMinRecap"].blank?
         RodTheBot::ThreeMinuteRecapWorker.perform_in(600, game_id)
       else
         post = format_recap(game)
-        RodTheBot::Post.perform_async(post, nil, nil, "https://nhl.com#{game["threeMinRecap"]}")
+        recap_id = rr["gameVideo"]["threeMinRecap"]
+        away_code = boxscore["awayTeam"]["abbrev"].downcase
+        home_code = boxscore["homeTeam"]["abbrev"].downcase
+        RodTheBot::Post.perform_async(post, nil, nil, "https://nhl.com/video/#{away_code}-at-#{home_code}-recap-#{recap_id}")
       end
     end
 
