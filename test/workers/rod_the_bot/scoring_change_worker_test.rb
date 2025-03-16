@@ -13,6 +13,8 @@ class RodTheBot::ScoringChangeWorkerTest < ActiveSupport::TestCase
       }
     }
     @redis_key = "game:#{@game_id}:goal:#{@play_id}"
+    # Update to match the new format in the worker
+    @scoring_key_pattern = /^#{Regexp.escape(@redis_key)}:scoring:\d+$/
   end
 
   def test_perform_with_scoring_change
@@ -28,6 +30,7 @@ class RodTheBot::ScoringChangeWorkerTest < ActiveSupport::TestCase
       modified_original_play = actual_goal_play.deep_dup
       modified_original_play["details"]["assist1PlayerId"] = "8000000"  # Use a non-existent player ID
 
+      # Allow any parameters for Post.perform_async
       RodTheBot::Post.expects(:perform_async).once
 
       @worker.perform(@game_id, @play_id, modified_original_play, @redis_key)
