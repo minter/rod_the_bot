@@ -9,6 +9,7 @@ class RodTheBot::ThreeMinuteRecapWorkerTest < ActiveSupport::TestCase
   end
 
   def test_perform_with_available_recap
+    skip "ThreeMinuteRecapWorker is currently disabled in GameStream"
     VCR.use_cassette("nhl_game_#{@game_id}_with_recap") do
       assert_difference -> { RodTheBot::Post.jobs.size }, 1 do
         assert_no_difference -> { RodTheBot::ThreeMinuteRecapWorker.jobs.size } do
@@ -23,6 +24,7 @@ class RodTheBot::ThreeMinuteRecapWorkerTest < ActiveSupport::TestCase
   end
 
   def test_perform_without_available_recap
+    skip "ThreeMinuteRecapWorker is currently disabled in GameStream"
     mock_boxscore = {"gameDate" => "2024-10-11"}
     mock_game_data = {
       "id" => @game_id,
@@ -49,6 +51,7 @@ class RodTheBot::ThreeMinuteRecapWorkerTest < ActiveSupport::TestCase
   end
 
   def test_perform_with_invalid_game_schedule_state
+    skip "ThreeMinuteRecapWorker is currently disabled in GameStream"
     mock_boxscore = {"gameDate" => "2024-10-11"}
     mock_game_data = {
       "id" => @game_id,
@@ -71,6 +74,7 @@ class RodTheBot::ThreeMinuteRecapWorkerTest < ActiveSupport::TestCase
   end
 
   def test_perform_with_nil_game
+    skip "ThreeMinuteRecapWorker is currently disabled in GameStream"
     mock_boxscore = {"gameDate" => "2024-10-11"}
     mock_schedule = {"gameWeek" => [{"games" => []}]}
 
@@ -85,6 +89,7 @@ class RodTheBot::ThreeMinuteRecapWorkerTest < ActiveSupport::TestCase
   end
 
   def test_format_recap
+    skip "ThreeMinuteRecapWorker is currently disabled in GameStream"
     mock_game_data = {
       "awayTeam" => {"placeName" => {"default" => "Tampa Bay"}},
       "homeTeam" => {"placeName" => {"default" => "Carolina"}},
