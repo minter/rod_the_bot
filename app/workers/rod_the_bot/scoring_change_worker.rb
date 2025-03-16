@@ -5,8 +5,11 @@ module RodTheBot
     include RodTheBot::PeriodFormatter
 
     def perform(game_id, play_id, original_play, redis_key)
-      # Add timestamp to redis key to ensure uniqueness
-      redis_key = "#{redis_key}:#{Time.now.strftime("%Y%m%d")}" if redis_key
+      # Use the original redis_key as the parent_key
+      parent_key = redis_key
+
+      # Create a new unique key for this scoring change post
+      scoring_key = "#{redis_key}:scoring:#{Time.now.to_i}"
       @feed = NhlApi.fetch_pbp_feed(game_id)
       @play = @feed["plays"].find { |play| play["eventId"].to_s == play_id.to_s }
       home = @feed["homeTeam"]
@@ -30,7 +33,7 @@ module RodTheBot
 
       post = format_post(scoring_team, period_name, players)
 
-      RodTheBot::Post.perform_async(post, redis_key, nil, nil, goal_images(players, @play))
+      RodTheBot::Post.perform_async(post, scoring_key, parent_key, nil, goal_images(players, @play))
     end
 
     def build_players(feed)

@@ -7,11 +7,11 @@ module RodTheBot
     def perform(game_id, play_id, redis_key, initial_run_time = nil)
       initial_run_time ||= Time.now.to_i
 
-      # Store the original redis_key before adding timestamp
-      original_redis_key = redis_key
+      # Store the original redis_key to use as parent_key
+      parent_key = redis_key
 
-      # Add timestamp to redis key to ensure uniqueness
-      redis_key = "#{redis_key}:#{Time.now.strftime("%Y%m%d")}" if redis_key
+      # Create a new unique key for this highlight post
+      highlight_key = "#{redis_key}:highlight:#{Time.now.to_i}"
 
       # Check if 6 hours have passed since the initial run
       if Time.now.to_i - initial_run_time > 6.hours.to_i
@@ -33,13 +33,13 @@ module RodTheBot
         output_path = download_highlight(@landing_play["highlightClipSharingUrl"])
         post = format_post(@landing_play)
         if output_path.include?("http")
-          RodTheBot::Post.perform_async(post, redis_key, nil, output_path, [], nil)
+          RodTheBot::Post.perform_async(post, highlight_key, parent_key, output_path, [], nil)
         else
-          RodTheBot::Post.perform_async(post, redis_key, nil, nil, [], output_path)
+          RodTheBot::Post.perform_async(post, highlight_key, parent_key, nil, [], output_path)
         end
       else
-        # Use original_redis_key when rescheduling
-        self.class.perform_in(3.minutes, game_id, play_id, original_redis_key, initial_run_time)
+        # Use parent_key when rescheduling
+        self.class.perform_in(3.minutes, game_id, play_id, parent_key, initial_run_time)
       end
     end
 
