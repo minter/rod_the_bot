@@ -88,14 +88,14 @@ class RodTheBot::GoalHighlightWorkerTest < ActiveSupport::TestCase
       worker.instance_variable_set(:@pbp_play, @goal_play)
       worker.instance_variable_set(:@landing_play, landing_play)
 
-      expected_post = "🎥 Goal highlight: #{landing_play["firstName"]["default"]} #{landing_play["lastName"]["default"]} (#{landing_play["teamAbbrev"]["default"]}) scores on a #{landing_play["shotType"]} shot at #{landing_play["timeInPeriod"]} of the #{worker.send(:format_period_name, @goal_play["periodDescriptor"]["number"])}."
+      # expected_post = "🎥 Goal highlight: #{landing_play["firstName"]["default"]} #{landing_play["lastName"]["default"]} (#{landing_play["teamAbbrev"]["default"]}) scores on a #{landing_play["shotType"]} shot at #{landing_play["timeInPeriod"]} of the #{worker.send(:format_period_name, @goal_play["periodDescriptor"]["number"])}."
 
-      if landing_play["assists"].any?
-        assists = landing_play["assists"].map { |a| "#{a["firstName"]["default"]} #{a["lastName"]["default"]}" }.join(", ")
-        expected_post += " Assisted by #{assists}."
-      end
+      # if landing_play["assists"].any?
+      #   assists = landing_play["assists"].map { |a| "#{a["firstName"]["default"]} #{a["lastName"]["default"]}" }.join(", ")
+      #   expected_post += " Assisted by #{assists}."
+      # end
 
-      expected_post += " Score: #{@landing_feed["awayTeam"]["abbrev"]} #{landing_play["awayScore"]} - #{@landing_feed["homeTeam"]["abbrev"]} #{landing_play["homeScore"]}"
+      # expected_post += " Score: #{@landing_feed["awayTeam"]["abbrev"]} #{landing_play["awayScore"]} - #{@landing_feed["homeTeam"]["abbrev"]} #{landing_play["homeScore"]}"
 
       # Allow any parameters for Post.perform_async
       RodTheBot::Post.expects(:perform_async).once
