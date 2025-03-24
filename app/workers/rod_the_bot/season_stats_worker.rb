@@ -49,24 +49,19 @@ module RodTheBot
       POST
 
       team_season_stats_post_1 = <<~POST
-        📊 #{@season_type} stats and NHL ranks for the #{your_team} (1/3)
+        📊 #{@season_type} stats and NHL ranks for the #{your_team} (1/2)
 
         Average Goals Scored: #{season_stats_with_rank[:average_goals_scored][:value]} (Rank: #{season_stats_with_rank[:average_goals_scored][:rank]})
         Average Goals Allowed: #{season_stats_with_rank[:average_goals_allowed][:value]} (Rank: #{season_stats_with_rank[:average_goals_allowed][:rank]})
         Power Play Percentage: #{season_stats_with_rank[:power_play_percentage][:value]} (Rank: #{season_stats_with_rank[:power_play_percentage][:rank]})
+        Penalty Kill Percentage: #{season_stats_with_rank[:penalty_kill_percentage][:value]} (Rank: #{season_stats_with_rank[:penalty_kill_percentage][:rank]})
       POST
 
       team_season_stats_post_2 = <<~POST
-        📊 #{@season_type} stats and NHL ranks for the #{your_team} (2/3)
+        📊 #{@season_type} stats and NHL ranks for the #{your_team} (2/2)
 
-        Penalty Kill Percentage: #{season_stats_with_rank[:penalty_kill_percentage][:value]} (Rank: #{season_stats_with_rank[:penalty_kill_percentage][:rank]})
         Shots Per Game: #{season_stats_with_rank[:shots_per_game][:value]} (Rank: #{season_stats_with_rank[:shots_per_game][:rank]})
         Shots Allowed Per Game: #{season_stats_with_rank[:shots_allowed_per_game][:value]} (Rank: #{season_stats_with_rank[:shots_allowed_per_game][:rank]})
-      POST
-
-      team_season_stats_post_3 = <<~POST
-        📊 #{@season_type} stats and NHL ranks for the #{your_team} (3/3)
-
         Faceoff Percentage: #{season_stats_with_rank[:faceoff_percentage][:value]} (Rank: #{season_stats_with_rank[:faceoff_percentage][:rank]})
         Points Percentage: #{season_stats_with_rank[:points_percentage][:value]} (Rank: #{season_stats_with_rank[:points_percentage][:rank]})
       POST
@@ -75,7 +70,6 @@ module RodTheBot
       current_date = Time.now.strftime("%Y%m%d")
       stats_post_1_key = "season_stats:#{@season}:#{@season_type}:#{current_date}:1"
       stats_post_2_key = "season_stats:#{@season}:#{@season_type}:#{current_date}:2"
-      stats_post_3_key = "season_stats:#{@season}:#{@season_type}:#{current_date}:3"
 
       # Schedule the posts with delays and keys
       RodTheBot::Post.perform_in(30.minutes, goalie_post)
@@ -87,7 +81,6 @@ module RodTheBot
 
       RodTheBot::Post.perform_in(75.minutes, team_season_stats_post_1, stats_post_1_key)
       RodTheBot::Post.perform_in(76.minutes, team_season_stats_post_2, stats_post_2_key, stats_post_1_key)
-      RodTheBot::Post.perform_in(77.minutes, team_season_stats_post_3, stats_post_3_key, stats_post_2_key)
     end
 
     def collect_roster_stats
