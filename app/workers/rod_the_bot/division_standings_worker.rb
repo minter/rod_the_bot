@@ -22,8 +22,9 @@ module RodTheBot
     def format_standings(my_division, division_teams)
       post = "📋 Here are the current standings for the #{my_division} division (by PT%):\n\n"
       division_teams.each_with_index do |team, index|
+        clinch_indicator = team["clinchIndicator"] + "-" if team["clinchIndicator"].present?
         point_percentage = sprintf("%.3f", team["pointPctg"].to_f)
-        post += "#{index + 1}. #{team["teamAbbrev"]["default"]}: #{team["points"]} pts (#{point_percentage}%)\n"
+        post += "#{index + 1}. #{clinch_indicator}#{team["teamAbbrev"]["default"]}: #{team["points"]} pts (#{point_percentage}%)\n"
       end
       post
     end
