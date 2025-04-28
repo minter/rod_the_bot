@@ -6,6 +6,9 @@ class RodTheBot::TodaysScheduleWorkerTest < ActiveSupport::TestCase
     @worker = RodTheBot::TodaysScheduleWorker.new
     ENV["TIME_ZONE"] = "America/New_York"
     Time.zone = TZInfo::Timezone.get(ENV["TIME_ZONE"])
+
+    # Stub NhlApi.postseason? to prevent HTTP requests during tests
+    NhlApi.stubs(:postseason?).returns(false)
   end
 
   test "perform with games scheduled" do
@@ -82,6 +85,48 @@ class RodTheBot::TodaysScheduleWorkerTest < ActiveSupport::TestCase
 
       assert_equal "CNCL", formatted_time
     end
+  end
+
+  test "series_status with team leading" do
+    game = {
+      "seriesStatus" => {
+        "topSeedTeamAbbrev" => "FLA",
+        "topSeedWins" => 2,
+        "bottomSeedTeamAbbrev" => "TBL",
+        "bottomSeedWins" => 1
+      }
+    }
+
+    status = @worker.send(:series_status, game)
+    assert_equal " (FLA leads 2-1)", status
+  end
+
+  test "series_status with series tied" do
+    game = {
+      "seriesStatus" => {
+        "topSeedTeamAbbrev" => "DAL",
+        "topSeedWins" => 2,
+        "bottomSeedTeamAbbrev" => "COL",
+        "bottomSeedWins" => 2
+      }
+    }
+
+    status = @worker.send(:series_status, game)
+    assert_equal " (Series tied at 2)", status
+  end
+
+  test "series_status with bottom seed leading" do
+    game = {
+      "seriesStatus" => {
+        "topSeedTeamAbbrev" => "TBL",
+        "topSeedWins" => 1,
+        "bottomSeedTeamAbbrev" => "FLA",
+        "bottomSeedWins" => 2
+      }
+    }
+
+    status = @worker.send(:series_status, game)
+    assert_equal " (FLA leads 2-1)", status
   end
 
   def teardown
