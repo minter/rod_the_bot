@@ -25,7 +25,8 @@ module RodTheBot
     def format_series(current_series)
       post = "📋 Here are the playoff matchups for the #{current_series["roundLabel"].tr("-", " ").titlecase}:\n\n"
       current_series["series"].each do |series|
-        post += "#{series["topSeed"]["abbrev"]} #{series["topSeed"]["wins"]} - #{series["bottomSeed"]["abbrev"]} #{series["bottomSeed"]["wins"]}\n\n"
+        trophy = " 🏆" if series["topSeed"]["wins"] == series["neededToWin"] || series["bottomSeed"]["wins"] == series["neededToWin"]
+        post += "#{series["topSeed"]["abbrev"]} #{series["topSeed"]["wins"]} - #{series["bottomSeed"]["abbrev"]} #{series["bottomSeed"]["wins"]}#{trophy}\n\n"
       end
       post
     end

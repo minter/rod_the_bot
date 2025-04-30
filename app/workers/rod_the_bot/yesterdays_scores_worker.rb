@@ -61,7 +61,7 @@ module RodTheBot
       if [top_seed["wins"], bottom_seed["wins"]].max == series_length
         winner = (top_seed["wins"] == series_length) ? top_seed : bottom_seed
         loser = (winner == top_seed) ? bottom_seed : top_seed
-        " (#{winner["abbrev"]} wins #{winner["wins"]}-#{loser["wins"]})"
+        " (#{winner["abbrev"]} wins #{winner["wins"]}-#{loser["wins"]}) 🏆"
       elsif top_seed["wins"] == bottom_seed["wins"]
         " (Series tied #{top_seed["wins"]}-#{bottom_seed["wins"]})"
       else
