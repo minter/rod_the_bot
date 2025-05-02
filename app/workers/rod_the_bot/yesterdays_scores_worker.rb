@@ -32,7 +32,29 @@ module RodTheBot
         return "#{visitor_team["abbrev"]} @ #{home_team["abbrev"]} - Not started"
       end
 
-      score_text = "#{visitor_team["abbrev"]} #{visitor_team["score"]} : #{home_team["score"]} #{home_team["abbrev"]}"
+      # Check if this is a postseason game with a series winner
+      trophy_prefix = ""
+      trophy_suffix = ""
+      
+      if NhlApi.postseason?
+        matchup = find_series_matchup(visitor_team["abbrev"], home_team["abbrev"])
+        if matchup
+          top_seed, bottom_seed = matchup.values_at("topSeed", "bottomSeed")
+          series_length = matchup["neededToWin"]
+          
+          if [top_seed["wins"], bottom_seed["wins"]].max == series_length
+            winner_abbrev = (top_seed["wins"] == series_length) ? top_seed["abbrev"] : bottom_seed["abbrev"]
+            
+            if winner_abbrev == visitor_team["abbrev"]
+              trophy_prefix = "🏆 "
+            elsif winner_abbrev == home_team["abbrev"]
+              trophy_suffix = " 🏆"
+            end
+          end
+        end
+      end
+
+      score_text = "#{trophy_prefix}#{visitor_team["abbrev"]} #{visitor_team["score"]} : #{home_team["score"]} #{home_team["abbrev"]}#{trophy_suffix}"
 
       score_text << format_overtime(game["periodDescriptor"])
       score_text << format_series_status(visitor_team["abbrev"], home_team["abbrev"]) if NhlApi.postseason?
@@ -61,7 +83,7 @@ module RodTheBot
       if [top_seed["wins"], bottom_seed["wins"]].max == series_length
         winner = (top_seed["wins"] == series_length) ? top_seed : bottom_seed
         loser = (winner == top_seed) ? bottom_seed : top_seed
-        " (#{winner["abbrev"]} wins #{winner["wins"]}-#{loser["wins"]}) 🏆"
+        " (#{winner["abbrev"]} wins #{winner["wins"]}-#{loser["wins"]})"
       elsif top_seed["wins"] == bottom_seed["wins"]
         " (Series tied #{top_seed["wins"]}-#{bottom_seed["wins"]})"
       else
