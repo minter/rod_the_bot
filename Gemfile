@@ -24,7 +24,7 @@ gem "nokogiri"
 gem "pry-rails"
 gem "redis", "~>5"
 gem "sidekiq", "~> 7"
-gem "sidekiq-scheduler", "~> 5"
+gem "sidekiq-scheduler", "~> 6"
 gem "streamio-ffmpeg", ">= 3.0.2"
 gem "uri", ">= 1.0.3"
 
