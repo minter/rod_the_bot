@@ -5,6 +5,7 @@ module RodTheBot
     attr_reader :feed
 
     def perform(game_id)
+      @game_id = game_id
       @feed = NhlApi.fetch_landing_feed(game_id)
 
       if feed["summary"].present? && feed["summary"]["threeStars"].present?
@@ -39,11 +40,30 @@ module RodTheBot
       gaa = player["goalsAgainstAverage"]
       sv_pct = sprintf("%.3f", player["savePctg"].round(3))
       stats = if gaa.to_i == 0 && sv_pct.to_i == 1
-        "(Shutout)"
+        bs = NhlApi.fetch_boxscore_feed(@game_id)
+        # Find the goalie in the boxscore feed
+        saves = find_goalie_saves(bs, player["playerId"])
+        "(#{saves}-Save Shutout)"
       else
         "(#{gaa} GAA, #{sv_pct} SV%)"
       end
       format_player_info(player, stats)
+    end
+
+    def find_goalie_saves(boxscore, player_id)
+      # Check both home and away teams
+      ["homeTeam", "awayTeam"].each do |team_key|
+        if boxscore["playerByGameStats"] && boxscore["playerByGameStats"][team_key] && boxscore["playerByGameStats"][team_key]["goalies"]
+          boxscore["playerByGameStats"][team_key]["goalies"].each do |goalie|
+            if goalie["playerId"] == player_id
+              return goalie["saves"]
+            end
+          end
+        end
+      end
+      
+      # Default to 0 if not found
+      0
     end
 
     def format_player_stats(player)
