@@ -61,7 +61,7 @@ module RodTheBot
           end
         end
       end
-      
+
       # Default to 0 if not found
       0
     end

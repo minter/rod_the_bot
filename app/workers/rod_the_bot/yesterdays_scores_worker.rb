@@ -35,16 +35,16 @@ module RodTheBot
       # Check if this is a postseason game with a series winner
       trophy_prefix = ""
       trophy_suffix = ""
-      
+
       if NhlApi.postseason?
         matchup = find_series_matchup(visitor_team["abbrev"], home_team["abbrev"])
         if matchup
           top_seed, bottom_seed = matchup.values_at("topSeed", "bottomSeed")
           series_length = matchup["neededToWin"]
-          
+
           if [top_seed["wins"], bottom_seed["wins"]].max == series_length
             winner_abbrev = (top_seed["wins"] == series_length) ? top_seed["abbrev"] : bottom_seed["abbrev"]
-            
+
             if winner_abbrev == visitor_team["abbrev"]
               trophy_prefix = "🏆 "
             elsif winner_abbrev == home_team["abbrev"]
