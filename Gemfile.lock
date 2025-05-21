@@ -159,7 +159,7 @@ GEM
     minitest (5.25.5)
     mocha (2.7.1)
       ruby2_keywords (>= 0.0.5)
-    mock_redis (0.49.0)
+    mock_redis (0.50.0)
       redis (~> 5)
     msgpack (1.8.0)
     multi_json (1.15.0)
