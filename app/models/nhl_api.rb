@@ -189,6 +189,10 @@ class NhlApi
       target_season.to_s != current_season.to_s
     end
 
+    def fetch_draft_picks(year)
+      get("/draft/picks/#{year}/all")
+    end
+
     private
 
     def get(path, options = {})
