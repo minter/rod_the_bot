@@ -2,7 +2,7 @@
 
 # Make sure RUBY_VERSION matches the Ruby version in .ruby-version and Gemfile
 ARG RUBY_VERSION=3.4.4
-FROM registry.docker.com/library/ruby:$RUBY_VERSION-slim as base
+FROM registry.docker.com/library/ruby:$RUBY_VERSION-slim AS base
 
 # Rails app lives here
 WORKDIR /rails
@@ -19,7 +19,7 @@ ENV RAILS_ENV="production" \
     CHROME_NO_SANDBOX=true
 
 # Throw-away build stage to reduce size of final image
-FROM base as build
+FROM base AS build
 
 # Install packages needed to build gems, Chromium, ffmpeg, and headless dependencies
 RUN apt-get update -qq && \
