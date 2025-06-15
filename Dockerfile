@@ -98,6 +98,7 @@ RUN apt-get update -qq && \
     libxrandr2 \
     xdg-utils \
     libxshmfence1 \
+    tini \
     && \
     chmod 4755 /usr/lib/chromium/chrome-sandbox && \
     # Clean up
@@ -119,7 +120,7 @@ RUN useradd rails --create-home --shell /bin/bash && \
 USER rails:rails
 
 # Entrypoint prepares the database.
-ENTRYPOINT ["/rails/bin/docker-entrypoint"]
+ENTRYPOINT ["/usr/bin/tini", "--", "/rails/bin/docker-entrypoint"]
 
 # Start the server by default, this can be overwritten at runtime
 CMD ["bundle", "exec", "dotenv", "sidekiq"]
