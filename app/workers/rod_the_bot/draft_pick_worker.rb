@@ -43,6 +43,18 @@ module RodTheBot
       # Add more as needed
     }
 
+    COUNTRY_NAMES = {
+      "CAN" => "Canada",
+      "USA" => "USA",
+      "CZE" => "Czech Republic",
+      "SWE" => "Sweden",
+      "FIN" => "Finland",
+      "RUS" => "Russia",
+      "CHE" => "Switzerland",
+      "SVK" => "Slovakia",
+      "DEU" => "Germany"
+    }.freeze
+
     def perform
       # 1. Check if today is an active draft date
       active_dates = ENV["DRAFT_ACTIVE_DATES"].to_s.split(",")
@@ -58,9 +70,19 @@ module RodTheBot
 
       # 3. Fetch draft data
       data = NhlApi.fetch_draft_picks(year)
-      unless data.is_a?(Hash) && data["picks"].is_a?(Array)
+      rankings = NhlApi.fetch_draft_rankings(year)
+
+      unless data.is_a?(Hash)
         Sidekiq.logger.error "Failed to fetch or parse draft data for year #{year}"
         return
+      end
+
+      prospects_by_name = {}
+      rankings.each do |category, prospect_list|
+        prospect_list.each do |prospect|
+          full_name = "#{prospect["firstName"]} #{prospect["lastName"]}"
+          prospects_by_name[full_name] = prospect.merge("category" => category)
+        end
       end
 
       # 4. Check draft state
@@ -82,6 +104,7 @@ module RodTheBot
         end
       end
 
+      draft_year = data["draftYear"] || year
       picks = data["picks"] || []
       team_abbrev = ENV["NHL_TEAM_ABBREVIATION"] || "CAR"
 
@@ -92,7 +115,7 @@ module RodTheBot
 
         # Deduplication key
         key = "draft_pick_#{year}_#{pick["round"]}_#{pick["pickInRound"]}"
-        next if REDIS.get(key)
+        # next if REDIS.get(key)
 
         # Build pick history string
         pick_history = pick["teamPickHistory"]
@@ -109,18 +132,11 @@ module RodTheBot
         end
 
         # Compose post
-        pick_num = pick["pickInRound"]
-        round = pick["round"]
-        draft_year = data["draftYear"] || year
-        team_name = pick.dig("teamName", "default") || pick["teamName"]
-        position = pick["positionCode"]
         first_name = pick.dig("firstName", "default") || pick["firstName"]
         last_name = pick.dig("lastName", "default") || pick["lastName"]
-        club = pick["amateurClubName"]
-        country_code = pick["countryCode"]
-        demonym = COUNTRY_DEMONYMS[country_code] || country_code
+        ranking_info = prospects_by_name["#{first_name} #{last_name}"]
 
-        post = "📝 With pick #{pick_num} #{pick_history_str} in round #{round} of the #{draft_year} NHL Draft, the #{team_name} have selected #{demonym} #{position} #{first_name} #{last_name} (#{club}, #{country_code})"
+        post = format_post(pick, ranking_info, pick_history_str, draft_year)
 
         # Post to Bluesky
         RodTheBot::Post.perform_async(post, key)
@@ -136,6 +152,89 @@ module RodTheBot
       if draft_day && ENV["DRAFT_YEAR_OVERRIDE"].blank?
         self.class.perform_in(5 * 60) # Re-queue in 5 minutes
       end
+    end
+
+    private
+
+    def format_post(pick, ranking_info, pick_history_str, draft_year)
+      # Data from pick
+      pick_num = pick["pickInRound"]
+      round = pick["round"]
+      team_name = pick.dig("teamName", "default") || pick["teamName"]
+      position = pick["positionCode"]
+      first_name = pick.dig("firstName", "default") || pick["firstName"]
+      last_name = pick.dig("lastName", "default") || pick["lastName"]
+      club = pick["amateurClubName"]
+      league = pick["amateurLeague"]
+      country_code = pick["countryCode"]
+      demonym = COUNTRY_DEMONYMS[country_code] || country_code
+
+      # First line
+      history_part = pick_history_str.empty? ? "" : " #{pick_history_str}"
+      first_line = "📝 With the #{pick_num.ordinalize} pick#{history_part} in round #{round} of the #{draft_year} NHL Draft, the #{team_name} have selected #{demonym} #{position} #{first_name} #{last_name} from #{club} (#{league})"
+
+      # Details
+      details = []
+      if ranking_info
+        category_name = get_ranking_category_name(ranking_info["category"])
+        rank = ranking_info["finalRank"]
+        details << "Ranking: #{rank.ordinalize} in #{category_name}"
+
+        height = ranking_info["heightInInches"]
+        details << "Height: #{format_height(height)}" if height
+
+        weight = ranking_info["weightInPounds"]
+        details << "Weight: #{weight} lbs" if weight
+
+        shoots_catches_label = position == "G" ? "Catches" : "Shoots"
+        shoots_catches = ranking_info["shootsCatches"]
+        details << "#{shoots_catches_label}: #{shoots_catches}" if shoots_catches
+
+        birth_date = ranking_info["birthDate"]
+        details << "Birthday: #{Date.parse(birth_date).strftime("%m/%d/%Y")}" if birth_date
+
+        birthplace = format_birthplace(ranking_info)
+        details << "Birthplace: #{birthplace}" if birthplace.present?
+      else # unranked
+        details << "Ranking: Unranked"
+        height = pick["height"]
+        details << "Height: #{format_height(height)}" if height
+        weight = pick["weight"]
+        details << "Weight: #{weight} lbs" if weight
+      end
+
+      [first_line, details.join("\n")].join("\n\n")
+    end
+
+    def format_height(total_inches)
+      return nil unless total_inches.is_a?(Numeric) && total_inches.positive?
+
+      feet = total_inches / 12
+      inches = total_inches % 12
+      "#{feet}'#{inches}\""
+    end
+
+    def format_birthplace(ranking_info)
+      city = ranking_info["birthCity"]
+      province = ranking_info["birthStateProvince"]
+      country_code = ranking_info["birthCountry"]
+
+      if province.present?
+        "#{city}, #{province}"
+      elsif city.present? && country_code.present?
+        "#{city}, #{COUNTRY_NAMES[country_code] || country_code}"
+      else
+        city
+      end
+    end
+
+    def get_ranking_category_name(category_symbol)
+      {
+        north_american_skaters: "North American Skaters",
+        international_skaters: "International Skaters",
+        north_american_goalies: "North American Goalies",
+        international_goalies: "International Goalies"
+      }[category_symbol]
     end
   end
 end

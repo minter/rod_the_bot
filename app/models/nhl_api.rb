@@ -180,9 +180,20 @@ class NhlApi
 
     def postseason?
       Time.zone = TZInfo::Timezone.get(ENV["TIME_ZONE"])
-      league_schedule = get("/schedule/now")
+      league_schedule = league_schedule_for_now
       regular_season_end_date = Date.parse(league_schedule["regularSeasonEndDate"])
-      Date.today > regular_season_end_date
+      Time.zone.today > regular_season_end_date
+    end
+
+    def offseason?
+      Time.zone = TZInfo::Timezone.get(ENV["TIME_ZONE"])
+      schedule = league_schedule_for_now
+      today = Time.zone.today
+      pre_season_start_date = Date.parse(schedule["preSeasonStartDate"])
+      playoff_end_date = Date.parse(schedule["playoffEndDate"])
+
+      (today < pre_season_start_date || today > playoff_end_date) ||
+        (today.between?(pre_season_start_date, playoff_end_date) && schedule["numberOfGames"].zero?)
     end
 
     def preseason?(target_season)
@@ -193,7 +204,24 @@ class NhlApi
       get("/draft/picks/#{year}/all")
     end
 
+    def fetch_draft_rankings(year)
+      Rails.cache.fetch("draft_rankings_#{year}", expires_in: 24.hours) do
+        {
+          north_american_skaters: get("/draft/rankings/#{year}/1")["rankings"],
+          international_skaters: get("/draft/rankings/#{year}/2")["rankings"],
+          north_american_goalies: get("/draft/rankings/#{year}/3")["rankings"],
+          international_goalies: get("/draft/rankings/#{year}/4")["rankings"]
+        }
+      end
+    end
+
     private
+
+    def league_schedule_for_now
+      Rails.cache.fetch("league_schedule_now", expires_in: 3.hours) do
+        get("/schedule/now")
+      end
+    end
 
     def get(path, options = {})
       response = super
