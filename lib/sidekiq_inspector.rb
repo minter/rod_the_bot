@@ -1,3 +1,5 @@
+require "sidekiq/api"
+
 module SidekiqInspector
   class << self
     # List all Sidekiq queues with their size and latency
