@@ -15,6 +15,7 @@ class RodTheBot::SchedulerTest < ActiveSupport::TestCase
   def test_perform_non_gameday
     VCR.use_cassette("nhl_schedule_20231201") do
       Timecop.freeze(Date.new(2023, 12, 1)) do
+        NhlApi.stubs(:offseason?).returns(false)
         NhlApi.expects(:postseason?).returns(false).at_least_once
         @worker.perform
 
@@ -28,6 +29,7 @@ class RodTheBot::SchedulerTest < ActiveSupport::TestCase
   def test_perform_gameday
     VCR.use_cassette("nhl_schedule_20231202") do
       Timecop.freeze(Date.new(2023, 12, 2)) do
+        NhlApi.stubs(:offseason?).returns(false)
         NhlApi.expects(:postseason?).returns(false).at_least_once
         NhlApi.expects(:preseason?).returns(false).at_least_once
         @worker.perform
@@ -61,6 +63,7 @@ class RodTheBot::SchedulerTest < ActiveSupport::TestCase
   def test_perform_preseason_gameday
     VCR.use_cassette("nhl_schedule_20240927") do
       Timecop.freeze(Date.new(2024, 9, 27)) do
+        NhlApi.stubs(:offseason?).returns(false)
         NhlApi.expects(:postseason?).returns(false).at_least_once
         NhlApi.expects(:preseason?).returns(true).at_least_once
         @worker.perform
