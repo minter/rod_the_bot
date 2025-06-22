@@ -1,6 +1,6 @@
 GIT
   remote: https://github.com/minter/bskyrb.git
-  revision: 1516da2413a7c7f0af127f757b77730871f81faf
+  revision: 34377b51ceeec85842f70993b049228a872e70b0
   branch: main
   specs:
     bskyrb (0.5.3)
@@ -166,7 +166,7 @@ GEM
     multi_json (1.15.0)
     multi_xml (0.7.2)
       bigdecimal (~> 3.1)
-    net-imap (0.5.8)
+    net-imap (0.5.9)
       date
       net-protocol
     net-pop (0.1.2)
