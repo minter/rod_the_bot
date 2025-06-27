@@ -89,10 +89,6 @@ module RodTheBot
       state = data["state"]
       if state == "fut"
         Sidekiq.logger.info "Draft not started yet (state: fut)."
-        # Only requeue if today is a draft day
-        if draft_day
-          self.class.perform_in(5 * 60) # Re-queue in 5 minutes
-        end
         return
       elsif state == "over"
         if ENV["DRAFT_YEAR_OVERRIDE"].present?
@@ -112,10 +108,10 @@ module RodTheBot
         # Only process picks for our team
         display_abbrev = pick.dig("displayAbbrev", "default") || pick["displayAbbrev"]
         next unless display_abbrev == team_abbrev
-
+        next unless pick["firstName"].present?
         # Deduplication key
         key = "draft_pick_#{year}_#{pick["round"]}_#{pick["pickInRound"]}"
-        # next if REDIS.get(key)
+        next if REDIS.get(key)
 
         # Build pick history string
         pick_history = pick["teamPickHistory"]
@@ -139,7 +135,7 @@ module RodTheBot
         post = format_post(pick, ranking_info, pick_history_str, draft_year)
 
         # Post to Bluesky
-        RodTheBot::Post.perform_async(post, key)
+        RodTheBot::Post.perform_async(post)
 
         # Store key in Redis for deduplication
         REDIS.set(key, "1", ex: 2 * 24 * 60 * 60) # 2 days TTL
@@ -186,7 +182,7 @@ module RodTheBot
         weight = ranking_info["weightInPounds"]
         details << "Weight: #{weight} lbs" if weight
 
-        shoots_catches_label = position == "G" ? "Catches" : "Shoots"
+        shoots_catches_label = (position == "G") ? "Catches" : "Shoots"
         shoots_catches = ranking_info["shootsCatches"]
         details << "#{shoots_catches_label}: #{shoots_catches}" if shoots_catches
 
