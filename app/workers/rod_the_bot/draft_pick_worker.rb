@@ -4,6 +4,8 @@ module RodTheBot
   class DraftPickWorker
     include Sidekiq::Worker
 
+    # TODO: Split post into two parts, to avoid the Bluesky character limit
+
     COUNTRY_DEMONYMS = {
       "CAN" => "Canadian",
       "USA" => "American",
