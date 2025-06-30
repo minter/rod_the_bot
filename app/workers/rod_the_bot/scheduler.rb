@@ -7,6 +7,7 @@ module RodTheBot
     include ActiveSupport::Inflector
 
     def perform
+      return if NhlApi.offseason?
       # if NhlApi.offseason?
       #   RodTheBot::DraftPickWorker.perform_async
       #   return
