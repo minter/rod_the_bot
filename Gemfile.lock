@@ -160,7 +160,7 @@ GEM
     minitest (5.25.5)
     mocha (2.7.1)
       ruby2_keywords (>= 0.0.5)
-    mock_redis (0.50.0)
+    mock_redis (0.51.0)
       redis (~> 5)
     msgpack (1.8.0)
     multi_json (1.15.0)
@@ -256,7 +256,7 @@ GEM
       psych (>= 4.0.0)
     redis (5.4.0)
       redis-client (>= 0.22.0)
-    redis-client (0.25.0)
+    redis-client (0.25.1)
       connection_pool
     regexp_parser (2.10.0)
     reline (0.6.1)
