@@ -12,7 +12,7 @@ inherit_gem:
 
 AllCops:
   NewCops: enable
-  TargetRubyVersion: 3.4.4
+  TargetRubyVersion: 3.4.5
   Exclude:
     - "db/**/*"
     - "script/*"
