@@ -1,6 +1,6 @@
 GIT
   remote: https://github.com/minter/bskyrb.git
-  revision: 23561cf823ac51b4166ce60f1d30f82fb8516e43
+  revision: 770019978d566d1c4c75eea36c51dda4194672d1
   branch: main
   specs:
     bskyrb (0.5.3)
@@ -139,7 +139,7 @@ GEM
       pp (>= 0.6.0)
       rdoc (>= 4.0.0)
       reline (>= 0.4.2)
-    json (2.13.0)
+    json (2.13.2)
     language_server-protocol (3.17.0.5)
     lint_roller (1.1.0)
     logger (1.7.0)
@@ -153,8 +153,7 @@ GEM
       net-smtp
     marcel (1.0.4)
     method_source (1.1.0)
-    mini_magick (5.2.0)
-      benchmark
+    mini_magick (5.3.0)
       logger
     mini_mime (1.1.5)
     minitest (5.25.5)
@@ -163,7 +162,7 @@ GEM
     mock_redis (0.51.0)
       redis (~> 5)
     msgpack (1.8.0)
-    multi_json (1.15.0)
+    multi_json (1.17.0)
     multi_xml (0.7.2)
       bigdecimal (~> 3.1)
     net-imap (0.5.9)
