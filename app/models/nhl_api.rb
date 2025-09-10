@@ -231,6 +231,56 @@ class NhlApi
       end
     end
 
+    def team_season_over?(team_abbreviation = ENV["NHL_TEAM_ABBREVIATION"])
+      Time.zone = TZInfo::Timezone.get(ENV["TIME_ZONE"])
+      today = Time.zone.today
+      
+      # First check if we're in the general offseason
+      return true if offseason?
+      
+      # Check if team has any remaining games in the regular season
+      regular_season_games = remaining_regular_season_games(team_abbreviation)
+      return false if regular_season_games.any?
+      
+      # If we're in postseason, check if team is still in playoffs
+      if postseason?
+        return team_eliminated_from_playoffs?(team_abbreviation)
+      end
+      
+      # If we're in preseason, team's previous season is over
+      preseason?
+    end
+
+    def remaining_regular_season_games(team_abbreviation = ENV["NHL_TEAM_ABBREVIATION"])
+      Time.zone = TZInfo::Timezone.get(ENV["TIME_ZONE"])
+      today = Time.zone.today
+      
+      # Get team schedule for the next 30 days to check for remaining games
+      remaining_games = []
+      (0..30).each do |days_ahead|
+        date = (today + days_ahead.days).strftime("%Y-%m-%d")
+        game = todays_game(date: date)
+        remaining_games << game if game
+      end
+      
+      remaining_games
+    end
+
+    def team_eliminated_from_playoffs?(team_abbreviation = ENV["NHL_TEAM_ABBREVIATION"])
+      # Check if team is still in active playoff series
+      postseason_carousel = fetch_postseason_carousel
+      return true unless postseason_carousel
+      
+      # Look for the team in active series
+      active_series = postseason_carousel["series"] || []
+      team_still_in_playoffs = active_series.any? do |series|
+        series["awayTeam"]["abbrev"] == team_abbreviation || 
+        series["homeTeam"]["abbrev"] == team_abbreviation
+      end
+      
+      !team_still_in_playoffs
+    end
+
     private
 
     def league_schedule_for_now
