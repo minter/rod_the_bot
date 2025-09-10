@@ -4,7 +4,7 @@ module RodTheBot
 
     def perform
       standings = NhlApi.fetch_standings["standings"]
-      return if NhlApi.preseason?(standings.first["seasonId"])
+      return if NhlApi.preseason?
 
       my_division = NhlApi.team_standings(ENV["NHL_TEAM_ABBREVIATION"])[:division_name]
       division_teams = sort_teams_in_division(standings, my_division)

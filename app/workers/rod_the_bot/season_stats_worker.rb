@@ -9,7 +9,7 @@ module RodTheBot
       @season_type = nil
       @season_type_id = nil
       skater_stats, goalie_stats = collect_roster_stats
-      return if NhlApi.preseason?(@season)
+      return if NhlApi.preseason?
       return if skater_stats.empty? || goalie_stats.empty?
 
       goalie_post = <<~POST
@@ -129,7 +129,7 @@ module RodTheBot
     def fetch_stats_and_rank(stat)
       feed = HTTParty.get("https://api.nhle.com/stats/rest/en/team/summary?sort=#{stat}&cayenneExp=seasonId=#{@season}%20and%20gameTypeId=#{@season_type_id}")
       # In stats against, the lower numbers are better. In other cases, the higher numbers are better
-      data = stat.match?(/Against/) ? feed["data"] : feed["data"].reverse
+      data = stat.include?("Against") ? feed["data"] : feed["data"].reverse
       data.each_with_index do |team, index|
         if team["teamId"] == ENV["NHL_TEAM_ID"].to_i
           value = case stat

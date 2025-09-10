@@ -198,8 +198,14 @@ class NhlApi
         (today.between?(pre_season_start_date, playoff_end_date) && schedule["numberOfGames"].zero?)
     end
 
-    def preseason?(target_season)
-      target_season.to_s != current_season.to_s
+    def preseason?
+      Time.zone = TZInfo::Timezone.get(ENV["TIME_ZONE"])
+      schedule = league_schedule_for_now
+      today = Time.zone.today
+      pre_season_start_date = Date.parse(schedule["preSeasonStartDate"])
+      regular_season_start_date = Date.parse(schedule["regularSeasonStartDate"])
+
+      today >= pre_season_start_date && today < regular_season_start_date
     end
 
     def fetch_draft_picks(year)

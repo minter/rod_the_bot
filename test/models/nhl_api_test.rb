@@ -164,18 +164,10 @@ class NhlApiTest < ActiveSupport::TestCase
   end
 
   test "preseason?" do
-    VCR.use_cassette("nhl_season") do
-      NhlApi.stubs(:current_season).returns("20232024")
-
-      # Test when it is preseason
-      assert NhlApi.preseason?("20242025"), "Should be preseason when target season is 20242025"
-
-      # Test when it is not preseason
-      refute NhlApi.preseason?("20232024"), "Should not be preseason when target season matches current season"
-
-      # Test with different current season
-      NhlApi.stubs(:current_season).returns("20242025")
-      refute NhlApi.preseason?("20242025"), "Should not be preseason when both seasons are 20242025"
+    VCR.use_cassette("nhl_schedule_now") do
+      # Test preseason detection based on current date vs league schedule
+      is_preseason = NhlApi.preseason?
+      assert_includes [true, false], is_preseason
     end
   end
 

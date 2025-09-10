@@ -49,7 +49,7 @@ module RodTheBot
       end
 
       if away["id"].to_i == ENV["NHL_TEAM_ID"].to_i || home["id"].to_i == ENV["NHL_TEAM_ID"].to_i
-        gameday_post = if NhlApi.preseason?(your_standings[:season_id])
+        gameday_post = if NhlApi.preseason?
           <<~POST
             🗣️ It's a #{your_standings[:team_name]} Preseason Gameday!
 
