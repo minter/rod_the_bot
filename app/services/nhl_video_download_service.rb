@@ -36,6 +36,7 @@ class NhlVideoDownloadService
 
   def extract_media_url(metrics_url)
     return nil unless metrics_url
+
     uri = URI.parse(metrics_url)
     query_params = URI.decode_www_form(uri.query).to_h
     media_url = query_params["media_url"]
@@ -102,6 +103,7 @@ class NhlVideoDownloadService
             ?.name;
         JS
         break if metrics_url
+
         sleep 0.5
       end
 

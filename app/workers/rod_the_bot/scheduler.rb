@@ -8,6 +8,7 @@ module RodTheBot
 
     def perform
       return if NhlApi.offseason?
+
       # if NhlApi.offseason?
       #   RodTheBot::DraftPickWorker.perform_async
       #   return

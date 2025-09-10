@@ -17,6 +17,7 @@ module RodTheBot
     def perform(game_id, play)
       @feed = NhlApi.fetch_pbp_feed(game_id)
       return if play.blank?
+
       @play = NhlApi.fetch_play(game_id, play["eventId"])
       return if @play.nil?
 

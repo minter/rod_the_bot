@@ -1,5 +1,6 @@
 class NhlApi
   include HTTParty
+
   base_uri "https://api-web.nhle.com/v1"
 
   class << self
@@ -10,6 +11,7 @@ class NhlApi
     def fetch_play(game_id, play_id)
       feed = fetch_pbp_feed(game_id)
       return nil unless feed && feed["plays"].is_a?(Array)
+
       feed["plays"].find { |play| play["eventId"].to_s == play_id.to_s }
     end
 
@@ -226,6 +228,7 @@ class NhlApi
     def get(path, options = {})
       response = super
       raise APIError, "API request failed: #{response.code}" unless response.success?
+
       response.parsed_response
     end
 

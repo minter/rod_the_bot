@@ -7,6 +7,7 @@ module RodTheBot
     def perform(post, key = nil, parent_key = nil, embed_url = nil, embed_images = [], video_file_path = nil)
       create_session
       return if @bsky.nil?
+
       post = append_team_hashtags(post)
 
       parent_uri = REDIS.get(parent_key) if parent_key
@@ -38,6 +39,7 @@ module RodTheBot
     def create_session
       return @bsky if @bsky # Return existing session if available
       return if Rails.env.test? # Skip actual creation in test environment
+
       credentials = ATProto::Credentials.new(ENV["BLUESKY_USERNAME"], ENV["BLUESKY_APP_PASSWORD"])
       session = ATProto::Session.new(credentials)
       @bsky = Bskyrb::Client.new(session)
@@ -50,6 +52,7 @@ module RodTheBot
 
     def create_post(post, embed_url: nil, embed_images: [], embed_video: nil)
       return unless ENV["BLUESKY_ENABLED"] == "true"
+
       post = @bsky.create_post(post, embed_url: embed_url, embed_images: embed_images, embed_video: embed_video)
       File.unlink(embed_video) if embed_video && File.exist?(embed_video)
       post
@@ -57,6 +60,7 @@ module RodTheBot
 
     def create_reply(reply_uri, post, embed_url: nil, embed_images: [], embed_video: nil)
       return unless ENV["BLUESKY_ENABLED"] == "true"
+
       Rails.logger.info "Creating reply to #{reply_uri} with post #{post} and embed_url #{embed_url}"
       post = @bsky.create_reply(reply_uri, post, embed_url: embed_url, embed_images: embed_images, embed_video: embed_video)
       File.unlink(embed_video) if embed_video && File.exist?(embed_video)

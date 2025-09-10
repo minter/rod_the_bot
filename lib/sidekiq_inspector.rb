@@ -137,6 +137,7 @@ module SidekiqInspector
       puts "Available SidekiqInspector commands:"
       methods(false).sort.each do |method_name|
         next if method_name == :help
+
         method = method(method_name)
         doc = method.comment
         if doc
@@ -231,6 +232,7 @@ module SidekiqInspector
 
     def parse_time(timestamp)
       return nil if timestamp.nil?
+
       Time.at(timestamp.to_f)
     rescue ArgumentError, TypeError
       nil
