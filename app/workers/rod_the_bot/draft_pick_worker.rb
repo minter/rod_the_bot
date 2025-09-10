@@ -111,6 +111,7 @@ module RodTheBot
         display_abbrev = pick.dig("displayAbbrev", "default") || pick["displayAbbrev"]
         next unless display_abbrev == team_abbrev
         next unless pick["firstName"].present?
+
         # Deduplication key
         key = "draft_pick_#{year}_#{pick["round"]}_#{pick["pickInRound"]}"
         next if REDIS.get(key)
