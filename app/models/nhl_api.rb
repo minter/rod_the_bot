@@ -223,6 +223,14 @@ class NhlApi
       end
     end
 
+    def fetch_player_content(player_id)
+      Rails.cache.fetch("player_content_#{player_id}", expires_in: 8.hours) do
+        response = HTTParty.get("https://forge-dapi.d3.nhle.com/v2/content/en-us/players?tags.slug=playerid-#{player_id}")
+        raise APIError, "API request failed: #{response.code}" unless response.success?
+        response.parsed_response
+      end
+    end
+
     private
 
     def league_schedule_for_now
