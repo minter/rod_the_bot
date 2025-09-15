@@ -231,6 +231,27 @@ class NhlApi
       end
     end
 
+    def fetch_skater_milestones
+      Rails.cache.fetch("skater_milestones_#{Date.current}", expires_in: 24.hours) do
+        response = HTTParty.get("https://api.nhle.com/stats/rest/en/milestones/skaters")
+        response.success? ? response.parsed_response : {}
+      end
+    end
+
+    def fetch_goalie_milestones
+      Rails.cache.fetch("goalie_milestones_#{Date.current}", expires_in: 24.hours) do
+        response = HTTParty.get("https://api.nhle.com/stats/rest/en/milestones/goalies")
+        response.success? ? response.parsed_response : {}
+      end
+    end
+
+    def get_player_career_stats(player_id)
+      Rails.cache.fetch("player_career_stats_#{player_id}", expires_in: 1.hour) do
+        response = HTTParty.get("https://api.nhle.com/stats/rest/en/skater/stats?cayenneExp=playerId=#{player_id}")
+        response.success? ? response.parsed_response : {}
+      end
+    end
+
     def team_season_over?(team_abbreviation = ENV["NHL_TEAM_ABBREVIATION"])
       Time.zone = TZInfo::Timezone.get(ENV["TIME_ZONE"])
       Time.zone.today

@@ -86,7 +86,8 @@ module RodTheBot
     def collect_roster_stats
       skater_stats = {}
       goalie_stats = {}
-      roster = HTTParty.get("https://api-web.nhle.com/v1/club-stats/#{ENV["NHL_TEAM_ABBREVIATION"]}/now")
+      response = HTTParty.get("https://api-web.nhle.com/v1/club-stats/#{ENV["NHL_TEAM_ABBREVIATION"]}/now")
+      roster = response.success? ? response.parsed_response : {}
       @season = roster["season"]
       @season_type_id = roster["gameType"]
       @season_type = case roster["gameType"]
@@ -127,7 +128,8 @@ module RodTheBot
     end
 
     def fetch_stats_and_rank(stat)
-      feed = HTTParty.get("https://api.nhle.com/stats/rest/en/team/summary?sort=#{stat}&cayenneExp=seasonId=#{@season}%20and%20gameTypeId=#{@season_type_id}")
+      response = HTTParty.get("https://api.nhle.com/stats/rest/en/team/summary?sort=#{stat}&cayenneExp=seasonId=#{@season}%20and%20gameTypeId=#{@season_type_id}")
+      feed = response.success? ? response.parsed_response : {}
       # In stats against, the lower numbers are better. In other cases, the higher numbers are better
       data = stat.include?("Against") ? feed["data"] : feed["data"].reverse
       data.each_with_index do |team, index|
