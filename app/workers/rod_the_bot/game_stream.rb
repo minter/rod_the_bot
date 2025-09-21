@@ -55,14 +55,14 @@ module RodTheBot
 
       # Check if this was a milestone goal
       check_goal_milestone(player_id, player_name)
-      
+
       # Check assists for this goal (but not for first career milestones)
       if play["details"]["assist1PlayerId"].present?
         assist_player_id = play["details"]["assist1PlayerId"]
         assist_player_name = get_player_name(assist_player_id)
         check_assist_milestone(assist_player_id, assist_player_name)
       end
-      
+
       if play["details"]["assist2PlayerId"].present?
         assist_player_id = play["details"]["assist2PlayerId"]
         assist_player_name = get_player_name(assist_player_id)
@@ -89,15 +89,15 @@ module RodTheBot
       milestone_goals = [1, 50, 100, 200, 250, 300, 400, 500]
 
       if milestone_goals.include?(goals)
-        if goals == 1
+        post = if goals == 1
           # First career goal - check if this is also first career point
           if points == 1
-            post = format_first_career_post(player_name, "goal")
+            format_first_career_post(player_name, "goal")
           else
-            post = format_milestone_achievement_post(player_name, "goal", goals)
+            format_milestone_achievement_post(player_name, "goal", goals)
           end
         else
-          post = format_milestone_achievement_post(player_name, "goal", goals)
+          format_milestone_achievement_post(player_name, "goal", goals)
         end
         RodTheBot::Post.perform_async(post)
       end
@@ -149,7 +149,7 @@ module RodTheBot
       team_goalies.each do |goalie|
         goalie_id = goalie["playerId"]
         goalie_name = "#{goalie["firstName"]["default"]} #{goalie["lastName"]["default"]}"
-        
+
         check_goalie_win_milestone(goalie_id, goalie_name)
         check_goalie_shutout_milestone(goalie_id, goalie_name)
       end
@@ -163,10 +163,10 @@ module RodTheBot
       milestone_wins = [1, 50, 100, 200, 300, 400, 500]
 
       if milestone_wins.include?(wins)
-        if wins == 1
-          post = format_first_career_post(goalie_name, "win")
+        post = if wins == 1
+          format_first_career_post(goalie_name, "win")
         else
-          post = format_milestone_achievement_post(goalie_name, "win", wins)
+          format_milestone_achievement_post(goalie_name, "win", wins)
         end
         RodTheBot::Post.perform_async(post)
       end
@@ -180,10 +180,10 @@ module RodTheBot
       milestone_shutouts = [1, 10, 20, 30, 40, 50, 100]
 
       if milestone_shutouts.include?(shutouts)
-        if shutouts == 1
-          post = format_first_career_post(goalie_name, "shutout")
+        post = if shutouts == 1
+          format_first_career_post(goalie_name, "shutout")
         else
-          post = format_milestone_achievement_post(goalie_name, "shutout", shutouts)
+          format_milestone_achievement_post(goalie_name, "shutout", shutouts)
         end
         RodTheBot::Post.perform_async(post)
       end
@@ -240,6 +240,7 @@ module RodTheBot
 
       post
     end
+
 
     def worker_mapping
       {
