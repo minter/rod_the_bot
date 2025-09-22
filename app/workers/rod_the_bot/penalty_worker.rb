@@ -42,6 +42,13 @@ module RodTheBot
 
       penalized_player_id = @play["details"]["committedByPlayerId"] || @play["details"]["servedByPlayerId"]
       penalized_player = players[@play["details"]["committedByPlayerId"]] || players[@play["details"]["servedByPlayerId"]]
+      
+      # Handle case where player is not found in roster (common in preseason)
+      if penalized_player.nil?
+        Rails.logger.warn "PenaltyWorker: Player #{penalized_player_id} not found in roster for game #{game_id}"
+        return
+      end
+      
       post = if penalized_player[:team_id] == ENV["NHL_TEAM_ID"].to_i
         "🙃 #{@your_team["commonName"]["default"]} Penalty\n\n"
       else
@@ -51,22 +58,28 @@ module RodTheBot
       period_name = format_period_name(@play["periodDescriptor"]["number"])
 
       post += if play["details"]["typeCode"] == "BEN"
+        served_by_player = players[@play["details"]["servedByPlayerId"]]
+        served_by_name = served_by_player&.dig(:name) || "Unknown Player"
         <<~POST
           Bench Minor - #{@play["details"]["descKey"].tr("-", " ").titlecase}
-          Penalty is served by #{players[@play["details"]["servedByPlayerId"]][:name]}
+          Penalty is served by #{served_by_name}
 
           That's a #{@play["details"]["duration"]} minute penalty at #{@play["timeInPeriod"]} of the #{period_name}
         POST
       elsif play["details"]["typeCode"] == "PS"
+        committed_by_player = players[@play["details"]["committedByPlayerId"]]
+        committed_by_name = committed_by_player&.dig(:name) || "Unknown Player"
         <<~POST
-          #{players[@play["details"]["committedByPlayerId"]][:name]} - #{@play["details"]["descKey"].sub(/^ps-/, "").tr("-", " ").titlecase}
+          #{committed_by_name} - #{@play["details"]["descKey"].sub(/^ps-/, "").tr("-", " ").titlecase}
           
           That's a penalty shot awarded at #{@play["timeInPeriod"]} of the #{period_name}
         POST
 
       else
+        committed_by_player = players[@play["details"]["committedByPlayerId"]]
+        committed_by_name = committed_by_player&.dig(:name) || "Unknown Player"
         <<~POST
-          #{players[@play["details"]["committedByPlayerId"]][:name]} - #{@play["details"]["descKey"].tr("-", " ").titlecase}
+          #{committed_by_name} - #{@play["details"]["descKey"].tr("-", " ").titlecase}
           
           That's a #{@play["details"]["duration"]} minute #{SEVERITY[@play["details"]["typeCode"]]} penalty at #{@play["timeInPeriod"]} of the #{period_name}
         POST
@@ -74,7 +87,9 @@ module RodTheBot
 
       penalized_player_landing_feed = NhlApi.fetch_player_landing_feed(penalized_player_id)
 
-      images = [penalized_player_landing_feed["headshot"]]
+      # Safely fetch headshot - may be nil in preseason
+      headshot = penalized_player_landing_feed&.dig("headshot")
+      images = headshot ? [headshot] : []
       RodTheBot::Post.perform_async(post, nil, nil, nil, images)
     end
 

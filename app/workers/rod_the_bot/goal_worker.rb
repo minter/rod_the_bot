@@ -34,9 +34,13 @@ module RodTheBot
       end
 
       period_name = format_period_name(@play["periodDescriptor"]["number"])
-      modifiers = modifiers(@play["situationCode"].to_s, players[@play["details"]["scoringPlayerId"]][:team_id], home["id"], away["id"])
-
-      scoring_team = (players[@play["details"]["scoringPlayerId"]][:team_id] == ENV["NHL_TEAM_ID"].to_i) ? @your_team : @their_team
+      
+      # Safely get scoring player data
+      scoring_player = players[@play["details"]["scoringPlayerId"]]
+      return unless scoring_player # Exit if player not found in roster
+      
+      modifiers = modifiers(@play["situationCode"].to_s, scoring_player[:team_id], home["id"], away["id"])
+      scoring_team = (scoring_player[:team_id] == ENV["NHL_TEAM_ID"].to_i) ? @your_team : @their_team
 
       post = build_post(
         scoring_team: scoring_team,
@@ -74,16 +78,24 @@ module RodTheBot
 
     def goal_details(players, play)
       details = []
-      details << "🚨 #{players[play["details"]["scoringPlayerId"]][:name]} (#{play["details"]["scoringPlayerTotal"]})"
+      
+      # Safely get scoring player name
+      scoring_player = players[play["details"]["scoringPlayerId"]]
+      scoring_player_name = scoring_player&.dig(:name) || "Unknown Player"
+      details << "🚨 #{scoring_player_name} (#{play["details"]["scoringPlayerTotal"]})"
 
       details << if play["details"]["assist1PlayerId"].present?
-        "🍎 #{players[play["details"]["assist1PlayerId"]][:name]} (#{play["details"]["assist1PlayerTotal"]})"
+        assist1_player = players[play["details"]["assist1PlayerId"]]
+        assist1_name = assist1_player&.dig(:name) || "Unknown Player"
+        "🍎 #{assist1_name} (#{play["details"]["assist1PlayerTotal"]})"
       else
         "🍎 Unassisted"
       end
 
       if play["details"]["assist2PlayerId"].present?
-        details << "🍎🍎 #{players[play["details"]["assist2PlayerId"]][:name]} (#{play["details"]["assist2PlayerTotal"]})"
+        assist2_player = players[play["details"]["assist2PlayerId"]]
+        assist2_name = assist2_player&.dig(:name) || "Unknown Player"
+        details << "🍎🍎 #{assist2_name} (#{play["details"]["assist2PlayerTotal"]})"
       end
 
       details.join("\n")
@@ -91,10 +103,26 @@ module RodTheBot
 
     def goal_images(players, play)
       images = []
-      images << NhlApi.fetch_player_landing_feed(play["details"]["scoringPlayerId"])["headshot"]
-      images << NhlApi.fetch_player_landing_feed(play["details"]["assist1PlayerId"])["headshot"] if play["details"]["assist1PlayerId"].present?
-      images << NhlApi.fetch_player_landing_feed(play["details"]["assist2PlayerId"])["headshot"] if play["details"]["assist2PlayerId"].present?
-      images
+      
+      # Safely fetch headshot for scoring player
+      if play["details"]["scoringPlayerId"].present?
+        player_feed = NhlApi.fetch_player_landing_feed(play["details"]["scoringPlayerId"])
+        images << player_feed&.dig("headshot")
+      end
+      
+      # Safely fetch headshot for assist1 player
+      if play["details"]["assist1PlayerId"].present?
+        player_feed = NhlApi.fetch_player_landing_feed(play["details"]["assist1PlayerId"])
+        images << player_feed&.dig("headshot")
+      end
+      
+      # Safely fetch headshot for assist2 player
+      if play["details"]["assist2PlayerId"].present?
+        player_feed = NhlApi.fetch_player_landing_feed(play["details"]["assist2PlayerId"])
+        images << player_feed&.dig("headshot")
+      end
+      
+      images.compact # Remove any nil values
     end
 
     def time_and_score(play, period_name, away, home)
