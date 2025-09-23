@@ -40,16 +40,21 @@ module RodTheBot
 
       players = build_players(@feed)
 
-      penalized_player_id = @play["details"]["committedByPlayerId"] || @play["details"]["servedByPlayerId"]
-      penalized_player = players[@play["details"]["committedByPlayerId"]] || players[@play["details"]["servedByPlayerId"]]
+      # Always prioritize the player who committed the penalty for display and headshot
+      committed_player_id = @play["details"]["committedByPlayerId"]
+      served_player_id = @play["details"]["servedByPlayerId"]
+      
+      # Use committed player for main penalty info, fallback to served player if needed
+      main_player_id = committed_player_id || served_player_id
+      main_player = players[main_player_id]
       
       # Handle case where player is not found in roster (common in preseason)
-      if penalized_player.nil?
-        Rails.logger.warn "PenaltyWorker: Player #{penalized_player_id} not found in roster for game #{game_id}"
+      if main_player.nil?
+        Rails.logger.warn "PenaltyWorker: Player #{main_player_id} not found in roster for game #{game_id}"
         return
       end
       
-      post = if penalized_player[:team_id] == ENV["NHL_TEAM_ID"].to_i
+      post = if main_player[:team_id] == ENV["NHL_TEAM_ID"].to_i
         "🙃 #{@your_team["commonName"]["default"]} Penalty\n\n"
       else
         "🤩 #{@their_team["commonName"]["default"]} Penalty!\n\n"
@@ -58,34 +63,45 @@ module RodTheBot
       period_name = format_period_name(@play["periodDescriptor"]["number"])
 
       post += if play["details"]["typeCode"] == "BEN"
-        served_by_player = players[@play["details"]["servedByPlayerId"]]
+        served_by_player = players[served_player_id]
         served_by_name = served_by_player&.dig(:name) || "Unknown Player"
+        served_by_number = served_by_player&.dig(:number) || "??"
         <<~POST
           Bench Minor - #{@play["details"]["descKey"].tr("-", " ").titlecase}
-          Penalty is served by #{served_by_name}
+          Penalty is served by ##{served_by_number} #{served_by_name}
 
           That's a #{@play["details"]["duration"]} minute penalty at #{@play["timeInPeriod"]} of the #{period_name}
         POST
       elsif play["details"]["typeCode"] == "PS"
-        committed_by_player = players[@play["details"]["committedByPlayerId"]]
-        committed_by_name = committed_by_player&.dig(:name) || "Unknown Player"
+        main_player_name = main_player&.dig(:name) || "Unknown Player"
         <<~POST
-          #{committed_by_name} - #{@play["details"]["descKey"].sub(/^ps-/, "").tr("-", " ").titlecase}
+          #{main_player_name} - #{@play["details"]["descKey"].sub(/^ps-/, "").tr("-", " ").titlecase}
           
           That's a penalty shot awarded at #{@play["timeInPeriod"]} of the #{period_name}
         POST
-
       else
-        committed_by_player = players[@play["details"]["committedByPlayerId"]]
-        committed_by_name = committed_by_player&.dig(:name) || "Unknown Player"
-        <<~POST
-          #{committed_by_name} - #{@play["details"]["descKey"].tr("-", " ").titlecase}
+        main_player_name = main_player&.dig(:name) || "Unknown Player"
+        penalty_message = <<~POST
+          #{main_player_name} - #{@play["details"]["descKey"].tr("-", " ").titlecase}
           
           That's a #{@play["details"]["duration"]} minute #{SEVERITY[@play["details"]["typeCode"]]} penalty at #{@play["timeInPeriod"]} of the #{period_name}
         POST
+        
+        # Add serving note if someone else is serving the penalty
+        if served_player_id && served_player_id != committed_player_id
+          served_by_player = players[served_player_id]
+          if served_by_player
+            served_by_name = served_by_player[:name]
+            served_by_number = served_by_player[:number]
+            penalty_message += "\n(Penalty served by ##{served_by_number} #{served_by_name})"
+          end
+        end
+        
+        penalty_message
       end
 
-      penalized_player_landing_feed = NhlApi.fetch_player_landing_feed(penalized_player_id)
+      # Always use the main player (committed player) for headshot
+      penalized_player_landing_feed = NhlApi.fetch_player_landing_feed(main_player_id)
 
       # Safely fetch headshot - may be nil in preseason
       headshot = penalized_player_landing_feed&.dig("headshot")
