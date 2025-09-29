@@ -43,17 +43,17 @@ module RodTheBot
       # Always prioritize the player who committed the penalty for display and headshot
       committed_player_id = @play["details"]["committedByPlayerId"]
       served_player_id = @play["details"]["servedByPlayerId"]
-      
+
       # Use committed player for main penalty info, fallback to served player if needed
       main_player_id = committed_player_id || served_player_id
       main_player = players[main_player_id]
-      
+
       # Handle case where player is not found in roster (common in preseason)
       if main_player.nil?
         Rails.logger.warn "PenaltyWorker: Player #{main_player_id} not found in roster for game #{game_id}"
         return
       end
-      
+
       post = if main_player[:team_id] == ENV["NHL_TEAM_ID"].to_i
         "🙃 #{@your_team["commonName"]["default"]} Penalty\n\n"
       else
@@ -86,7 +86,7 @@ module RodTheBot
           
           That's a #{@play["details"]["duration"]} minute #{SEVERITY[@play["details"]["typeCode"]]} penalty at #{@play["timeInPeriod"]} of the #{period_name}
         POST
-        
+
         # Add serving note if someone else is serving the penalty
         if served_player_id && served_player_id != committed_player_id
           served_by_player = players[served_player_id]
@@ -96,7 +96,7 @@ module RodTheBot
             penalty_message += "\n(Penalty served by ##{served_by_number} #{served_by_name})"
           end
         end
-        
+
         penalty_message
       end
 

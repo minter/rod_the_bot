@@ -9,13 +9,13 @@ module RodTheBot
       away_goalie = find_starting_goalie("awayTeam")
       away_goalie_record = find_goalie_record(away_goalie["playerId"])
       goalie_images = get_goalie_images(home_goalie, away_goalie)
-      
+
       # Cache starting goalies for goalie change detection
       home_team_id = @feed["homeTeam"]["id"]
       away_team_id = @feed["awayTeam"]["id"]
       REDIS.set("game:#{game_id}:current_goalie:#{home_team_id}", home_goalie["playerId"], ex: 28800) # 8 hours
       REDIS.set("game:#{game_id}:current_goalie:#{away_team_id}", away_goalie["playerId"], ex: 28800)
-      
+
       officials = NhlApi.officials(game_id)
       scratches = NhlApi.scratches(game_id)
 
@@ -33,7 +33,7 @@ module RodTheBot
 
     def find_starting_goalie(team)
       goalies = @feed.dig("summary", "iceSurface", team, "goalies")
-      if goalies && goalies.any?
+      if goalies&.any?
         goalies.first
       else
         Rails.logger.warn "GameStartWorker: No goalies found for #{team} in game feed"
@@ -41,44 +41,44 @@ module RodTheBot
         {
           "playerId" => nil,
           "sweaterNumber" => "?",
-          "name" => { "default" => "Unknown Goalie" }
+          "name" => {"default" => "Unknown Goalie"}
         }
       end
     end
 
     def find_goalie_record(player_id)
       return "(Stats unavailable)" if player_id.nil?
-      
+
       # In preseason, goalies often don't have current season stats yet
       return "(Preseason - Stats unavailable)" if NhlApi.preseason?
-      
+
       season = (@feed["gameType"] == 3) ? "playoffs" : "regularSeason"
       player = NhlApi.fetch_player_landing_feed(player_id)
-      
+
       # Add error handling for missing or malformed data
       unless player && player["featuredStats"]
         Rails.logger.warn "GameStartWorker: Missing featuredStats for player #{player_id}"
         return "(Stats unavailable)"
       end
-      
+
       unless player["featuredStats"][season]
         Rails.logger.warn "GameStartWorker: Missing season '#{season}' in featuredStats for player #{player_id}"
         return "(Stats unavailable)"
       end
-      
+
       unless player["featuredStats"][season]["subSeason"]
         Rails.logger.warn "GameStartWorker: Missing subSeason in featuredStats[#{season}] for player #{player_id}"
         return "(Stats unavailable)"
       end
-      
+
       stats = player["featuredStats"][season]["subSeason"]
-      
+
       # Check if required stats fields exist
       unless stats["wins"] && stats["losses"] && stats["otLosses"] && stats["goalsAgainstAvg"] && stats["savePctg"]
         Rails.logger.warn "GameStartWorker: Missing required stat fields for player #{player_id}"
         return "(Stats unavailable)"
       end
-      
+
       "(#{stats["wins"]}-#{stats["losses"]}-#{stats["otLosses"]}, #{sprintf("%.2f", stats["goalsAgainstAvg"].round(2))} GAA, #{sprintf("%.3f", stats["savePctg"].round(3))} SV%)"
     end
 
@@ -109,17 +109,13 @@ module RodTheBot
       home_goalie_image = if home_goalie["playerId"]
         player_feed = NhlApi.fetch_player_landing_feed(home_goalie["playerId"])
         player_feed&.dig("headshot")
-      else
-        nil
       end
-      
+
       away_goalie_image = if away_goalie["playerId"]
         player_feed = NhlApi.fetch_player_landing_feed(away_goalie["playerId"])
         player_feed&.dig("headshot")
-      else
-        nil
       end
-      
+
       [home_goalie_image, away_goalie_image]
     end
   end

@@ -241,7 +241,6 @@ module RodTheBot
       post
     end
 
-
     def worker_mapping
       {
         "goal" => [RodTheBot::GoalWorker, 90],

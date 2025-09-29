@@ -8,24 +8,24 @@ module RodTheBot
       games = format_schedule(schedule, date)
       time_zone_abbr = Time.zone.tzinfo.abbreviation
       playoffs = NhlApi.postseason? ? "playoff " : ""
-      
+
       # Handle no games case
       if games.empty?
         post_text = "🗓️  Today's NHL #{playoffs}schedule (times #{time_zone_abbr})\n\nNo games scheduled."
         RodTheBot::Post.perform_async(post_text)
         return
       end
-      
+
       # Check if we need to split into multiple posts
       base_text = "🗓️  Today's NHL #{playoffs}schedule (times #{time_zone_abbr})\n\n"
       formatted_schedule = games.join("\n")
       full_text = "#{base_text}#{formatted_schedule}\n"
-      
+
       # Account for hashtags that will be added by Post worker
       hashtags = ENV["TEAM_HASHTAGS"] || ""
       hashtag_length = hashtags.empty? ? 0 : hashtags.length + 1 # +1 for newline
       max_content_length = 300 - hashtag_length
-      
+
       if full_text.length <= max_content_length
         # Single post if it fits
         RodTheBot::Post.perform_async(full_text)

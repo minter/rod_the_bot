@@ -112,14 +112,14 @@ module RodTheBot
     # Helper method to check if GameStreamWorker will be scheduled today
     def self.game_stream_scheduled_today?
       return false if NhlApi.offseason?
-      
+
       game = NhlApi.todays_game
       return false if game.nil? || game["gameScheduleState"] != "OK"
-      
+
       your_team_id = ENV["NHL_TEAM_ID"].to_i
       home_team_id = game["homeTeam"]["id"].to_i
       away_team_id = game["awayTeam"]["id"].to_i
-      
+
       your_team_id == home_team_id || your_team_id == away_team_id
     end
   end

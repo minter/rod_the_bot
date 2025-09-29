@@ -108,10 +108,10 @@ class RodTheBot::GameStartWorkerTest < ActiveSupport::TestCase
       player_id = "8479973"
       feed = NhlApi.fetch_pbp_feed(@game_id)
       @game_start_worker.instance_variable_set(:@feed, feed)
-      
+
       # Mock player data with missing featuredStats
       NhlApi.expects(:fetch_player_landing_feed).with(player_id).returns({})
-      
+
       record = @game_start_worker.send(:find_goalie_record, player_id)
       assert_equal "(Stats unavailable)", record
     end
@@ -120,7 +120,7 @@ class RodTheBot::GameStartWorkerTest < ActiveSupport::TestCase
   test "find_goalie_record handles nil player_id" do
     feed = NhlApi.fetch_pbp_feed(@game_id)
     @game_start_worker.instance_variable_set(:@feed, feed)
-    
+
     record = @game_start_worker.send(:find_goalie_record, nil)
     assert_equal "(Stats unavailable)", record
   end
@@ -131,9 +131,9 @@ class RodTheBot::GameStartWorkerTest < ActiveSupport::TestCase
       # Remove goalies from the feed
       feed["summary"]["iceSurface"]["homeTeam"].delete("goalies")
       @game_start_worker.instance_variable_set(:@feed, feed)
-      
+
       goalie = @game_start_worker.send(:find_starting_goalie, "homeTeam")
-      
+
       assert_not_nil goalie
       assert_equal "?", goalie["sweaterNumber"]
       assert_equal "Unknown Goalie", goalie["name"]["default"]
@@ -144,9 +144,9 @@ class RodTheBot::GameStartWorkerTest < ActiveSupport::TestCase
   test "get_goalie_images handles nil player_id" do
     home_goalie = {"playerId" => nil, "sweaterNumber" => "?", "name" => {"default" => "Unknown Goalie"}}
     away_goalie = {"playerId" => nil, "sweaterNumber" => "?", "name" => {"default" => "Unknown Goalie"}}
-    
+
     images = @game_start_worker.send(:get_goalie_images, home_goalie, away_goalie)
-    
+
     assert_equal [nil, nil], images
   end
 end

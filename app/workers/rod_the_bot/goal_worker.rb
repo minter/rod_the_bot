@@ -34,11 +34,11 @@ module RodTheBot
       end
 
       period_name = format_period_name(@play["periodDescriptor"]["number"])
-      
+
       # Safely get scoring player data
       scoring_player = players[@play["details"]["scoringPlayerId"]]
       return unless scoring_player # Exit if player not found in roster
-      
+
       modifiers = modifiers(@play["situationCode"].to_s, scoring_player[:team_id], home["id"], away["id"])
       scoring_team = (scoring_player[:team_id] == ENV["NHL_TEAM_ID"].to_i) ? @your_team : @their_team
 
@@ -78,7 +78,7 @@ module RodTheBot
 
     def goal_details(players, play)
       details = []
-      
+
       # Safely get scoring player name
       scoring_player = players[play["details"]["scoringPlayerId"]]
       scoring_player_name = scoring_player&.dig(:name) || "Unknown Player"
@@ -103,25 +103,25 @@ module RodTheBot
 
     def goal_images(players, play)
       images = []
-      
+
       # Safely fetch headshot for scoring player
       if play["details"]["scoringPlayerId"].present?
         player_feed = NhlApi.fetch_player_landing_feed(play["details"]["scoringPlayerId"])
         images << player_feed&.dig("headshot")
       end
-      
+
       # Safely fetch headshot for assist1 player
       if play["details"]["assist1PlayerId"].present?
         player_feed = NhlApi.fetch_player_landing_feed(play["details"]["assist1PlayerId"])
         images << player_feed&.dig("headshot")
       end
-      
+
       # Safely fetch headshot for assist2 player
       if play["details"]["assist2PlayerId"].present?
         player_feed = NhlApi.fetch_player_landing_feed(play["details"]["assist2PlayerId"])
         images << player_feed&.dig("headshot")
       end
-      
+
       images.compact # Remove any nil values
     end
 

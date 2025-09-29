@@ -16,14 +16,14 @@ class RodTheBot::GoalieChangeWorkerTest < ActiveSupport::TestCase
 
   test "detects actual goalie change in game 2025010061 from Bobrovsky to Cooper Black" do
     game_id = "2025010061"
-    
+
     VCR.use_cassette("nhl_game_#{game_id}_gamecenter_pbp", allow_playback_repeats: true) do
       # Get the actual game feed to extract real data
       feed = NhlApi.fetch_pbp_feed(game_id)
-      
+
       # Set up initial state - Bobrovsky (8475683) was starting goalie for Florida (team 13)
       REDIS.set("game:#{game_id}:current_goalie:13", "8475683", ex: 28800)
-      
+
       # Find the actual shot event that revealed the goalie change (event 809)
       goalie_change_play = feed["plays"].find { |play| play["eventId"] == 809 }
       assert_not_nil goalie_change_play, "Could not find event 809 in game feed"
@@ -54,21 +54,21 @@ class RodTheBot::GoalieChangeWorkerTest < ActiveSupport::TestCase
 
   test "does not post when goalie has not changed" do
     game_id = "2025010061"
-    
+
     VCR.use_cassette("nhl_game_#{game_id}_gamecenter_pbp", allow_playback_repeats: true) do
       feed = NhlApi.fetch_pbp_feed(game_id)
-      
+
       # Set up cache with Cooper Black already active
       REDIS.set("game:#{game_id}:current_goalie:13", "8484900", ex: 28800)
-      
+
       # Use a later shot event where Cooper Black is still in goal
-      later_shot_play = feed["plays"].find { |play| 
-        play["eventId"] > 809 && 
-        play["typeDescKey"] == "shot-on-goal" && 
-        play["details"] && 
-        play["details"]["goalieInNetId"] == 8484900 
+      later_shot_play = feed["plays"].find { |play|
+        play["eventId"] > 809 &&
+          play["typeDescKey"] == "shot-on-goal" &&
+          play["details"] &&
+          play["details"]["goalieInNetId"] == 8484900
       }
-      
+
       skip "No later shot events found for Cooper Black" unless later_shot_play
 
       assert_no_difference -> { RodTheBot::Post.jobs.size } do
@@ -82,16 +82,16 @@ class RodTheBot::GoalieChangeWorkerTest < ActiveSupport::TestCase
 
   test "does not process play without goalieInNetId" do
     game_id = "2025010061"
-    
+
     VCR.use_cassette("nhl_game_#{game_id}_gamecenter_pbp", allow_playback_repeats: true) do
       feed = NhlApi.fetch_pbp_feed(game_id)
-      
+
       # Find a hit or other event without goalie info
-      non_shot_play = feed["plays"].find { |play| 
-        play["typeDescKey"] == "hit" && 
-        (!play["details"] || !play["details"]["goalieInNetId"])
+      non_shot_play = feed["plays"].find { |play|
+        play["typeDescKey"] == "hit" &&
+          (!play["details"] || !play["details"]["goalieInNetId"])
       }
-      
+
       skip "No non-shot events found" unless non_shot_play
 
       assert_no_difference -> { RodTheBot::Post.jobs.size } do
@@ -102,7 +102,7 @@ class RodTheBot::GoalieChangeWorkerTest < ActiveSupport::TestCase
 
   test "handles missing player in roster gracefully" do
     game_id = "2025010061"
-    
+
     # Create fake shot event with non-existent goalie ID
     fake_play = {
       "eventId" => 999,
