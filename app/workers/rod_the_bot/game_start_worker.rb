@@ -9,6 +9,13 @@ module RodTheBot
       away_goalie = find_starting_goalie("awayTeam")
       away_goalie_record = find_goalie_record(away_goalie["playerId"])
       goalie_images = get_goalie_images(home_goalie, away_goalie)
+      
+      # Cache starting goalies for goalie change detection
+      home_team_id = @feed["homeTeam"]["id"]
+      away_team_id = @feed["awayTeam"]["id"]
+      REDIS.set("game:#{game_id}:current_goalie:#{home_team_id}", home_goalie["playerId"], ex: 28800) # 8 hours
+      REDIS.set("game:#{game_id}:current_goalie:#{away_team_id}", away_goalie["playerId"], ex: 28800)
+      
       officials = NhlApi.officials(game_id)
       scratches = NhlApi.scratches(game_id)
 

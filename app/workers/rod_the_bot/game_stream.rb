@@ -246,6 +246,7 @@ module RodTheBot
       {
         "goal" => [RodTheBot::GoalWorker, 90],
         "penalty" => [RodTheBot::PenaltyWorker, 30],
+        "shot-on-goal" => [RodTheBot::GoalieChangeWorker, 5],
         "period-start" => [RodTheBot::PeriodStartWorker, 1],
         "period-end" => [RodTheBot::EndOfPeriodWorker, 180]
       }
