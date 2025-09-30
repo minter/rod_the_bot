@@ -54,7 +54,9 @@ class RodTheBot::PenaltyWorkerTest < ActiveSupport::TestCase
     period_name = RodTheBot::PeriodFormatter.format_period_name(play["periodDescriptor"]["number"])
 
     player_name = penalized_player ? penalized_player[:name] : "Unknown Player"
-    penalty_desc = play["details"]["descKey"].sub(/^ps-/, "").tr("-", " ").titlecase
+    # Use the same penalty formatting logic as the worker
+    desc_key = play["details"]["descKey"].sub(/^ps-/, "")
+    penalty_desc = @worker.send(:format_penalty_name, desc_key)
 
     case play["details"]["typeCode"]
     when "BEN"

@@ -4,6 +4,9 @@ class RodTheBot::GameStartWorkerTest < ActiveSupport::TestCase
   def setup
     @game_start_worker = RodTheBot::GameStartWorker.new
     @game_id = "2024020478"
+
+    # Mock preseason check to avoid VCR issues
+    NhlApi.stubs(:preseason?).returns(false)
   end
 
   test "find_starting_goalie" do
@@ -69,11 +72,13 @@ class RodTheBot::GameStartWorkerTest < ActiveSupport::TestCase
         "gameType" => 2,
         "venue" => {"default" => "Test Arena"},
         "homeTeam" => {
+          "id" => 1,
           "name" => {"default" => "Home Team"},
           "abbrev" => "HOME",
           "commonName" => {"default" => "Home Team"}
         },
         "awayTeam" => {
+          "id" => 2,
           "name" => {"default" => "Away Team"},
           "abbrev" => "AWAY",
           "commonName" => {"default" => "Away Team"}
@@ -81,21 +86,22 @@ class RodTheBot::GameStartWorkerTest < ActiveSupport::TestCase
         "startTime" => "2024-02-04T19:00:00Z"
       })
       NhlApi.expects(:officials).returns({referees: ["Ref1", "Ref2"], linesmen: ["Lines1", "Lines2"]})
-      NhlApi.expects(:fetch_player_landing_feed).twice.returns({
+      # Worker calls fetch_player_landing_feed 4 times:
+      # 2 for goalie records + 2 for goalie images
+      NhlApi.expects(:fetch_player_landing_feed).times(4).returns({
         "featuredStats" => {
           "regularSeason" => {
             "subSeason" => {"wins" => 10, "losses" => 5, "otLosses" => 2, "goalsAgainstAvg" => 2.5, "savePctg" => 0.915}
           }
-        }
-      })
-      NhlApi.expects(:fetch_player_landing_feed).twice.returns({
-        "featuredStats" => {
-          "regularSeason" => {
-            "subSeason" => {"wins" => 10, "losses" => 5, "otLosses" => 2, "goalsAgainstAvg" => 2.5, "savePctg" => 0.915}
-          }
-        }
+        },
+        "headshot" => "https://example.com/headshot.jpg"
       })
       NhlApi.expects(:scratches).returns("HOME: Player1, Player2\nAWAY: Player3, Player4")
+
+      # Mock Redis calls for goalie caching (with specific parameters)
+      REDIS.expects(:set).with("game:#{@game_id}:current_goalie:1", "123", ex: 28800).once  # Home goalie
+      REDIS.expects(:set).with("game:#{@game_id}:current_goalie:2", "456", ex: 28800).once  # Away goalie
+
       RodTheBot::Post.expects(:perform_async).once
       RodTheBot::Post.expects(:perform_in).once
 
@@ -118,11 +124,13 @@ class RodTheBot::GameStartWorkerTest < ActiveSupport::TestCase
   end
 
   test "find_goalie_record handles nil player_id" do
-    feed = NhlApi.fetch_pbp_feed(@game_id)
-    @game_start_worker.instance_variable_set(:@feed, feed)
+    VCR.use_cassette("nhl_game_#{@game_id}_gamecenter_pbp_nil_player") do
+      feed = NhlApi.fetch_pbp_feed(@game_id)
+      @game_start_worker.instance_variable_set(:@feed, feed)
 
-    record = @game_start_worker.send(:find_goalie_record, nil)
-    assert_equal "(Stats unavailable)", record
+      record = @game_start_worker.send(:find_goalie_record, nil)
+      assert_equal "(Stats unavailable)", record
+    end
   end
 
   test "find_starting_goalie handles missing goalies" do

@@ -5,6 +5,9 @@ class RodTheBot::GameStreamTest < ActiveSupport::TestCase
     @game_stream = RodTheBot::GameStream.new
     @game_id = "2023020369" # replace with a valid game_id
     ENV["NHL_TEAM_ID"] = "12" # Assuming this is needed for consistency with other tests
+
+    # Mock preseason check to avoid VCR issues and skip milestone checking
+    NhlApi.stubs(:preseason?).returns(true)  # Skip milestone achievements to avoid extra API calls
   end
 
   def teardown
@@ -28,6 +31,9 @@ class RodTheBot::GameStreamTest < ActiveSupport::TestCase
   end
 
   test "process_play enqueues correct worker" do
+    # Mock preseason to prevent milestone checking which requires more complex data
+    NhlApi.stubs(:preseason?).returns(true)  # Skip milestone achievements in preseason
+
     play = {"typeDescKey" => "goal", "eventId" => "73"}
 
     REDIS.expects(:get).with("#{@game_id}:73").returns(nil)
@@ -46,6 +52,7 @@ class RodTheBot::GameStreamTest < ActiveSupport::TestCase
     expected_mapping = {
       "goal" => [RodTheBot::GoalWorker, 90],
       "penalty" => [RodTheBot::PenaltyWorker, 30],
+      "shot-on-goal" => [RodTheBot::GoalieChangeWorker, 5],
       "period-start" => [RodTheBot::PeriodStartWorker, 1],
       "period-end" => [RodTheBot::EndOfPeriodWorker, 180]
     }

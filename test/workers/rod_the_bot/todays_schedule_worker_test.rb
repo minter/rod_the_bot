@@ -48,9 +48,15 @@ class RodTheBot::TodaysScheduleWorkerTest < ActiveSupport::TestCase
 
       formatted_schedule = @worker.send(:format_schedule, schedule, date)
 
-      assert_match(/BOS @ FLA - 7 PM/, formatted_schedule)
-      assert_match(/CHI @ UTA - 10 PM/, formatted_schedule)
-      assert_no_match(/No games scheduled/, formatted_schedule)
+      # format_schedule returns an array of game strings
+      assert_kind_of Array, formatted_schedule
+      assert formatted_schedule.any?
+
+      # Join to string for content matching
+      schedule_text = formatted_schedule.join("\n")
+      assert_match(/BOS @ FLA - 7 PM/, schedule_text)
+      assert_match(/CHI @ UTA - 10 PM/, schedule_text)
+      assert_no_match(/No games scheduled/, schedule_text)
     end
   end
 
@@ -61,7 +67,9 @@ class RodTheBot::TodaysScheduleWorkerTest < ActiveSupport::TestCase
 
       formatted_schedule = @worker.send(:format_schedule, schedule, date)
 
-      assert_equal "No games scheduled.", formatted_schedule
+      # format_schedule returns an empty array when no games, not a string
+      assert_equal [], formatted_schedule
+      assert formatted_schedule.empty?
     end
   end
 

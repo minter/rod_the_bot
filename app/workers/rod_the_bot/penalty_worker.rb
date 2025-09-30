@@ -18,7 +18,7 @@ module RodTheBot
       # Common penalties with better formatting
       "delaying-game" => "Delay Of Game",
       "too-many-men-on-the-ice" => "Too Many Men",
-      "cross-checking" => "Cross-Checking", 
+      "cross-checking" => "Cross-Checking",
       "high-sticking" => "High-Sticking",
       "high-sticking-double-minor" => "High-Sticking (Double Minor)",
       "checking-from-behind" => "Checking from Behind",
@@ -30,27 +30,27 @@ module RodTheBot
       "illegal-check-to-head" => "Illegal Check to the Head",
       "playing-without-a-helmet" => "Playing Without a Helmet",
       "throwing-equipment" => "Throwing Equipment",
-      
+
       # Specific delay of game penalties
       "delaying-game-puck-over-glass" => "Delay of Game - Puck over Glass",
-      "delaying-game-face-off-violation" => "Delay of Game - Face-off Violation", 
+      "delaying-game-face-off-violation" => "Delay of Game - Face-off Violation",
       "delaying-game-bench-face-off-violation" => "Delay of Game - Bench Face-off Violation",
       "delaying-game-equipment" => "Delay of Game - Equipment",
       "delaying-game-smothering-puck" => "Delay of Game - Smothering Puck",
       "delaying-game-unsuccessful-challenge" => "Delay of Game - Unsuccessful Challenge",
       "delaying-game-bench" => "Delay of Game (Bench)",
-      
+
       # Penalty shot penalties (remove ps- prefix in helper method)
       "covering-puck-in-crease" => "Covering Puck in Crease",
-      "goalkeeper-displaced-net" => "Goalkeeper Displaced Net", 
+      "goalkeeper-displaced-net" => "Goalkeeper Displaced Net",
       "holding-on-breakaway" => "Holding on Breakaway",
       "hooking-on-breakaway" => "Hooking on Breakaway",
       "net-displaced" => "Net Displaced",
       "slash-on-breakaway" => "Slashing on Breakaway",
       "throwing-object-at-puck" => "Throwing Object at Puck",
       "tripping-on-breakaway" => "Tripping on Breakaway",
-      
-      # Specific variations 
+
+      # Specific variations
       "roughing-removing-opponents-helmet" => "Roughing - Removing Opponent's Helmet",
       "spearing-double-minor" => "Spearing (Double Minor)",
       "interference-goalkeeper" => "Goaltender Interference",

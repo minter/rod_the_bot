@@ -16,6 +16,7 @@ class RodTheBot::SchedulerTest < ActiveSupport::TestCase
     VCR.use_cassette("nhl_schedule_20231201") do
       Timecop.freeze(Date.new(2023, 12, 1)) do
         NhlApi.stubs(:offseason?).returns(false)
+        NhlApi.stubs(:preseason?).returns(false)  # Mock preseason check
         NhlApi.expects(:postseason?).returns(false).at_least_once
         @worker.perform
 
