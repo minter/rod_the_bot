@@ -46,9 +46,10 @@ class RodTheBot::EndOfPeriodStatsWorkerTest < ActiveSupport::TestCase
         Takeaways: VGK - 0 | EDM - 1
       POST
 
-      assert_equal toi_expected_output, RodTheBot::Post.jobs.first["args"].first
-      assert_equal sog_expected_output, RodTheBot::Post.jobs.second["args"].first
-      assert_equal game_stats_expected_output, RodTheBot::Post.jobs.third["args"].first
+      # Updated order: Game comparison first, then shots on goal, then time on ice
+      assert_equal game_stats_expected_output, RodTheBot::Post.jobs.first["args"].first
+      assert_equal sog_expected_output, RodTheBot::Post.jobs.second["args"].first  
+      assert_equal toi_expected_output, RodTheBot::Post.jobs.third["args"].first
     end
   end
 end

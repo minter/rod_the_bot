@@ -39,12 +39,12 @@ module RodTheBot
       sog_key = "#{period_base_key}:sog"
       splits_key = "#{period_base_key}:splits"
 
-      # Post time on ice first
-      RodTheBot::Post.perform_in(30.seconds, period_toi_post, toi_key)
-      # Post shots on goal as reply to time on ice
-      RodTheBot::Post.perform_in(31.seconds, shots_on_goal_post, sog_key, toi_key)
-      # Post game splits as reply to shots on goal
-      RodTheBot::Post.perform_in(32.seconds, game_split_stats_post, splits_key, sog_key)
+      # Post game comparison first (primary post)
+      RodTheBot::Post.perform_in(30.seconds, game_split_stats_post, splits_key)
+      # Post shots on goal as reply to game comparison (5 seconds later to ensure parent ID is stored)
+      RodTheBot::Post.perform_in(35.seconds, shots_on_goal_post, sog_key, splits_key)
+      # Post time on ice as reply to shots on goal (5 seconds later to ensure parent ID is stored)
+      RodTheBot::Post.perform_in(40.seconds, period_toi_post, toi_key, sog_key)
     end
 
     private
