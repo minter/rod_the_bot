@@ -14,6 +14,53 @@ module RodTheBot
       "PS" => "Penalty Shot"
     }.freeze
 
+    PENALTY_NAMES = {
+      # Common penalties with better formatting
+      "delaying-game" => "Delay Of Game",
+      "too-many-men-on-the-ice" => "Too Many Men",
+      "cross-checking" => "Cross-Checking", 
+      "high-sticking" => "High-Sticking",
+      "high-sticking-double-minor" => "High-Sticking (Double Minor)",
+      "checking-from-behind" => "Checking from Behind",
+      "abuse-of-officials" => "Abuse of Officials",
+      "unsportsmanlike-conduct" => "Unsportsmanlike Conduct",
+      "unsportsmanlike-conduct-bench" => "Unsportsmanlike Conduct (Bench)",
+      "goalie-leave-crease" => "Goaltender Left Crease",
+      "goalie-participation-beyond-center" => "Goaltender Beyond Center Line",
+      "illegal-check-to-head" => "Illegal Check to the Head",
+      "playing-without-a-helmet" => "Playing Without a Helmet",
+      "throwing-equipment" => "Throwing Equipment",
+      
+      # Specific delay of game penalties
+      "delaying-game-puck-over-glass" => "Delay of Game - Puck over Glass",
+      "delaying-game-face-off-violation" => "Delay of Game - Face-off Violation", 
+      "delaying-game-bench-face-off-violation" => "Delay of Game - Bench Face-off Violation",
+      "delaying-game-equipment" => "Delay of Game - Equipment",
+      "delaying-game-smothering-puck" => "Delay of Game - Smothering Puck",
+      "delaying-game-unsuccessful-challenge" => "Delay of Game - Unsuccessful Challenge",
+      "delaying-game-bench" => "Delay of Game (Bench)",
+      
+      # Penalty shot penalties (remove ps- prefix in helper method)
+      "covering-puck-in-crease" => "Covering Puck in Crease",
+      "goalkeeper-displaced-net" => "Goalkeeper Displaced Net", 
+      "holding-on-breakaway" => "Holding on Breakaway",
+      "hooking-on-breakaway" => "Hooking on Breakaway",
+      "net-displaced" => "Net Displaced",
+      "slash-on-breakaway" => "Slashing on Breakaway",
+      "throwing-object-at-puck" => "Throwing Object at Puck",
+      "tripping-on-breakaway" => "Tripping on Breakaway",
+      
+      # Specific variations 
+      "roughing-removing-opponents-helmet" => "Roughing - Removing Opponent's Helmet",
+      "spearing-double-minor" => "Spearing (Double Minor)",
+      "interference-goalkeeper" => "Goaltender Interference",
+      "interference-bench" => "Interference (Bench)",
+      "holding-the-stick" => "Holding the Stick",
+      "puck-thrown-forward-goalkeeper" => "Puck Thrown Forward by Goalkeeper",
+      "instigator-misconduct" => "Instigator Misconduct",
+      "game-misconduct-head-coach" => "Game Misconduct (Head Coach)"
+    }.freeze
+
     def perform(game_id, play)
       @feed = NhlApi.fetch_pbp_feed(game_id)
       return if play.blank?
@@ -67,7 +114,7 @@ module RodTheBot
         served_by_name = served_by_player&.dig(:name) || "Unknown Player"
         served_by_number = served_by_player&.dig(:number) || "??"
         <<~POST
-          Bench Minor - #{@play["details"]["descKey"].tr("-", " ").titlecase}
+          Bench Minor - #{format_penalty_name(@play["details"]["descKey"])}
           Penalty is served by ##{served_by_number} #{served_by_name}
 
           That's a #{@play["details"]["duration"]} minute penalty at #{@play["timeInPeriod"]} of the #{period_name}
@@ -75,14 +122,14 @@ module RodTheBot
       elsif play["details"]["typeCode"] == "PS"
         main_player_name = main_player&.dig(:name) || "Unknown Player"
         <<~POST
-          #{main_player_name} - #{@play["details"]["descKey"].sub(/^ps-/, "").tr("-", " ").titlecase}
+          #{main_player_name} - #{format_penalty_name(@play["details"]["descKey"].sub(/^ps-/, ""))}
           
           That's a penalty shot awarded at #{@play["timeInPeriod"]} of the #{period_name}
         POST
       else
         main_player_name = main_player&.dig(:name) || "Unknown Player"
         penalty_message = <<~POST
-          #{main_player_name} - #{@play["details"]["descKey"].tr("-", " ").titlecase}
+          #{main_player_name} - #{format_penalty_name(@play["details"]["descKey"])}
           
           That's a #{@play["details"]["duration"]} minute #{SEVERITY[@play["details"]["typeCode"]]} penalty at #{@play["timeInPeriod"]} of the #{period_name}
         POST
@@ -119,6 +166,11 @@ module RodTheBot
         }
       end
       players
+    end
+
+    def format_penalty_name(desc_key)
+      # Use custom mapping first, fallback to default formatting
+      PENALTY_NAMES[desc_key] || desc_key.tr("-", " ").titlecase
     end
   end
 end
