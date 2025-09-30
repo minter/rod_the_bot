@@ -9,34 +9,67 @@ module RodTheBot
       @feed = NhlApi.fetch_pbp_feed(game_id)
       @play = play
 
-      goalie_id = play["details"]["goalieInNetId"]
+      goalie_id = play["details"]["goalieInNetId"].to_s  # Ensure string for comparison
       event_team = play["details"]["eventOwnerTeamId"]
 
       home = @feed["homeTeam"]
       away = @feed["awayTeam"]
 
-      # Determine which team's goalie changed (defending team)
+      # Determine which team's goalie this shot was against (defending team)
       defending_team_id = (event_team == home["id"]) ? away["id"] : home["id"]
       defending_team = (defending_team_id == home["id"]) ? home : away
 
-      # Check if this is actually a goalie change
+      # Get current cached goalie for this team
       current_goalie = REDIS.get("game:#{game_id}:current_goalie:#{defending_team_id}")
 
-      if goalie_id != current_goalie && goalie_id.present? && current_goalie.present?
-        # GOALIE CHANGE DETECTED!
-        new_goalie = get_goalie_info(goalie_id)
-        return if new_goalie.nil?
-
-        post = build_post(defending_team, new_goalie)
-        headshot = get_goalie_headshot(goalie_id)
-        images = headshot ? [headshot] : []
-
-        RodTheBot::Post.perform_async(post, nil, nil, nil, images)
-
-        # Update cache with new goalie
+      # If no cached goalie (GameStartWorker didn't run or cache expired), initialize from game state
+      if current_goalie.blank?
+        Rails.logger.info "GoalieChangeWorker: No cached goalie for team #{defending_team_id}. Initializing cache from current game state."
         REDIS.set("game:#{game_id}:current_goalie:#{defending_team_id}", goalie_id, ex: 28800)
+        return  # Don't post on cache initialization
+      end
 
-        Rails.logger.info "GoalieChangeWorker: Detected goalie change for team #{defending_team_id}, new goalie: #{new_goalie[:name]} (##{new_goalie[:number]})"
+      Rails.logger.debug "GoalieChangeWorker: Team #{defending_team_id}, cached: #{current_goalie}, current: #{goalie_id}, event: #{play["eventId"]}"
+
+      # Only detect change if we have a cached value and it's different
+      if current_goalie.present? && goalie_id.present? && goalie_id != current_goalie
+
+        # Safety check: Look at recent plays to confirm this is actually a new goalie
+        # Skip if this goalie has been active in recent plays (prevents false positives from stale cache)
+        recent_plays = @feed["plays"].select { |p|
+          p["details"] &&
+            p["details"]["goalieInNetId"] == play["details"]["goalieInNetId"] &&
+            p["eventId"] < play["eventId"]
+        }.last(5)  # Check last 5 plays with this goalie
+
+        if recent_plays.length >= 3
+          Rails.logger.info "GoalieChangeWorker: Skipping false positive - #{goalie_id} has been active recently. Updating cache silently."
+          REDIS.set("game:#{game_id}:current_goalie:#{defending_team_id}", goalie_id, ex: 28800)
+          return
+        end
+        # GOALIE CHANGE DETECTED!
+
+        # Use atomic operation to prevent race conditions - only proceed if we can claim this change
+        change_lock_key = "game:#{game_id}:goalie_change_lock:#{defending_team_id}:#{goalie_id}"
+        if REDIS.set(change_lock_key, "claimed", nx: true, ex: 300)  # 5 minute lock
+          new_goalie = get_goalie_info(play["details"]["goalieInNetId"])  # Use original integer for API calls
+          return if new_goalie.nil?
+
+          # Update cache with new goalie
+          REDIS.set("game:#{game_id}:current_goalie:#{defending_team_id}", goalie_id, ex: 28800)
+
+          post = build_post(defending_team, new_goalie)
+          headshot = get_goalie_headshot(play["details"]["goalieInNetId"])  # Use original integer
+          images = headshot ? [headshot] : []
+
+          RodTheBot::Post.perform_async(post, nil, nil, nil, images)
+
+          Rails.logger.info "GoalieChangeWorker: Posted goalie change for team #{defending_team_id}, #{current_goalie} → #{goalie_id} (#{new_goalie[:name]} ##{new_goalie[:number]})"
+        else
+          Rails.logger.debug "GoalieChangeWorker: Change already claimed by another worker. Team #{defending_team_id}, #{current_goalie} → #{goalie_id}"
+        end
+      else
+        Rails.logger.debug "GoalieChangeWorker: No change detected. Team #{defending_team_id}, cached: #{current_goalie}, current: #{goalie_id}"
       end
     end
 
