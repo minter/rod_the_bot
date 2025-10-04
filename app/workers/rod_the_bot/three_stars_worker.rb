@@ -78,16 +78,24 @@ module RodTheBot
     end
 
     def format_player_info(player, stats)
-      # Format player name with jersey number using consistent format
-      first_name = player["firstName"]&.dig("default") || player["firstName"] || "Unknown"
-      last_name = player["lastName"]&.dig("default") || player["lastName"] || "Player"
-      
-      player_name = format_player_with_components(
-        player["sweaterNo"], 
-        first_name,
-        last_name
-      )
-      "#{player["teamAbbrev"]} #{player_name} #{stats}\n"
+      # For three stars, use the name string verbatim from the NHL API
+      # since it's already nicely formatted (e.g., "O. Weisblatt", "J. Kemell")
+      if player["name"].present?
+        # New API format: use the pre-formatted name directly
+        full_name = player["name"]["default"] || player["name"] || "Unknown Player"
+        player_name = "##{player["sweaterNo"]} #{full_name}"
+      else
+        # Fallback to old format for backwards compatibility
+        first_name = player["firstName"]&.dig("default") || player["firstName"] || "Unknown"
+        last_name = player["lastName"]&.dig("default") || player["lastName"] || "Player"
+        
+        player_name = format_player_with_components(
+          player["sweaterNo"], 
+          first_name,
+          last_name
+        )
+      end
+      "#{player["teamAbbrev"]} #{player_name} #{stats}"
     end
 
     def post_three_stars(post)
