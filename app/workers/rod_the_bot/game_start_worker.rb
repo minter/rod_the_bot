@@ -1,6 +1,7 @@
 module RodTheBot
   class GameStartWorker
     include Sidekiq::Worker
+    include RodTheBot::PlayerFormatter
 
     def perform(game_id)
       @feed = NhlApi.fetch_pbp_feed(game_id)
@@ -83,14 +84,21 @@ module RodTheBot
     end
 
     def format_main_post(feed, home_goalie, home_goalie_record, away_goalie, away_goalie_record)
+      # Get game roster data for consistent formatting
+      players = NhlApi.game_rosters(feed["id"])
+      
+      # Format goalie names with jersey numbers using consistent format
+      home_goalie_name = format_player_from_roster(players, home_goalie["playerId"])
+      away_goalie_name = format_player_from_roster(players, away_goalie["playerId"])
+
       <<~POST
         🚦 It's puck drop at #{feed["venue"]["default"]} for #{feed["awayTeam"]["commonName"]["default"]} at #{feed["homeTeam"]["commonName"]["default"]}!
         
         Starting Goalies:
 
-        #{feed["homeTeam"]["abbrev"]}: ##{home_goalie["sweaterNumber"]} #{home_goalie["name"]["default"]} #{home_goalie_record}
+        #{feed["homeTeam"]["abbrev"]}: #{home_goalie_name} #{home_goalie_record}
         
-        #{feed["awayTeam"]["abbrev"]}: ##{away_goalie["sweaterNumber"]} #{away_goalie["name"]["default"]} #{away_goalie_record}
+        #{feed["awayTeam"]["abbrev"]}: #{away_goalie_name} #{away_goalie_record}
       POST
     end
 
@@ -118,5 +126,6 @@ module RodTheBot
 
       [home_goalie_image, away_goalie_image]
     end
+
   end
 end

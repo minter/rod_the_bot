@@ -3,6 +3,7 @@ module RodTheBot
     include Sidekiq::Worker
     include ActiveSupport::Inflector
     include RodTheBot::PeriodFormatter
+    include RodTheBot::PlayerFormatter
 
     CHALLENGE_MAPPINGS = {
       # Home team challenges
@@ -100,14 +101,22 @@ module RodTheBot
         The #{scoring_team["commonName"]["default"]} goal at #{@play["timeInPeriod"]} of the #{period_name} now reads:
 
       POST
-      post += "🚨 #{players[@play["details"]["scoringPlayerId"].to_s]&.dig(:name)} (#{@play["details"]["scoringPlayerTotal"]})\n"
+      
+      # Format scoring player with jersey number
+      scoring_player_name = format_player_from_roster(players, @play["details"]["scoringPlayerId"])
+      post += "🚨 #{scoring_player_name} (#{@play["details"]["scoringPlayerTotal"]})\n"
 
       post += if @play["details"]["assist1PlayerId"].present?
-        "🍎 #{players[@play["details"]["assist1PlayerId"].to_s]&.dig(:name)} (#{@play["details"]["assist1PlayerTotal"]})\n"
+        assist1_name = format_player_from_roster(players, @play["details"]["assist1PlayerId"])
+        "🍎 #{assist1_name} (#{@play["details"]["assist1PlayerTotal"]})\n"
       else
         "🍎 Unassisted\n"
       end
-      post += "🍎🍎 #{players[@play["details"]["assist2PlayerId"].to_s]&.dig(:name)} (#{@play["details"]["assist2PlayerTotal"]})\n" if @play["details"]["assist2PlayerId"].present?
+      
+      if @play["details"]["assist2PlayerId"].present?
+        assist2_name = format_player_from_roster(players, @play["details"]["assist2PlayerId"])
+        post += "🍎🍎 #{assist2_name} (#{@play["details"]["assist2PlayerTotal"]})\n"
+      end
 
       post
     end

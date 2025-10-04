@@ -1,6 +1,7 @@
 module RodTheBot
   class GoalieChangeWorker
     include Sidekiq::Worker
+    include RodTheBot::PlayerFormatter
     include ActiveSupport::Inflector
 
     def perform(game_id, play)
@@ -79,10 +80,13 @@ module RodTheBot
       city_name = team["placeName"]["default"]      # "Florida"
       team_nickname = team["commonName"]["default"] # "Panthers"
 
+      # Format goalie name with jersey number using consistent format  
+      goalie_name = format_player_with_components(goalie[:number], goalie[:first_name], goalie[:last_name])
+
       <<~POST
         🥅 Goaltending change for #{city_name}!
 
-        Now in goal for the #{team_nickname}, ##{goalie[:number]} #{goalie[:name]}
+        Now in goal for the #{team_nickname}, #{goalie_name}
       POST
     end
 
@@ -94,7 +98,8 @@ module RodTheBot
       return nil if goalie.nil?
 
       {
-        name: goalie[:name],
+        first_name: goalie[:first_name],
+        last_name: goalie[:last_name],
         number: goalie[:number],
         team_id: goalie[:team_id]
       }
@@ -114,7 +119,8 @@ module RodTheBot
         players[player["playerId"]] = {
           team_id: player["teamId"],
           number: player["sweaterNumber"],
-          name: player["firstName"]["default"] + " " + player["lastName"]["default"]
+          first_name: player["firstName"]["default"],
+          last_name: player["lastName"]["default"]
         }
       end
       players

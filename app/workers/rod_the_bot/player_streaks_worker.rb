@@ -1,6 +1,7 @@
 module RodTheBot
   class PlayerStreaksWorker
     include Sidekiq::Worker
+    include RodTheBot::PlayerFormatter
     include ActionView::Helpers::TextHelper
 
     def perform
@@ -155,11 +156,13 @@ module RodTheBot
       # Use existing roster data if available
       roster = NhlApi.roster(ENV["NHL_TEAM_ABBREVIATION"])
       player = roster[player_id.to_i]
-      return player[:fullName] if player
+      if player
+        return format_player_with_components(player[:sweaterNumber], player[:firstName], player[:lastName])
+      end
 
       # Fallback to API call
       player_data = NhlApi.fetch_player_landing_feed(player_id)
-      "#{player_data["firstName"]["default"]} #{player_data["lastName"]["default"]}"
+      format_player_name(player_data)
     end
 
     def post_streaks_in_thread(streaks, season_type)

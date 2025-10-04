@@ -1,0 +1,40 @@
+# Cursor Rules for Rod The Bot Project
+
+## Ruby/Rails Shell Environment
+
+**CRITICAL**: When running Ruby, Rails, or Ruby ecosystem commands, always use interactive shell to ensure proper environment loading:
+
+### Required Pattern:
+```bash
+zsh -i -c "your_command_here"
+```
+
+### Commands that MUST use this pattern:
+- `ruby` - Ruby interpreter 
+- `rails` / `bin/rails` - Rails commands (test, console, server, etc.)
+- `bundle` - Bundler commands (install, update, exec, etc.)
+- `gem` - Gem management
+- `rspec` - Test runner
+- `rubocop` - Linter
+- Any custom Ruby scripts or executables
+
+### Examples:
+✅ **Correct**:
+- `zsh -i -c "bin/rails test"`
+- `zsh -i -c "bundle install"`
+- `zsh -i -c "ruby --version"`
+- `zsh -i -c "rails console"`
+
+❌ **Incorrect** (will use system Ruby, not rbenv Ruby):
+- `bin/rails test`
+- `bundle install` 
+- `ruby --version`
+
+### Why This Matters:
+- This project uses rbenv to manage Ruby versions
+- Without loading .zshrc, commands use system Ruby (2.6.10) instead of project Ruby (3.4.5)
+- Wrong Ruby version causes Bundler errors, gem incompatibilities, and test failures
+- Interactive shell (`-i` flag) loads .zshrc which initializes rbenv
+
+### Exception:
+Only skip this pattern if you explicitly need to test system Ruby behavior or if rbenv is manually initialized in the same command.

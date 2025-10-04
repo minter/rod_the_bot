@@ -21,9 +21,9 @@ class RodTheBot::GoalWorkerTest < ActiveSupport::TestCase
       expected_output = <<~POST
         👎 Red Wings Goal
         
-        🚨 Klim Kostin (3)
-        🍎 Joe Veleno (10)
-        🍎🍎 Daniel Sprong (18)
+        🚨 #24 Klim Kostin (3)
+        🍎 #90 Joe Veleno (10)
+        🍎🍎 #17 Daniel Sprong (18)
         ⏱️  02:27 1st Period
         
         DET 1 - CAR 0
@@ -46,9 +46,9 @@ class RodTheBot::GoalWorkerTest < ActiveSupport::TestCase
       expected_output = <<~POST
         🎉 Hurricanes GOOOOOOOAL!
         
-        🚨 Jordan Martinook (6)
-        🍎 Brent Burns (18)
-        🍎🍎 Jordan Staal (9)
+        🚨 #48 Jordan Martinook (6)
+        🍎 #8 Brent Burns (18)
+        🍎🍎 #11 Jordan Staal (9)
         ⏱️  03:14 1st Period
         
         DET 1 - CAR 1
@@ -71,9 +71,9 @@ class RodTheBot::GoalWorkerTest < ActiveSupport::TestCase
       expected_output = <<~POST
         👎 Red Wings Power Play Goal
         
-        🚨 J.T. Compher (10)
-        🍎 Dylan Larkin (22)
-        🍎🍎 Shayne Gostisbehere (24)
+        🚨 #37 J.T. Compher (10)
+        🍎 #71 Dylan Larkin (22)
+        🍎🍎 #41 Shayne Gostisbehere (24)
         ⏱️  19:17 2nd Period
         
         DET 2 - CAR 2
@@ -96,8 +96,8 @@ class RodTheBot::GoalWorkerTest < ActiveSupport::TestCase
       expected_output = <<~POST
         🎉 Hurricanes Shorthanded GOOOOOOOAL!
         
-        🚨 Brady Skjei (4)
-        🍎 Teuvo Teravainen (7)
+        🚨 #76 Brady Skjei (4)
+        🍎 #86 Teuvo Teravainen (7)
         ⏱️  08:05 3rd Period
         
         BUF 1 - CAR 6
@@ -120,9 +120,9 @@ class RodTheBot::GoalWorkerTest < ActiveSupport::TestCase
       expected_output = <<~POST
         🎉 Hurricanes Empty Net GOOOOOOOAL!
         
-        🚨 Sebastian Aho (16)
-        🍎 Martin Necas (18)
-        🍎🍎 Andrei Svechnikov (19)
+        🚨 #20 Sebastian Aho (16)
+        🍎 #88 Martin Necas (18)
+        🍎🍎 #37 Andrei Svechnikov (19)
         ⏱️  18:44 3rd Period
         
         DET 2 - CAR 4
@@ -145,9 +145,9 @@ class RodTheBot::GoalWorkerTest < ActiveSupport::TestCase
       expected_output = <<~POST
         🎉 Hurricanes Power Play, Empty Net GOOOOOOOAL!
         
-        🚨 Andrei Svechnikov (6)
-        🍎 Sebastian Aho (25)
-        🍎🍎 Brent Burns (13)
+        🚨 #37 Andrei Svechnikov (6)
+        🍎 #20 Sebastian Aho (25)
+        🍎🍎 #8 Brent Burns (13)
         ⏱️  19:41 3rd Period
         
         MTL 3 - CAR 5

@@ -1,6 +1,7 @@
 module RodTheBot
   class GameStream
     include Sidekiq::Worker
+    include RodTheBot::PlayerFormatter
 
     attr_reader :feed, :game_id
 
@@ -71,13 +72,9 @@ module RodTheBot
     end
 
     def get_player_name(player_id)
-      # Get player name from the game feed
-      player = @feed["rosterSpots"].find { |p| p["playerId"] == player_id }
-      return "#{player["firstName"]["default"]} #{player["lastName"]["default"]}" if player
-
-      # Fallback to API call
-      player_feed = NhlApi.fetch_player_landing_feed(player_id)
-      "#{player_feed["firstName"]["default"]} #{player_feed["lastName"]["default"]}"
+      # Get player name with jersey number from the game feed
+      players = NhlApi.game_rosters(@game_id)
+      format_player_from_roster(players, player_id)
     end
 
     def check_goal_milestone(player_id, player_name)

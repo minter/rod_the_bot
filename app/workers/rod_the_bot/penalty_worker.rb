@@ -3,6 +3,7 @@ module RodTheBot
     include Sidekiq::Worker
     include ActiveSupport::Inflector
     include RodTheBot::PeriodFormatter
+    include RodTheBot::PlayerFormatter
 
     SEVERITY = {
       "MIN" => "Minor",
@@ -110,24 +111,22 @@ module RodTheBot
       period_name = format_period_name(@play["periodDescriptor"]["number"])
 
       post += if play["details"]["typeCode"] == "BEN"
-        served_by_player = players[served_player_id]
-        served_by_name = served_by_player&.dig(:name) || "Unknown Player"
-        served_by_number = served_by_player&.dig(:number) || "??"
+        served_by_player_name = format_player_from_roster(players, served_player_id)
         <<~POST
           Bench Minor - #{format_penalty_name(@play["details"]["descKey"])}
-          Penalty is served by ##{served_by_number} #{served_by_name}
+          Penalty is served by #{served_by_player_name}
 
           That's a #{@play["details"]["duration"]} minute penalty at #{@play["timeInPeriod"]} of the #{period_name}
         POST
       elsif play["details"]["typeCode"] == "PS"
-        main_player_name = main_player&.dig(:name) || "Unknown Player"
+        main_player_name = format_player_from_roster(players, committed_player_id)
         <<~POST
           #{main_player_name} - #{format_penalty_name(@play["details"]["descKey"].sub(/^ps-/, ""))}
           
           That's a penalty shot awarded at #{@play["timeInPeriod"]} of the #{period_name}
         POST
       else
-        main_player_name = main_player&.dig(:name) || "Unknown Player"
+        main_player_name = format_player_from_roster(players, committed_player_id)
         penalty_message = <<~POST
           #{main_player_name} - #{format_penalty_name(@play["details"]["descKey"])}
           
@@ -136,12 +135,8 @@ module RodTheBot
 
         # Add serving note if someone else is serving the penalty
         if served_player_id && served_player_id != committed_player_id
-          served_by_player = players[served_player_id]
-          if served_by_player
-            served_by_name = served_by_player[:name]
-            served_by_number = served_by_player[:number]
-            penalty_message += "\n(Penalty served by ##{served_by_number} #{served_by_name})"
-          end
+          served_by_player_name = format_player_from_roster(players, served_player_id)
+          penalty_message += "\n(Penalty served by #{served_by_player_name})"
         end
 
         penalty_message

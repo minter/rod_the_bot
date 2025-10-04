@@ -24,11 +24,11 @@ class RodTheBot::ThreeStarsWorkerTest < ActiveSupport::TestCase
       expected_output = <<~POST
         Three Stars Of The Game:
         
-        ⭐️⭐️⭐️ CAR #28 W. Carrier (1G, 1A, 2PTS)
+        ⭐️⭐️⭐️ CAR #28 Unknown Player (1G, 1A, 2PTS)
         
-        ⭐️⭐️ CAR #24 S. Jarvis (2G, 2PTS)
+        ⭐️⭐️ CAR #24 Unknown Player (2G, 2PTS)
         
-        ⭐️ CAR #26 S. Walker (1G, 2A, 3PTS)
+        ⭐️ CAR #26 Unknown Player (1G, 2A, 3PTS)
 
       POST
       assert_equal expected_output, post

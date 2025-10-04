@@ -34,17 +34,23 @@ class RodTheBot::GameStartWorkerTest < ActiveSupport::TestCase
   test "format_main_post" do
     VCR.use_cassette("nhl_game_#{@game_id}_gamecenter_pbp_game_start") do
       feed = NhlApi.fetch_pbp_feed(@game_id)
-      home_goalie = {"sweaterNumber" => "35", "name" => {"default" => "L. Ullmark"}}
-      away_goalie = {"sweaterNumber" => "35", "name" => {"default" => "T. Jarry"}}
+      home_goalie = {"playerId" => "8479973", "sweaterNumber" => "35", "name" => {"default" => "L. Ullmark"}}
+      away_goalie = {"playerId" => "8477924", "sweaterNumber" => "35", "name" => {"default" => "T. Jarry"}}
       home_goalie_record = "(5-3-0, 3.22 GAA, 0.877 SV%)"
       away_goalie_record = "(5-3-0, 2.62 GAA, 0.907 SV%)"
+
+      # Mock the game_rosters call to avoid VCR issues
+      NhlApi.expects(:game_rosters).with(feed["id"]).returns({
+        "8479973" => {name: "Linus Ullmark", number: "35", team_id: 9},
+        "8477924" => {name: "Tristan Jarry", number: "35", team_id: 5}
+      })
 
       post = @game_start_worker.send(:format_main_post, feed, home_goalie, home_goalie_record, away_goalie, away_goalie_record)
 
       assert_match(/🚦 It's puck drop at .+ for .+ at .+!/, post)
       assert_match(/Starting Goalies:/, post)
-      assert_match(/PIT: #35 T. Jarry \(5-3-0, 2.62 GAA, 0.907 SV%\)/, post)
-      assert_match(/OTT: #35 L. Ullmark \(5-3-0, 3.22 GAA, 0.877 SV%\)/, post)
+      assert_match(/PIT: #35 Tristan Jarry \(5-3-0, 2.62 GAA, 0.907 SV%\)/, post)
+      assert_match(/OTT: #35 Linus Ullmark \(5-3-0, 3.22 GAA, 0.877 SV%\)/, post)
     end
   end
 
@@ -63,6 +69,7 @@ class RodTheBot::GameStartWorkerTest < ActiveSupport::TestCase
   test "perform" do
     VCR.use_cassette("nhl_game_#{@game_id}_game_start_worker_perform") do
       NhlApi.expects(:fetch_pbp_feed).returns({
+        "id" => @game_id,
         "summary" => {
           "iceSurface" => {
             "homeTeam" => {"goalies" => [{"playerId" => "123", "name" => {"default" => "Home Goalie"}}]},
@@ -84,6 +91,12 @@ class RodTheBot::GameStartWorkerTest < ActiveSupport::TestCase
           "commonName" => {"default" => "Away Team"}
         },
         "startTime" => "2024-02-04T19:00:00Z"
+      })
+      
+      # Mock the game_rosters call to avoid additional fetch_pbp_feed call
+      NhlApi.expects(:game_rosters).with(@game_id).returns({
+        "123" => {name: "Home Goalie", number: "30", team_id: 1},
+        "456" => {name: "Away Goalie", number: "31", team_id: 2}
       })
       NhlApi.expects(:officials).returns({referees: ["Ref1", "Ref2"], linesmen: ["Lines1", "Lines2"]})
       # Worker calls fetch_player_landing_feed 4 times:

@@ -3,6 +3,7 @@ module RodTheBot
     include Sidekiq::Worker
     include ActiveSupport::Inflector
     include RodTheBot::PeriodFormatter
+    include RodTheBot::PlayerFormatter
 
     def perform(game_id, play)
       @feed = NhlApi.fetch_pbp_feed(game_id)
@@ -79,22 +80,19 @@ module RodTheBot
     def goal_details(players, play)
       details = []
 
-      # Safely get scoring player name
-      scoring_player = players[play["details"]["scoringPlayerId"]]
-      scoring_player_name = scoring_player&.dig(:name) || "Unknown Player"
+      # Format scoring player with jersey number
+      scoring_player_name = format_player_from_roster(players, play["details"]["scoringPlayerId"])
       details << "🚨 #{scoring_player_name} (#{play["details"]["scoringPlayerTotal"]})"
 
       details << if play["details"]["assist1PlayerId"].present?
-        assist1_player = players[play["details"]["assist1PlayerId"]]
-        assist1_name = assist1_player&.dig(:name) || "Unknown Player"
+        assist1_name = format_player_from_roster(players, play["details"]["assist1PlayerId"])
         "🍎 #{assist1_name} (#{play["details"]["assist1PlayerTotal"]})"
       else
         "🍎 Unassisted"
       end
 
       if play["details"]["assist2PlayerId"].present?
-        assist2_player = players[play["details"]["assist2PlayerId"]]
-        assist2_name = assist2_player&.dig(:name) || "Unknown Player"
+        assist2_name = format_player_from_roster(players, play["details"]["assist2PlayerId"])
         details << "🍎🍎 #{assist2_name} (#{play["details"]["assist2PlayerTotal"]})"
       end
 

@@ -1,6 +1,7 @@
 module RodTheBot
   class ThreeStarsWorker
     include Sidekiq::Worker
+    include RodTheBot::PlayerFormatter
 
     attr_reader :feed
 
@@ -77,7 +78,16 @@ module RodTheBot
     end
 
     def format_player_info(player, stats)
-      "#{player["teamAbbrev"]} ##{player["sweaterNo"]} #{player["name"]["default"]} #{stats}\n"
+      # Format player name with jersey number using consistent format
+      first_name = player["firstName"]&.dig("default") || player["firstName"] || "Unknown"
+      last_name = player["lastName"]&.dig("default") || player["lastName"] || "Player"
+      
+      player_name = format_player_with_components(
+        player["sweaterNo"], 
+        first_name,
+        last_name
+      )
+      "#{player["teamAbbrev"]} #{player_name} #{stats}\n"
     end
 
     def post_three_stars(post)

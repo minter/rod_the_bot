@@ -3,6 +3,7 @@ module RodTheBot
     include Sidekiq::Worker
     include ActiveSupport::Inflector
     include RodTheBot::PeriodFormatter
+    include RodTheBot::PlayerFormatter
 
     def perform(game_id, play_id, redis_key, initial_run_time = nil)
       initial_run_time ||= Time.now.to_i
@@ -57,20 +58,34 @@ module RodTheBot
     end
 
     def format_post(landing_play)
-      scorer_full_name = "#{landing_play["firstName"]["default"]} #{landing_play["lastName"]["default"]}"
+      # Get roster data to find jersey numbers
+      players = NhlApi.game_rosters(@pbp_feed["id"])
+      
+      # Format scorer with jersey number
+      scorer_id = @pbp_play["details"]["scoringPlayerId"]
+      scorer_name = format_player_from_roster(players, scorer_id)
+      
       team = landing_play["teamAbbrev"]["default"]
       time = landing_play["timeInPeriod"]
       shot_type = landing_play["shotType"]
       period_name = format_period_name(@pbp_play["periodDescriptor"]["number"])
 
-      assists = landing_play["assists"].map { |a| "#{a["firstName"]["default"]} #{a["lastName"]["default"]}" }
-      assist_text = assists.empty? ? "" : " Assisted by #{assists.join(", ")}."
+      # Format assists with jersey numbers
+      assist_names = []
+      if @pbp_play["details"]["assist1PlayerId"].present?
+        assist_names << format_player_from_roster(players, @pbp_play["details"]["assist1PlayerId"])
+      end
+      if @pbp_play["details"]["assist2PlayerId"].present?
+        assist_names << format_player_from_roster(players, @pbp_play["details"]["assist2PlayerId"])
+      end
+      
+      assist_text = assist_names.empty? ? "" : " Assisted by #{assist_names.join(", ")}."
 
       away_team = @landing_feed["awayTeam"]["abbrev"]
       home_team = @landing_feed["homeTeam"]["abbrev"]
       score = format("%s %d - %s %d", away_team, landing_play["awayScore"], home_team, landing_play["homeScore"])
 
-      "🎥 Goal highlight: #{scorer_full_name} (#{team}) scores on a #{shot_type} shot at #{time} of the #{period_name}." \
+      "🎥 Goal highlight: #{scorer_name} (#{team}) scores on a #{shot_type} shot at #{time} of the #{period_name}." \
       "#{assist_text} Score: #{score}"
     end
 
