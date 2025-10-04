@@ -25,7 +25,9 @@ class RodTheBot::ThreeStarsWorkerTest < ActiveSupport::TestCase
         Three Stars Of The Game:
 
         ⭐️⭐️⭐️ CAR #28 W. Carrier (1G, 1A, 2PTS)
+
         ⭐️⭐️ CAR #24 S. Jarvis (2G, 2PTS)
+
         ⭐️ CAR #26 S. Walker (1G, 2A, 3PTS)
       POST
       assert_equal expected_output, post
@@ -80,7 +82,9 @@ class RodTheBot::ThreeStarsWorkerTest < ActiveSupport::TestCase
       Three Stars Of The Game:
 
       ⭐️⭐️⭐️ NSH #74 J. Saros (1.88 GAA, 0.920 SV%)
+
       ⭐️⭐️ NSH #17 T. Jost (1G, 1PT)
+
       ⭐️ NSH #25 J. Kemell (1G, 1A, 2PTS)
     POST
     assert_equal expected_output, post

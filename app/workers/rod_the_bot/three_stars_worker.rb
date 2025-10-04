@@ -24,7 +24,9 @@ module RodTheBot
         Three Stars Of The Game:
 
         ⭐️⭐️⭐️ #{player_stats(three_stars[2])}
+
         ⭐️⭐️ #{player_stats(three_stars[1])}
+
         ⭐️ #{player_stats(three_stars[0])}
       POST
     end
