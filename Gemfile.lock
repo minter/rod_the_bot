@@ -16,7 +16,7 @@ GIT
       xrpc (>= 0.1.5)
 
 GEM
-  remote: https://rubygems.org/
+  remote: https://gem.coop/
   specs:
     actioncable (8.0.3)
       actionpack (= 8.0.3)
