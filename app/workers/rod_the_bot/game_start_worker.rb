@@ -86,7 +86,7 @@ module RodTheBot
     def format_main_post(feed, home_goalie, home_goalie_record, away_goalie, away_goalie_record)
       # Get game roster data for consistent formatting
       players = NhlApi.game_rosters(feed["id"])
-      
+
       # Format goalie names with jersey numbers using consistent format
       home_goalie_name = format_player_from_roster(players, home_goalie["playerId"])
       away_goalie_name = format_player_from_roster(players, away_goalie["playerId"])
@@ -126,6 +126,5 @@ module RodTheBot
 
       [home_goalie_image, away_goalie_image]
     end
-
   end
 end

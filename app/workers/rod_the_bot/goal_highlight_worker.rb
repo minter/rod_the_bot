@@ -60,11 +60,11 @@ module RodTheBot
     def format_post(landing_play)
       # Get roster data to find jersey numbers
       players = NhlApi.game_rosters(@pbp_feed["id"])
-      
+
       # Format scorer with jersey number
       scorer_id = @pbp_play["details"]["scoringPlayerId"]
       scorer_name = format_player_from_roster(players, scorer_id)
-      
+
       team = landing_play["teamAbbrev"]["default"]
       time = landing_play["timeInPeriod"]
       shot_type = landing_play["shotType"]
@@ -78,7 +78,7 @@ module RodTheBot
       if @pbp_play["details"]["assist2PlayerId"].present?
         assist_names << format_player_from_roster(players, @pbp_play["details"]["assist2PlayerId"])
       end
-      
+
       assist_text = assist_names.empty? ? "" : " Assisted by #{assist_names.join(", ")}."
 
       away_team = @landing_feed["awayTeam"]["abbrev"]

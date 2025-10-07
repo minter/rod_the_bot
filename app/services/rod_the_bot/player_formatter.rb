@@ -30,17 +30,17 @@ module RodTheBot
     # Format player name when you have separate components
     def format_player_with_components(number, first_name, last_name)
       return "Unknown Player" if first_name.blank? || last_name.blank?
-      
-      "##{number || '?'} #{first_name} #{last_name}"
+
+      "##{number || "?"} #{first_name} #{last_name}"
     end
 
     private
 
     def extract_number(player_data)
-      player_data["sweaterNumber"] || 
-      player_data[:number] || 
-      player_data["number"] || 
-      "?"
+      player_data["sweaterNumber"] ||
+        player_data[:number] ||
+        player_data["number"] ||
+        "?"
     end
 
     def extract_first_name(player_data)

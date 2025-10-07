@@ -80,7 +80,7 @@ module RodTheBot
       city_name = team["placeName"]["default"]      # "Florida"
       team_nickname = team["commonName"]["default"] # "Panthers"
 
-      # Format goalie name with jersey number using consistent format  
+      # Format goalie name with jersey number using consistent format
       goalie_name = format_player_with_components(goalie[:number], goalie[:first_name], goalie[:last_name])
 
       <<~POST

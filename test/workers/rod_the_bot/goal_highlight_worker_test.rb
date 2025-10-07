@@ -27,7 +27,7 @@ class RodTheBot::GoalHighlightWorkerTest < ActiveSupport::TestCase
       NhlApi.expects(:game_rosters).returns({
         "8477500" => {name: "Jordan Martinook", number: "48", team_id: 12}
       })
-      
+
       # Allow any parameters for Post.perform_async
       RodTheBot::Post.expects(:perform_async).once
 
@@ -89,7 +89,7 @@ class RodTheBot::GoalHighlightWorkerTest < ActiveSupport::TestCase
       NhlApi.expects(:game_rosters).returns({
         "8477500" => {name: "Jordan Martinook", number: "48", team_id: 12}
       })
-      
+
       landing_play = @landing_feed["summary"]["scoring"].flat_map { |period| period["goals"] }.find { |goal| goal["timeInPeriod"] == @goal_play["timeInPeriod"] }
 
       worker = RodTheBot::GoalHighlightWorker.new

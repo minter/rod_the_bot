@@ -92,7 +92,7 @@ class RodTheBot::GameStartWorkerTest < ActiveSupport::TestCase
         },
         "startTime" => "2024-02-04T19:00:00Z"
       })
-      
+
       # Mock the game_rosters call to avoid additional fetch_pbp_feed call
       NhlApi.expects(:game_rosters).with(@game_id).returns({
         "123" => {name: "Home Goalie", number: "30", team_id: 1},

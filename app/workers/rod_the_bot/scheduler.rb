@@ -16,9 +16,6 @@ module RodTheBot
       RodTheBot::YesterdaysScoresWorker.perform_in(5.minutes)
       RodTheBot::TodaysScheduleWorker.perform_in(10.minutes)
 
-      # Add upcoming milestones check (only for regular season and playoffs)
-      RodTheBot::UpcomingMilestonesWorker.perform_in(14.minutes) unless NhlApi.preseason?
-
       if NhlApi.postseason?
         # Postseason
         RodTheBot::PostseasonSeriesWorker.perform_in(16.minutes)
@@ -87,9 +84,9 @@ module RodTheBot
 
         RodTheBot::GameStream.perform_at(time - 15.minutes, game_id)
         RodTheBot::Post.perform_async(gameday_post, nil, nil, nil, [away_logo_url, home_logo_url])
-        RodTheBot::UpcomingMilestonesWorker.perform_in(1.minute)
         RodTheBot::PlayerStreaksWorker.perform_in(3.minutes)
         RodTheBot::SeasonStatsWorker.perform_in(5.minutes, your_standings[:team_name])
+        RodTheBot::UpcomingMilestonesWorker.perform_in(10.minutes)
       end
     end
 

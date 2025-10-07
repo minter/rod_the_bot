@@ -90,9 +90,9 @@ module RodTheBot
         # Fallback to old format for backwards compatibility
         first_name = player["firstName"]&.dig("default") || player["firstName"] || "Unknown"
         last_name = player["lastName"]&.dig("default") || player["lastName"] || "Player"
-        
+
         player_name = format_player_with_components(
-          player["sweaterNo"], 
+          player["sweaterNo"],
           first_name,
           last_name
         )

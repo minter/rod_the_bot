@@ -101,7 +101,7 @@ module RodTheBot
         The #{scoring_team["commonName"]["default"]} goal at #{@play["timeInPeriod"]} of the #{period_name} now reads:
 
       POST
-      
+
       # Format scoring player with jersey number
       scoring_player_name = format_player_from_roster(players, @play["details"]["scoringPlayerId"])
       post += "🚨 #{scoring_player_name} (#{@play["details"]["scoringPlayerTotal"]})\n"
@@ -112,7 +112,7 @@ module RodTheBot
       else
         "🍎 Unassisted\n"
       end
-      
+
       if @play["details"]["assist2PlayerId"].present?
         assist2_name = format_player_from_roster(players, @play["details"]["assist2PlayerId"])
         post += "🍎🍎 #{assist2_name} (#{@play["details"]["assist2PlayerTotal"]})\n"
