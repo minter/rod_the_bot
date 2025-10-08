@@ -5,7 +5,7 @@
 #   git config --global core.excludesfile '~/.gitignore_global'
 
 # Ignore bundler config.
-/.bundle
+#/.bundle
 
 # Ignore all environment files (except templates).
 /.env*
@@ -35,3 +35,6 @@
 
 # Ignore SQlite databases
 db/*.sqlite3
+
+# Bundle
+vendor/bundle
