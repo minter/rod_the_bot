@@ -1,6 +1,6 @@
 GIT
   remote: https://github.com/minter/bskyrb.git
-  revision: 71af9f7ba7353295bd38348a7c44d331fce4ba25
+  revision: 6db5f19f02e2314a004164d2e52ba416c8387a3d
   branch: main
   specs:
     bskyrb (0.5.3)
@@ -94,7 +94,7 @@ GEM
     ast (2.4.3)
     base64 (0.3.0)
     benchmark (0.4.1)
-    bigdecimal (3.3.0)
+    bigdecimal (3.3.1)
     bootsnap (1.18.6)
       msgpack (~> 1.2)
     builder (3.3.0)
