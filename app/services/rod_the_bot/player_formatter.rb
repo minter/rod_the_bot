@@ -18,7 +18,8 @@ module RodTheBot
 
     # Format player name from roster data (used in workers with game rosters)
     def format_player_from_roster(players_hash, player_id)
-      player = players_hash[player_id]
+      # Try both integer and string keys to handle different roster formats
+      player = players_hash[player_id] || players_hash[player_id.to_s]
       return "Unknown Player" unless player
 
       number = player[:number] || player["number"] || "?"
