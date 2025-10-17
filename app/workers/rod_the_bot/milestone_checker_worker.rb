@@ -214,12 +214,12 @@ module RodTheBot
       when "shutout" then "🛡️"
       end
 
-      # Keep it concise for Bluesky
-      post = "#{emoji} MILESTONE! #{player_name} has reached #{value} career #{stat_type.pluralize(value)}! #{emoji}\n\n#{ENV["TEAM_HASHTAGS"]}"
+      # Keep it concise for Bluesky (hashtags will be added by Post worker)
+      post = "#{emoji} MILESTONE! #{player_name} has reached #{value} career #{stat_type.pluralize(value)}! #{emoji}"
 
       # Ensure we don't exceed Bluesky's character limit
       if post.length > 300
-        post = "#{emoji} MILESTONE! #{player_name} reached #{value} career #{stat_type.pluralize(value)}! #{emoji}\n\n#{ENV["TEAM_HASHTAGS"]}"
+        post = "#{emoji} MILESTONE! #{player_name} reached #{value} career #{stat_type.pluralize(value)}! #{emoji}"
       end
 
       post
@@ -233,17 +233,17 @@ module RodTheBot
       when "shutout" then "🛡️"
       end
 
-      # Special formatting for first career milestones
+      # Special formatting for first career milestones (hashtags will be added by Post worker)
       verb = case stat_type
       when "win", "shutout" then "earned"
       else "scored"
       end
 
-      post = "#{emoji} MILESTONE! #{player_name} has #{verb} their first career NHL #{stat_type}! #{emoji}\n\n#{ENV["TEAM_HASHTAGS"]}"
+      post = "#{emoji} MILESTONE! #{player_name} has #{verb} their first career NHL #{stat_type}! #{emoji}"
 
       # Ensure we don't exceed Bluesky's character limit
       if post.length > 300
-        post = "#{emoji} MILESTONE! #{player_name} #{verb} their first career NHL #{stat_type}! #{emoji}\n\n#{ENV["TEAM_HASHTAGS"]}"
+        post = "#{emoji} MILESTONE! #{player_name} #{verb} their first career NHL #{stat_type}! #{emoji}"
       end
 
       post
