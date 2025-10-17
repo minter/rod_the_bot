@@ -46,9 +46,9 @@ module RodTheBot
     end
 
     def check_goal_milestone(player_id, player_name)
-      career_stats = get_player_career_stats(player_id)
-      goals = career_stats.dig("data", 0, "goals") || 0
-      points = career_stats.dig("data", 0, "points") || 0
+      # Calculate career totals using pre-game stats + in-game stats
+      goals = calculate_career_total(player_id, "goals")
+      points = calculate_career_total(player_id, "points")
 
       # Check for milestone goals
       milestone_goals = [1, 50, 100, 200, 250, 300, 400, 500]
@@ -69,9 +69,9 @@ module RodTheBot
     end
 
     def check_point_milestone(player_id, player_name)
-      career_stats = get_player_career_stats(player_id)
-      points = career_stats.dig("data", 0, "points") || 0
-      goals = career_stats.dig("data", 0, "goals") || 0
+      # Calculate career totals using pre-game stats + in-game stats
+      points = calculate_career_total(player_id, "points")
+      goals = calculate_career_total(player_id, "goals")
 
       # Check for milestone points
       milestone_points = [1, 50, 100, 200, 250, 300, 400, 500, 600, 700, 750, 800, 900, 1000]
@@ -93,8 +93,8 @@ module RodTheBot
     end
 
     def check_assist_milestone(player_id, player_name)
-      career_stats = get_player_career_stats(player_id)
-      assists = career_stats.dig("data", 0, "assists") || 0
+      # Calculate career totals using pre-game stats + in-game stats
+      assists = calculate_career_total(player_id, "assists")
 
       # Check for milestone assists (skip first career assist - handled under points)
       milestone_assists = [50, 100, 200, 250, 300, 400, 500, 600, 700, 750, 800, 900, 1000]
@@ -122,8 +122,8 @@ module RodTheBot
     end
 
     def check_goalie_win_milestone(goalie_id, goalie_name)
-      career_stats = get_player_career_stats(goalie_id)
-      wins = career_stats.dig("data", 0, "wins") || 0
+      # Calculate career totals using pre-game stats + in-game result
+      wins = calculate_career_total(goalie_id, "wins")
 
       # Check for milestone wins
       milestone_wins = [1, 50, 100, 200, 300, 400, 500]
@@ -139,8 +139,8 @@ module RodTheBot
     end
 
     def check_goalie_shutout_milestone(goalie_id, goalie_name)
-      career_stats = get_player_career_stats(goalie_id)
-      shutouts = career_stats.dig("data", 0, "so") || 0
+      # Calculate career totals using pre-game stats + in-game result
+      shutouts = calculate_career_total(goalie_id, "shutouts")
 
       # Check for milestone shutouts
       milestone_shutouts = [1, 10, 20, 30, 40, 50, 100]
@@ -155,8 +155,52 @@ module RodTheBot
       end
     end
 
-    def get_player_career_stats(player_id)
-      # Never use cache for milestone checks - always fetch fresh stats
+    def calculate_career_total(player_id, stat_type)
+      # Try to use pre-game stats + in-game stats for accurate calculation
+      pregame_key = "pregame:#{@game_id}:player:#{player_id}:#{stat_type}"
+      pregame_stat = REDIS.get(pregame_key)
+      
+      if pregame_stat
+        # We have pre-game stats, calculate based on what happened in this game
+        pregame_total = pregame_stat.to_i
+        ingame_total = get_ingame_stats(player_id, stat_type)
+        return pregame_total + ingame_total
+      end
+      
+      # Fall back to API if pre-game stats aren't available (shouldn't happen in normal operation)
+      # This uses the unreliable NHL stats API that may not have updated yet
+      Rails.logger.warn "MilestoneCheckerWorker: No pre-game stats found for player #{player_id}, falling back to API"
+      career_stats = get_player_career_stats_from_api(player_id)
+      career_stats.dig("data", 0, stat_type) || 0
+    end
+
+    def get_ingame_stats(player_id, stat_type)
+      # Get all plays from this game
+      feed = NhlApi.fetch_pbp_feed(@game_id)
+      
+      case stat_type
+      when "goals"
+        feed["plays"].count { |play| 
+          play["typeDescKey"] == "goal" && 
+          play.dig("details", "scoringPlayerId") == player_id 
+        }
+      when "assists"
+        feed["plays"].count { |play|
+          play["typeDescKey"] == "goal" && 
+          (play.dig("details", "assist1PlayerId") == player_id ||
+           play.dig("details", "assist2PlayerId") == player_id)
+        }
+      when "points"
+        goals = get_ingame_stats(player_id, "goals")
+        assists = get_ingame_stats(player_id, "assists")
+        goals + assists
+      else
+        0
+      end
+    end
+
+    def get_player_career_stats_from_api(player_id)
+      # Fetch from API (for fallback when pre-game stats aren't available)
       response = HTTParty.get("https://api.nhle.com/stats/rest/en/skater/stats?cayenneExp=playerId=#{player_id}")
       response.success? ? response.parsed_response : {}
     end

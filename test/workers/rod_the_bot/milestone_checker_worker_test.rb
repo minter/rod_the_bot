@@ -10,6 +10,8 @@ class RodTheBot::MilestoneCheckerWorkerTest < ActiveSupport::TestCase
 
   def teardown
     Sidekiq::Worker.clear_all
+    # Clean up Redis pre-game stats keys
+    REDIS.keys("pregame:*").each { |key| REDIS.del(key) }
   end
 
   test "check_goal_milestone detects 100th goal" do
@@ -24,31 +26,31 @@ class RodTheBot::MilestoneCheckerWorkerTest < ActiveSupport::TestCase
         }
       }
 
-      # Mock the career stats API to return 100 goals for scorer
-      jarvis_stats = {
-        "data" => [{
-          "goals" => 100,
-          "points" => 217,
-          "assists" => 117
-        }]
+      # Mock pre-game stats in Redis (Jarvis had 99 goals before this game)
+      REDIS.set("pregame:#{@game_id}:player:8482093:goals", 99)
+      REDIS.set("pregame:#{@game_id}:player:8482093:points", 216)
+      REDIS.set("pregame:#{@game_id}:player:8482093:assists", 117)
+      
+      # Mock pre-game stats for assist player (not a milestone)
+      REDIS.set("pregame:#{@game_id}:player:8476906:goals", 10)
+      REDIS.set("pregame:#{@game_id}:player:8476906:points", 50)
+      REDIS.set("pregame:#{@game_id}:player:8476906:assists", 40)
+
+      # Mock the game feed to show Jarvis scored once in this game
+      feed = {
+        "plays" => [
+          {
+            "typeDescKey" => "goal",
+            "eventId" => 391,
+            "details" => {
+              "scoringPlayerId" => 8482093,
+              "assist1PlayerId" => 8476906
+            }
+          }
+        ]
       }
-
-      # Mock stats for assist player (not a milestone)
-      carrier_stats = {
-        "data" => [{
-          "goals" => 10,
-          "points" => 50,
-          "assists" => 40
-        }]
-      }
-
-      HTTParty.stubs(:get)
-        .with(regexp_matches(/playerId=8482093/))
-        .returns(stub(success?: true, parsed_response: jarvis_stats))
-
-      HTTParty.stubs(:get)
-        .with(regexp_matches(/playerId=8476906/))
-        .returns(stub(success?: true, parsed_response: carrier_stats))
+      
+      NhlApi.stubs(:fetch_pbp_feed).returns(feed)
 
       # Mock roster data
       NhlApi.stubs(:game_rosters).returns({
@@ -58,7 +60,7 @@ class RodTheBot::MilestoneCheckerWorkerTest < ActiveSupport::TestCase
 
       @worker.perform(@game_id, play)
 
-      # Should have scheduled a post for the milestone
+      # Should have scheduled a post for the milestone (99 + 1 = 100)
       assert_equal 1, RodTheBot::Post.jobs.size
       job = RodTheBot::Post.jobs.first
       assert_match(/MILESTONE/, job["args"][0])
@@ -79,18 +81,26 @@ class RodTheBot::MilestoneCheckerWorkerTest < ActiveSupport::TestCase
         }
       }
 
-      # Mock the career stats API to return 99 goals (not a milestone)
-      career_stats_response = {
-        "data" => [{
-          "goals" => 99,
-          "points" => 216,
-          "assists" => 117
-        }]
-      }
+      # Mock pre-game stats in Redis (Jarvis had 98 goals before this game)
+      REDIS.set("pregame:#{@game_id}:player:8482093:goals", 98)
+      REDIS.set("pregame:#{@game_id}:player:8482093:points", 215)
+      REDIS.set("pregame:#{@game_id}:player:8482093:assists", 117)
 
-      HTTParty.stubs(:get)
-        .with(regexp_matches(/playerId=8482093/))
-        .returns(stub(success?: true, parsed_response: career_stats_response))
+      # Mock the game feed to show Jarvis scored once in this game (98 + 1 = 99, not a milestone)
+      feed = {
+        "plays" => [
+          {
+            "typeDescKey" => "goal",
+            "eventId" => 391,
+            "details" => {
+              "scoringPlayerId" => 8482093,
+              "assist1PlayerId" => nil
+            }
+          }
+        ]
+      }
+      
+      NhlApi.stubs(:fetch_pbp_feed).returns(feed)
 
       # Mock roster data
       NhlApi.stubs(:game_rosters).returns({
@@ -99,7 +109,7 @@ class RodTheBot::MilestoneCheckerWorkerTest < ActiveSupport::TestCase
 
       @worker.perform(@game_id, play)
 
-      # Should not have scheduled any posts
+      # Should not have scheduled any posts (99 is not a milestone)
       assert_equal 0, RodTheBot::Post.jobs.size
     end
   end
@@ -116,30 +126,31 @@ class RodTheBot::MilestoneCheckerWorkerTest < ActiveSupport::TestCase
         }
       }
 
-      # Mock the career stats API
-      scorer_stats = {
-        "data" => [{
-          "goals" => 50,
-          "points" => 150,
-          "assists" => 100
-        }]
+      # Mock pre-game stats for Jarvis (had 99 assists before this game)
+      REDIS.set("pregame:#{@game_id}:player:8482093:goals", 99)
+      REDIS.set("pregame:#{@game_id}:player:8482093:points", 217)
+      REDIS.set("pregame:#{@game_id}:player:8482093:assists", 99)
+      
+      # Mock pre-game stats for scorer (not near any milestone)
+      REDIS.set("pregame:#{@game_id}:player:8476906:goals", 50)
+      REDIS.set("pregame:#{@game_id}:player:8476906:points", 150)
+      REDIS.set("pregame:#{@game_id}:player:8476906:assists", 100)
+
+      # Mock the game feed showing this goal with Jarvis getting an assist
+      feed = {
+        "plays" => [
+          {
+            "typeDescKey" => "goal",
+            "eventId" => 391,
+            "details" => {
+              "scoringPlayerId" => 8476906,
+              "assist1PlayerId" => 8482093
+            }
+          }
+        ]
       }
-
-      assist_stats = {
-        "data" => [{
-          "goals" => 99,
-          "points" => 217,
-          "assists" => 100  # Milestone!
-        }]
-      }
-
-      HTTParty.stubs(:get)
-        .with(regexp_matches(/playerId=8476906/))
-        .returns(stub(success?: true, parsed_response: scorer_stats))
-
-      HTTParty.stubs(:get)
-        .with(regexp_matches(/playerId=8482093/))
-        .returns(stub(success?: true, parsed_response: assist_stats))
+      
+      NhlApi.stubs(:fetch_pbp_feed).returns(feed)
 
       # Mock roster data
       NhlApi.stubs(:game_rosters).returns({
@@ -149,7 +160,7 @@ class RodTheBot::MilestoneCheckerWorkerTest < ActiveSupport::TestCase
 
       @worker.perform(@game_id, play)
 
-      # Should have scheduled a post for the assist milestone
+      # Should have scheduled a post for the assist milestone (99 + 1 = 100)
       assert_operator RodTheBot::Post.jobs.size, :>=, 1
       
       # Find the assist milestone post

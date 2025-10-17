@@ -28,6 +28,9 @@ module RodTheBot
       main_post_key = "game_start_#{game_id}:#{current_date}"
       RodTheBot::Post.perform_async(main_post, main_post_key, nil, nil, goalie_images)
       RodTheBot::Post.perform_in(1.minute, reply_post, "game_start_reply_#{game_id}:#{current_date}", main_post_key)
+      
+      # Store pre-game career stats for milestone detection (skip in preseason)
+      RodTheBot::PregameStatsWorker.perform_async(game_id) unless NhlApi.preseason?
     end
 
     private

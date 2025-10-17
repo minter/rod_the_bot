@@ -40,12 +40,13 @@ module RodTheBot
     end
 
     def schedule_milestone_check(play)
-      # Schedule milestone check with 3-minute delay to allow NHL API stats to update
+      # Schedule milestone check immediately since we calculate from pre-game stats
       # Use a unique Redis key to prevent duplicate milestone checks
       milestone_key = "#{game_id}:milestone:#{play["eventId"]}"
       
       if REDIS.get(milestone_key).nil?
-        RodTheBot::MilestoneCheckerWorker.perform_in(180, game_id, play)
+        # Check immediately (30 seconds after the play) using pre-game stats + in-game calculation
+        RodTheBot::MilestoneCheckerWorker.perform_in(30, game_id, play)
         REDIS.set(milestone_key, "true", ex: 172800)
       end
     end
