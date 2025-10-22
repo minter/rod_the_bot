@@ -30,7 +30,7 @@ class RodTheBot::MilestoneCheckerWorkerTest < ActiveSupport::TestCase
       REDIS.set("pregame:#{@game_id}:player:8482093:goals", 99)
       REDIS.set("pregame:#{@game_id}:player:8482093:points", 216)
       REDIS.set("pregame:#{@game_id}:player:8482093:assists", 117)
-      
+
       # Mock pre-game stats for assist player (not a milestone)
       REDIS.set("pregame:#{@game_id}:player:8476906:goals", 10)
       REDIS.set("pregame:#{@game_id}:player:8476906:points", 50)
@@ -49,13 +49,13 @@ class RodTheBot::MilestoneCheckerWorkerTest < ActiveSupport::TestCase
           }
         ]
       }
-      
+
       NhlApi.stubs(:fetch_pbp_feed).returns(feed)
 
       # Mock roster data
       NhlApi.stubs(:game_rosters).returns({
-        8482093 => { number: 24, name: "Seth Jarvis", team_id: 12 },
-        8476906 => { number: 65, name: "William Carrier", team_id: 12 }
+        8482093 => {number: 24, name: "Seth Jarvis", team_id: 12},
+        8476906 => {number: 65, name: "William Carrier", team_id: 12}
       })
 
       @worker.perform(@game_id, play)
@@ -99,12 +99,12 @@ class RodTheBot::MilestoneCheckerWorkerTest < ActiveSupport::TestCase
           }
         ]
       }
-      
+
       NhlApi.stubs(:fetch_pbp_feed).returns(feed)
 
       # Mock roster data
       NhlApi.stubs(:game_rosters).returns({
-        8482093 => { number: 24, name: "Seth Jarvis", team_id: 12 }
+        8482093 => {number: 24, name: "Seth Jarvis", team_id: 12}
       })
 
       @worker.perform(@game_id, play)
@@ -130,7 +130,7 @@ class RodTheBot::MilestoneCheckerWorkerTest < ActiveSupport::TestCase
       REDIS.set("pregame:#{@game_id}:player:8482093:goals", 99)
       REDIS.set("pregame:#{@game_id}:player:8482093:points", 217)
       REDIS.set("pregame:#{@game_id}:player:8482093:assists", 99)
-      
+
       # Mock pre-game stats for scorer (not near any milestone)
       REDIS.set("pregame:#{@game_id}:player:8476906:goals", 50)
       REDIS.set("pregame:#{@game_id}:player:8476906:points", 150)
@@ -149,28 +149,27 @@ class RodTheBot::MilestoneCheckerWorkerTest < ActiveSupport::TestCase
           }
         ]
       }
-      
+
       NhlApi.stubs(:fetch_pbp_feed).returns(feed)
 
       # Mock roster data
       NhlApi.stubs(:game_rosters).returns({
-        8476906 => { number: 65, name: "William Carrier", team_id: 12 },
-        8482093 => { number: 24, name: "Seth Jarvis", team_id: 12 }
+        8476906 => {number: 65, name: "William Carrier", team_id: 12},
+        8482093 => {number: 24, name: "Seth Jarvis", team_id: 12}
       })
 
       @worker.perform(@game_id, play)
 
       # Should have scheduled a post for the assist milestone (99 + 1 = 100)
       assert_operator RodTheBot::Post.jobs.size, :>=, 1
-      
+
       # Find the assist milestone post
       assist_post = RodTheBot::Post.jobs.find do |job|
         job["args"][0].include?("100 career assists")
       end
-      
+
       assert_not_nil assist_post, "Should have scheduled an assist milestone post"
       assert_match(/Seth Jarvis/, assist_post["args"][0])
     end
   end
 end
-
