@@ -43,7 +43,7 @@ module RodTheBot
       # Schedule milestone check immediately since we calculate from pre-game stats
       # Use a unique Redis key to prevent duplicate milestone checks
       milestone_key = "#{game_id}:milestone:#{play["eventId"]}"
-      
+
       if REDIS.get(milestone_key).nil?
         # Check immediately (30 seconds after the play) using pre-game stats + in-game calculation
         RodTheBot::MilestoneCheckerWorker.perform_in(30, game_id, play)

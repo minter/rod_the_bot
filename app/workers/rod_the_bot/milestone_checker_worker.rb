@@ -159,14 +159,14 @@ module RodTheBot
       # Try to use pre-game stats + in-game stats for accurate calculation
       pregame_key = "pregame:#{@game_id}:player:#{player_id}:#{stat_type}"
       pregame_stat = REDIS.get(pregame_key)
-      
+
       if pregame_stat
         # We have pre-game stats, calculate based on what happened in this game
         pregame_total = pregame_stat.to_i
         ingame_total = get_ingame_stats(player_id, stat_type)
         return pregame_total + ingame_total
       end
-      
+
       # Fall back to API if pre-game stats aren't available (shouldn't happen in normal operation)
       # This uses the unreliable NHL stats API that may not have updated yet
       Rails.logger.warn "MilestoneCheckerWorker: No pre-game stats found for player #{player_id}, falling back to API"
@@ -177,18 +177,18 @@ module RodTheBot
     def get_ingame_stats(player_id, stat_type)
       # Get all plays from this game
       feed = NhlApi.fetch_pbp_feed(@game_id)
-      
+
       case stat_type
       when "goals"
-        feed["plays"].count { |play| 
-          play["typeDescKey"] == "goal" && 
-          play.dig("details", "scoringPlayerId") == player_id 
+        feed["plays"].count { |play|
+          play["typeDescKey"] == "goal" &&
+            play.dig("details", "scoringPlayerId") == player_id
         }
       when "assists"
         feed["plays"].count { |play|
-          play["typeDescKey"] == "goal" && 
-          (play.dig("details", "assist1PlayerId") == player_id ||
-           play.dig("details", "assist2PlayerId") == player_id)
+          play["typeDescKey"] == "goal" &&
+            (play.dig("details", "assist1PlayerId") == player_id ||
+             play.dig("details", "assist2PlayerId") == player_id)
         }
       when "points"
         goals = get_ingame_stats(player_id, "goals")
@@ -250,4 +250,3 @@ module RodTheBot
     end
   end
 end
-

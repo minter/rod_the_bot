@@ -116,4 +116,3 @@ module RodTheBot
     end
   end
 end
-
