@@ -105,7 +105,7 @@ module RodTheBot
       post = if main_player[:team_id] == ENV["NHL_TEAM_ID"].to_i
         "🙃 #{@your_team["commonName"]["default"]} Penalty\n\n"
       else
-        "🤩 #{@their_team["commonName"]["default"]} Penalty!\n\n"
+        "😵‍💫 #{@their_team["commonName"]["default"]} Penalty!\n\n"
       end
 
       period_name = format_period_name(@play["periodDescriptor"]["number"])
