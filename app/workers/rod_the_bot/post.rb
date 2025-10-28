@@ -53,6 +53,9 @@ module RodTheBot
     def create_post(post, embed_url: nil, embed_images: [], embed_video: nil)
       return unless ENV["BLUESKY_ENABLED"] == "true"
 
+      # Filter out nil values from embed_images - Bsky client expects String (URL) or File objects only
+      embed_images = Array(embed_images).compact
+
       post = @bsky.create_post(post, embed_url: embed_url, embed_images: embed_images, embed_video: embed_video)
       File.unlink(embed_video) if embed_video && File.exist?(embed_video)
       post
@@ -60,6 +63,9 @@ module RodTheBot
 
     def create_reply(reply_uri, post, embed_url: nil, embed_images: [], embed_video: nil)
       return unless ENV["BLUESKY_ENABLED"] == "true"
+
+      # Filter out nil values from embed_images - Bsky client expects String (URL) or File objects only
+      embed_images = Array(embed_images).compact
 
       Rails.logger.info "Creating reply to #{reply_uri} with post #{post} and embed_url #{embed_url}"
       post = @bsky.create_reply(reply_uri, post, embed_url: embed_url, embed_images: embed_images, embed_video: embed_video)
