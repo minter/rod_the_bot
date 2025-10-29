@@ -30,6 +30,7 @@ module RodTheBot
       original_play = @play.deep_dup
 
       if @play["details"]["scoringPlayerId"].blank?
+        Rails.logger.info "GoalWorker: scoringPlayerId is blank for game #{game_id}, play #{@play_id}. Rescheduling in 60 seconds."
         RodTheBot::GoalWorker.perform_in(60, game_id, @play)
         return
       end
@@ -37,8 +38,13 @@ module RodTheBot
       period_name = format_period_name(@play["periodDescriptor"]["number"])
 
       # Safely get scoring player data
-      scoring_player = players[@play["details"]["scoringPlayerId"]]
-      return unless scoring_player # Exit if player not found in roster
+      scoring_player_id = @play["details"]["scoringPlayerId"]
+      scoring_player = players[scoring_player_id] || players[scoring_player_id.to_s] || players[scoring_player_id.to_i]
+      
+      unless scoring_player
+        Rails.logger.error "GoalWorker: Player not found in roster for game #{game_id}, play #{@play_id}, scoring_player_id: #{scoring_player_id} (type: #{scoring_player_id.class}). Players hash has #{players.size} entries. Sample keys: #{players.keys.first(3).inspect}"
+        return
+      end
 
       modifiers = modifiers(@play["situationCode"].to_s, scoring_player[:team_id], home["id"], away["id"])
       scoring_team = (scoring_player[:team_id] == ENV["NHL_TEAM_ID"].to_i) ? @your_team : @their_team
@@ -54,6 +60,7 @@ module RodTheBot
       )
 
       redis_key = "game:#{game_id}:goal:#{@play_id}"
+      Rails.logger.info "GoalWorker: Posting goal for game #{game_id}, play #{@play_id}, scoring_team: #{scoring_team['commonName']['default']} (your_team: #{scoring_team == @your_team})"
       RodTheBot::Post.perform_async(post, redis_key, nil, nil, goal_images(players, @play))
       RodTheBot::ScoringChangeWorker.perform_in(600, game_id, play["eventId"], original_play, redis_key)
       RodTheBot::GoalHighlightWorker.perform_in(10, game_id, play["eventId"], redis_key) if scoring_team == @your_team
