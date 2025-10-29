@@ -29,6 +29,8 @@ module RodTheBot
     def process_play(play)
       worker_class, delay = worker_mapping[play["typeDescKey"]]
       
+      return unless worker_class
+
       # For goals, we only mark as processed after GoalWorker successfully posts
       # Use "completed" key instead of immediate marking to allow retries on failure
       redis_key = if play["typeDescKey"] == "goal"
@@ -36,15 +38,13 @@ module RodTheBot
       else
         "#{game_id}:#{play["eventId"]}"
       end
-      
+
       if play["typeDescKey"] == "goal"
-        already_completed = REDIS.get(redis_key)
+        already_completed = REDIS.get(redis_key).present?
         scheduled_key = "#{game_id}:goal:scheduled:#{play["eventId"]}"
-        already_scheduled = REDIS.get(scheduled_key)
-        Rails.logger.info "GameStream: Found goal event #{play["eventId"]} for game #{game_id}. Already completed: #{already_completed.present?}, Already scheduled: #{already_scheduled.present?}, worker_class: #{worker_class.inspect}"
+        already_scheduled = REDIS.get(scheduled_key).present?
+        Rails.logger.info "GameStream: Found goal event #{play["eventId"]} for game #{game_id}. Already completed: #{already_completed}, Already scheduled: #{already_scheduled}, worker_class: #{worker_class.inspect}"
       end
-      
-      return unless worker_class
 
       if REDIS.get(redis_key).nil?
         # For goals, use a temporary "scheduled" key to prevent duplicate scheduling
