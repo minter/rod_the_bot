@@ -28,16 +28,37 @@ module RodTheBot
 
     def process_play(play)
       worker_class, delay = worker_mapping[play["typeDescKey"]]
-      if play["typeDescKey"] == "goal"
-        redis_key = "#{game_id}:#{play["eventId"]}"
-        already_processed = REDIS.get(redis_key)
-        Rails.logger.info "GameStream: Found goal event #{play["eventId"]} for game #{game_id}. Already processed: #{already_processed.present?}, worker_class: #{worker_class.inspect}"
+      
+      # For goals, we only mark as processed after GoalWorker successfully posts
+      # Use "completed" key instead of immediate marking to allow retries on failure
+      redis_key = if play["typeDescKey"] == "goal"
+        "#{game_id}:goal:completed:#{play["eventId"]}"
+      else
+        "#{game_id}:#{play["eventId"]}"
       end
+      
+      if play["typeDescKey"] == "goal"
+        already_completed = REDIS.get(redis_key)
+        scheduled_key = "#{game_id}:goal:scheduled:#{play["eventId"]}"
+        already_scheduled = REDIS.get(scheduled_key)
+        Rails.logger.info "GameStream: Found goal event #{play["eventId"]} for game #{game_id}. Already completed: #{already_completed.present?}, Already scheduled: #{already_scheduled.present?}, worker_class: #{worker_class.inspect}"
+      end
+      
       return unless worker_class
 
-      if REDIS.get("#{game_id}:#{play["eventId"]}").nil?
-        worker_class.perform_in(delay, game_id, play)
-        REDIS.set("#{game_id}:#{play["eventId"]}", "true", ex: 172800)
+      if REDIS.get(redis_key).nil?
+        # For goals, use a temporary "scheduled" key to prevent duplicate scheduling
+        # This expires after 5 minutes (enough time for the 90s delay + processing)
+        if play["typeDescKey"] == "goal"
+          scheduled_key = "#{game_id}:goal:scheduled:#{play["eventId"]}"
+          if REDIS.get(scheduled_key).nil?
+            worker_class.perform_in(delay, game_id, play)
+            REDIS.set(scheduled_key, "true", ex: 300) # 5 minutes
+          end
+        else
+          worker_class.perform_in(delay, game_id, play)
+          REDIS.set(redis_key, "true", ex: 172800)
+        end
 
         # Schedule milestone check with delay to allow NHL API stats to update (only during regular season and playoffs)
         schedule_milestone_check(play) unless NhlApi.preseason?
