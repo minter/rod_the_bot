@@ -336,7 +336,7 @@ GEM
     watir (7.3.0)
       regexp_parser (>= 1.2, < 3)
       selenium-webdriver (~> 4.2)
-    webmock (3.26.0)
+    webmock (3.26.1)
       addressable (>= 2.8.0)
       crack (>= 0.3.2)
       hashdiff (>= 0.4.0, < 2.0.0)
