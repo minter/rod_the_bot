@@ -254,15 +254,24 @@ class NhlApi
 
     def get_player_game_log(player_id, limit = 10)
       Rails.cache.fetch("player_game_log_#{player_id}_#{limit}_#{Date.current}", expires_in: 4.hours) do
-        response = HTTParty.get("https://api.nhle.com/stats/rest/en/skater/gameLog?cayenneExp=playerId=#{player_id}&limit=#{limit}")
-        response.success? ? (response.parsed_response["data"] || []) : []
+        season = current_season
+        game_type = postseason? ? 3 : 2
+        # Use api-web endpoint documented for game logs
+        path = "/player/#{player_id}/game-log/#{season}/#{game_type}"
+        data = get(path)["gameLog"] || []
+        # api-web returns most-recent first; trim to limit
+        data.first(limit)
       end
     end
 
     def get_goalie_game_log(player_id, limit = 10)
       Rails.cache.fetch("goalie_game_log_#{player_id}_#{limit}_#{Date.current}", expires_in: 4.hours) do
-        response = HTTParty.get("https://api.nhle.com/stats/rest/en/goalie/gameLog?cayenneExp=playerId=#{player_id}&limit=#{limit}")
-        response.success? ? (response.parsed_response["data"] || []) : []
+        season = current_season
+        game_type = postseason? ? 3 : 2
+        # Same api-web endpoint serves goalies as well
+        path = "/player/#{player_id}/game-log/#{season}/#{game_type}"
+        data = get(path)["gameLog"] || []
+        data.first(limit)
       end
     end
 

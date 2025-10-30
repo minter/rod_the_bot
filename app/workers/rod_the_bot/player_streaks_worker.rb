@@ -33,6 +33,7 @@ module RodTheBot
 
     def analyze_player_streaks(team_id, current_roster)
       streaks = []
+      min_streak_length = (ENV["STREAK_MIN_LENGTH"] || "3").to_i
 
       # Check all players on the roster
       current_roster.each do |player_id|
@@ -45,7 +46,7 @@ module RodTheBot
 
           win_streak = calculate_goalie_win_streak(recent_games)
 
-          if win_streak[:length] >= 3
+          if win_streak[:length] >= min_streak_length
             streaks << format_streak_data(player_id, "Wins", win_streak)
           end
         else
@@ -59,13 +60,13 @@ module RodTheBot
           assist_streak = calculate_streak(recent_games, "assists")
 
           # Only include significant streaks (3+ games)
-          if point_streak[:length] >= 3
+          if point_streak[:length] >= min_streak_length
             streaks << format_streak_data(player_id, "Points", point_streak)
           end
-          if goal_streak[:length] >= 3
+          if goal_streak[:length] >= min_streak_length
             streaks << format_streak_data(player_id, "Goals", goal_streak)
           end
-          if assist_streak[:length] >= 3
+          if assist_streak[:length] >= min_streak_length
             streaks << format_streak_data(player_id, "Assists", assist_streak)
           end
         end
@@ -76,22 +77,32 @@ module RodTheBot
 
     def get_player_recent_games(player_id)
       all_games = NhlApi.get_player_game_log(player_id, 20) # Get more games to filter
-      filter_games_by_season_type(all_games)
+      filtered = filter_games_by_season_type(all_games)
+      filtered
     end
 
     def get_goalie_recent_games(player_id)
       all_games = NhlApi.get_goalie_game_log(player_id, 20) # Get more games to filter
-      filter_games_by_season_type(all_games)
+      filtered = filter_games_by_season_type(all_games)
+      filtered
     end
 
     def filter_games_by_season_type(games)
+      # api-web endpoint already scopes to season/type; just ensure we take recent entries
+      # If these fields exist (when using stats REST), keep compatibility
       current_season = NhlApi.current_season
       target_game_type = NhlApi.postseason? ? 3 : 2 # 2 = regular season, 3 = playoffs
 
-      games.select do |game|
-        game["seasonId"].to_s == current_season &&
-          game["gameTypeId"].to_i == target_game_type
-      end.first(10) # Take first 10 after filtering
+      if games.first&.key?("seasonId") || games.first&.key?("gameTypeId")
+        filtered = games.select do |game|
+          game["seasonId"].to_s == current_season &&
+            game["gameTypeId"].to_i == target_game_type
+        end
+      else
+        filtered = games
+      end
+
+      filtered.first(10)
     end
 
     def get_player_type(player_id)
@@ -105,7 +116,8 @@ module RodTheBot
       streak_length = 0
       streak_games = []
 
-      games.reverse_each do |game|
+      # Iterate from most recent to older games to capture the active streak
+      games.each do |game|
         if game[stat_type].to_i > 0
           streak_length += 1
           streak_games << game
@@ -125,9 +137,10 @@ module RodTheBot
       streak_length = 0
       streak_games = []
 
-      games.reverse_each do |game|
+      # Iterate from most recent to older games to capture the active win streak
+      games.each do |game|
         # For goalies, check if they got a win (wins > 0)
-        if game["wins"].to_i > 0
+        if game["wins"].to_i > 0 || game["decision"].to_s.upcase == "W"
           streak_length += 1
           streak_games << game
         else
