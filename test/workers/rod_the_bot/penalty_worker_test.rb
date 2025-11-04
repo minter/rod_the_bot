@@ -49,7 +49,7 @@ class RodTheBot::PenaltyWorkerTest < ActiveSupport::TestCase
     penalized_player = players[play["details"]["committedByPlayerId"]] || players[play["details"]["servedByPlayerId"]]
 
     penalized_team = (penalized_player && penalized_player[:team_id].to_s == ENV["NHL_TEAM_ID"]) ? your_team : their_team
-    emoji = (penalized_team == your_team) ? "🙃" : "🤩"
+    emoji = (penalized_team == your_team) ? "🙃" : "😵‍💫"
 
     period_name = RodTheBot::PeriodFormatter.format_period_name(play["periodDescriptor"]["number"])
 
