@@ -77,14 +77,12 @@ module RodTheBot
 
     def get_player_recent_games(player_id)
       all_games = NhlApi.get_player_game_log(player_id, 20) # Get more games to filter
-      filtered = filter_games_by_season_type(all_games)
-      filtered
+      filter_games_by_season_type(all_games)
     end
 
     def get_goalie_recent_games(player_id)
       all_games = NhlApi.get_goalie_game_log(player_id, 20) # Get more games to filter
-      filtered = filter_games_by_season_type(all_games)
-      filtered
+      filter_games_by_season_type(all_games)
     end
 
     def filter_games_by_season_type(games)
@@ -93,13 +91,13 @@ module RodTheBot
       current_season = NhlApi.current_season
       target_game_type = NhlApi.postseason? ? 3 : 2 # 2 = regular season, 3 = playoffs
 
-      if games.first&.key?("seasonId") || games.first&.key?("gameTypeId")
-        filtered = games.select do |game|
+      filtered = if games.first&.key?("seasonId") || games.first&.key?("gameTypeId")
+        games.select do |game|
           game["seasonId"].to_s == current_season &&
             game["gameTypeId"].to_i == target_game_type
         end
       else
-        filtered = games
+        games
       end
 
       filtered.first(10)

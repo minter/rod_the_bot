@@ -28,7 +28,7 @@ module RodTheBot
 
     def process_play(play)
       worker_class, delay = worker_mapping[play["typeDescKey"]]
-      
+
       return unless worker_class
 
       # For goals, we only mark as processed after GoalWorker successfully posts

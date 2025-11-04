@@ -40,7 +40,7 @@ module RodTheBot
       # Safely get scoring player data
       scoring_player_id = @play["details"]["scoringPlayerId"]
       scoring_player = players[scoring_player_id] || players[scoring_player_id.to_s] || players[scoring_player_id.to_i]
-      
+
       unless scoring_player
         Rails.logger.error "GoalWorker: Player not found in roster for game #{game_id}, play #{@play_id}, scoring_player_id: #{scoring_player_id} (type: #{scoring_player_id.class}). Players hash has #{players.size} entries. Sample keys: #{players.keys.first(3).inspect}"
         return
@@ -60,16 +60,16 @@ module RodTheBot
       )
 
       redis_key = "game:#{game_id}:goal:#{@play_id}"
-      
+
       # Set the completion key so GameStream knows this goal was successfully processed
       # This allows GameStream to retry if GoalWorker fails silently
       completion_key = "#{game_id}:goal:completed:#{@play_id}"
-      
-      Rails.logger.info "GoalWorker: Posting goal for game #{game_id}, play #{@play_id}, scoring_team: #{scoring_team['commonName']['default']} (your_team: #{scoring_team == @your_team})"
+
+      Rails.logger.info "GoalWorker: Posting goal for game #{game_id}, play #{@play_id}, scoring_team: #{scoring_team["commonName"]["default"]} (your_team: #{scoring_team == @your_team})"
       RodTheBot::Post.perform_async(post, redis_key, nil, nil, goal_images(players, @play))
       RodTheBot::ScoringChangeWorker.perform_in(600, game_id, play["eventId"], original_play, redis_key)
       RodTheBot::GoalHighlightWorker.perform_in(10, game_id, play["eventId"], redis_key) if scoring_team == @your_team
-      
+
       # Mark as completed only after successfully scheduling all workers
       REDIS.set(completion_key, "true", ex: 172800)
     end
