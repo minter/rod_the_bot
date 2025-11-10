@@ -2,6 +2,8 @@ require "test_helper"
 
 class RodTheBot::MilestoneCheckerWorkerTest < ActiveSupport::TestCase
   def setup
+    # Clear Sidekiq jobs at the start to ensure test isolation
+    Sidekiq::Worker.clear_all
     @worker = RodTheBot::MilestoneCheckerWorker.new
     @game_id = "2025020070"
     ENV["NHL_TEAM_ID"] = "12"
