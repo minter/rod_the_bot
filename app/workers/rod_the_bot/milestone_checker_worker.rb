@@ -17,23 +17,27 @@ module RodTheBot
     private
 
     def check_goal_milestones(play)
-      return unless play["details"]["scoringPlayerId"].present?
+      details = play["details"]
+      return unless details
+      return unless details["eventOwnerTeamId"].to_i == tracked_team_id
+      return unless details["scoringPlayerId"].present?
+      return unless player_on_tracked_team?(details["scoringPlayerId"])
 
-      player_id = play["details"]["scoringPlayerId"]
+      player_id = details["scoringPlayerId"]
       player_name = get_player_name(player_id)
 
       # Check if this was a milestone goal
       check_goal_milestone(player_id, player_name)
 
       # Check assists for this goal (but not for first career milestones)
-      if play["details"]["assist1PlayerId"].present?
-        assist_player_id = play["details"]["assist1PlayerId"]
+      if details["assist1PlayerId"].present? && player_on_tracked_team?(details["assist1PlayerId"])
+        assist_player_id = details["assist1PlayerId"]
         assist_player_name = get_player_name(assist_player_id)
         check_assist_milestone(assist_player_id, assist_player_name)
       end
 
-      if play["details"]["assist2PlayerId"].present?
-        assist_player_id = play["details"]["assist2PlayerId"]
+      if details["assist2PlayerId"].present? && player_on_tracked_team?(details["assist2PlayerId"])
+        assist_player_id = details["assist2PlayerId"]
         assist_player_name = get_player_name(assist_player_id)
         check_assist_milestone(assist_player_id, assist_player_name)
       end
@@ -41,8 +45,7 @@ module RodTheBot
 
     def get_player_name(player_id)
       # Get player name with jersey number from the game feed
-      players = NhlApi.game_rosters(@game_id)
-      format_player_from_roster(players, player_id)
+      format_player_from_roster(game_roster, player_id)
     end
 
     def check_goal_milestone(player_id, player_name)
@@ -203,6 +206,22 @@ module RodTheBot
       # Fetch from API (for fallback when pre-game stats aren't available)
       response = HTTParty.get("https://api.nhle.com/stats/rest/en/skater/stats?cayenneExp=playerId=#{player_id}")
       response.success? ? response.parsed_response : {}
+    end
+
+    def tracked_team_id
+      @tracked_team_id ||= ENV["NHL_TEAM_ID"].to_i
+    end
+
+    def game_roster
+      @game_roster ||= NhlApi.game_rosters(@game_id)
+    end
+
+    def player_on_tracked_team?(player_id)
+      player = game_roster[player_id] || game_roster[player_id.to_s]
+      return false unless player
+
+      team_id = player[:team_id] || player["team_id"] || player["teamId"]
+      team_id.to_i == tracked_team_id
     end
 
     def format_milestone_achievement_post(player_name, stat_type, value)

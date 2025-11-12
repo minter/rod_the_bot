@@ -24,7 +24,8 @@ class RodTheBot::MilestoneCheckerWorkerTest < ActiveSupport::TestCase
         "details" => {
           "scoringPlayerId" => 8482093,  # Seth Jarvis
           "assist1PlayerId" => 8476906,
-          "assist2PlayerId" => nil
+          "assist2PlayerId" => nil,
+          "eventOwnerTeamId" => 12
         }
       }
 
@@ -79,7 +80,8 @@ class RodTheBot::MilestoneCheckerWorkerTest < ActiveSupport::TestCase
         "details" => {
           "scoringPlayerId" => 8482093,
           "assist1PlayerId" => nil,
-          "assist2PlayerId" => nil
+          "assist2PlayerId" => nil,
+          "eventOwnerTeamId" => 12
         }
       }
 
@@ -124,7 +126,8 @@ class RodTheBot::MilestoneCheckerWorkerTest < ActiveSupport::TestCase
         "details" => {
           "scoringPlayerId" => 8476906,
           "assist1PlayerId" => 8482093,  # Seth Jarvis gets assist
-          "assist2PlayerId" => nil
+          "assist2PlayerId" => nil,
+          "eventOwnerTeamId" => 12
         }
       }
 
@@ -172,6 +175,43 @@ class RodTheBot::MilestoneCheckerWorkerTest < ActiveSupport::TestCase
 
       assert_not_nil assist_post, "Should have scheduled an assist milestone post"
       assert_match(/Seth Jarvis/, assist_post["args"][0])
+    end
+  end
+
+  test "check_goal_milestones ignores opposing team goals" do
+    VCR.use_cassette("milestone_checker_opponent_goal") do
+      play = {
+        "typeDescKey" => "goal",
+        "eventId" => 500,
+        "details" => {
+          "scoringPlayerId" => 9999999,
+          "assist1PlayerId" => nil,
+          "assist2PlayerId" => nil,
+          "eventOwnerTeamId" => 99 # Opponent team
+        }
+      }
+
+      REDIS.set("pregame:#{@game_id}:player:9999999:goals", 49)
+      REDIS.set("pregame:#{@game_id}:player:9999999:points", 99)
+
+      feed = {
+        "plays" => [
+          {
+            "typeDescKey" => "goal",
+            "eventId" => 500,
+            "details" => {
+              "scoringPlayerId" => 9999999
+            }
+          }
+        ]
+      }
+
+      NhlApi.stubs(:fetch_pbp_feed).returns(feed)
+      NhlApi.stubs(:game_rosters).returns({})
+
+      @worker.perform(@game_id, play)
+
+      assert_equal 0, RodTheBot::Post.jobs.size, "Should not post milestones for opposing team goals"
     end
   end
 end
