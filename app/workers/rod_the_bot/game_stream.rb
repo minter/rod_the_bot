@@ -8,9 +8,12 @@ module RodTheBot
     def perform(game_id)
       @game_id = game_id
       @feed = NhlApi.fetch_pbp_feed(game_id)
-      game_final = @feed["plays"].find { |play| play["typeDescKey"] == "game-end" }.present?
+      plays = @feed&.dig("plays") || []
+      return if plays.empty?
 
-      @feed["plays"].each do |play|
+      game_final = plays.find { |play| play["typeDescKey"] == "game-end" }.present?
+
+      plays.each do |play|
         process_play(play)
       end
 

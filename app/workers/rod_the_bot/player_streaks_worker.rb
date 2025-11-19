@@ -8,7 +8,6 @@ module RodTheBot
       # Skip preseason - stats don't count
       return if NhlApi.preseason?
 
-      team_id = ENV["NHL_TEAM_ID"].to_i
       season_type = NhlApi.postseason? ? "Playoffs" : "Regular Season"
 
       # Get currently rostered players
@@ -16,7 +15,7 @@ module RodTheBot
       return if current_roster.empty?
 
       # Get active player streaks
-      streaks = analyze_player_streaks(team_id, current_roster)
+      streaks = analyze_player_streaks(current_roster)
       return if streaks.empty?
 
       # Post streaks as a separate thread
@@ -26,12 +25,11 @@ module RodTheBot
     private
 
     def get_current_roster_player_ids
-      # Get current team roster
-      roster = NhlApi.roster(ENV["NHL_TEAM_ABBREVIATION"])
+      # Get current team roster (uses cached roster method)
       roster.keys.map(&:to_s)
     end
 
-    def analyze_player_streaks(team_id, current_roster)
+    def analyze_player_streaks(current_roster)
       streaks = []
       min_streak_length = (ENV["STREAK_MIN_LENGTH"] || "3").to_i
 
@@ -75,6 +73,10 @@ module RodTheBot
       streaks
     end
 
+    def roster
+      @roster ||= NhlApi.roster(ENV["NHL_TEAM_ABBREVIATION"])
+    end
+
     def get_player_recent_games(player_id)
       all_games = NhlApi.get_player_game_log(player_id, 20) # Get more games to filter
       filter_games_by_season_type(all_games)
@@ -104,7 +106,6 @@ module RodTheBot
     end
 
     def get_player_type(player_id)
-      roster = NhlApi.roster(ENV["NHL_TEAM_ABBREVIATION"])
       player = roster[player_id.to_i]
       return "goalie" if player && player[:position] == "G"
       "skater"
@@ -178,8 +179,7 @@ module RodTheBot
     end
 
     def get_player_name_from_id(player_id)
-      # Use existing roster data if available
-      roster = NhlApi.roster(ENV["NHL_TEAM_ABBREVIATION"])
+      # Use cached roster data if available
       player = roster[player_id.to_i]
       if player
         return format_player_with_components(player[:sweaterNumber], player[:firstName], player[:lastName])

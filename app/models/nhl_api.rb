@@ -52,8 +52,9 @@ class NhlApi
 
     def fetch_scores(date: Date.yesterday.strftime("%Y-%m-%d"))
       Rails.cache.fetch("scores_#{date}", expires_in: 18.hours) do
-        response = get("/score/#{date}")["games"]
-        response.find_all { |game| game["gameDate"] == date }
+        response = get("/score/#{date}")
+        games = response["games"] || []
+        games.find_all { |game| game["gameDate"] == date }
       end
     end
 
@@ -70,7 +71,9 @@ class NhlApi
     end
 
     def todays_game(date: Time.now.strftime("%Y-%m-%d"))
-      fetch_team_schedule(date: date)["games"].find { |game| game["gameDate"] == date }
+      schedule = fetch_team_schedule(date: date)
+      games = schedule["games"] || []
+      games.find { |game| game["gameDate"] == date }
     end
 
     def roster(team_abbreviation)
@@ -121,33 +124,44 @@ class NhlApi
     end
 
     def officials(game_id)
-      officials_data = fetch_right_rail_feed(game_id)["gameInfo"]
+      right_rail = fetch_right_rail_feed(game_id)
+      officials_data = right_rail&.dig("gameInfo")
+      return { referees: [], linesmen: [] } unless officials_data
+
       {
-        referees: officials_data["referees"].map { |ref| ref["default"] },
-        linesmen: officials_data["linesmen"].map { |linesman| linesman["default"] }
+        referees: (officials_data["referees"] || []).map { |ref| ref["default"] },
+        linesmen: (officials_data["linesmen"] || []).map { |linesman| linesman["default"] }
       }
     end
 
     def scratches(game_id)
       boxscore = fetch_boxscore_feed(game_id)
       game_data = fetch_right_rail_feed(game_id)
-      game_info = game_data["gameInfo"]
-      away_team = boxscore["awayTeam"]["abbrev"]
-      home_team = boxscore["homeTeam"]["abbrev"]
+      game_info = game_data&.dig("gameInfo")
+      return nil unless game_info
+
+      away_team = boxscore.dig("awayTeam", "abbrev")
+      home_team = boxscore.dig("homeTeam", "abbrev")
+      return nil unless away_team && home_team
 
       scratches_data = {}
       ["awayTeam", "homeTeam"].each do |team|
-        team_scratches = game_info[team]["scratches"]
+        team_info = game_info[team]
+        next unless team_info
+
+        team_scratches = team_info["scratches"] || []
         formatted_scratches = team_scratches.map do |player|
-          "#{player["firstName"]["default"][0]}. #{player["lastName"]["default"]}"
-        end
+          first_name = player.dig("firstName", "default") || ""
+          last_name = player.dig("lastName", "default") || ""
+          "#{first_name[0]}. #{last_name}" if first_name.present? && last_name.present?
+        end.compact
         scratches_data[team] = formatted_scratches
       end
 
-      return nil if scratches_data["homeTeam"].count > 6 || scratches_data["awayTeam"].count > 6
+      return nil if scratches_data["homeTeam"]&.count.to_i > 6 || scratches_data["awayTeam"]&.count.to_i > 6
 
-      away_scratches = scratches_data["awayTeam"].empty? ? "None" : scratches_data["awayTeam"].join(", ")
-      home_scratches = scratches_data["homeTeam"].empty? ? "None" : scratches_data["homeTeam"].join(", ")
+      away_scratches = scratches_data["awayTeam"]&.empty? ? "None" : scratches_data["awayTeam"]&.join(", ") || "None"
+      home_scratches = scratches_data["homeTeam"]&.empty? ? "None" : scratches_data["homeTeam"]&.join(", ") || "None"
 
       "#{away_team}: #{away_scratches}\n#{home_team}: #{home_scratches}"
     end

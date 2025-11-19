@@ -109,15 +109,20 @@ module RodTheBot
     end
 
     def check_goalie_milestones
-      # Get team goalies from the game feed
-      feed = NhlApi.fetch_pbp_feed(@game_id)
-      team_goalies = feed["rosterSpots"].select do |player|
+      # Get team goalies from the game feed (use cached feed)
+      feed = game_feed
+      roster_spots = feed&.dig("rosterSpots") || []
+      team_goalies = roster_spots.select do |player|
         player["position"] == "G" && player["teamId"] == ENV["NHL_TEAM_ID"].to_i
       end
 
       team_goalies.each do |goalie|
         goalie_id = goalie["playerId"]
-        goalie_name = "#{goalie["firstName"]["default"]} #{goalie["lastName"]["default"]}"
+        first_name = goalie.dig("firstName", "default") || ""
+        last_name = goalie.dig("lastName", "default") || ""
+        goalie_name = "#{first_name} #{last_name}".strip
+
+        next if goalie_name.empty? || goalie_id.nil?
 
         check_goalie_win_milestone(goalie_id, goalie_name)
         check_goalie_shutout_milestone(goalie_id, goalie_name)
@@ -178,20 +183,25 @@ module RodTheBot
     end
 
     def get_ingame_stats(player_id, stat_type)
-      # Get all plays from this game
-      feed = NhlApi.fetch_pbp_feed(@game_id)
+      # Cache feed to avoid fetching multiple times
+      feed = game_feed
+      plays = feed&.dig("plays") || []
+      return 0 if plays.empty?
+
+      # Normalize player_id to integer for consistent comparison
+      player_id_int = player_id.to_i
 
       case stat_type
       when "goals"
-        feed["plays"].count { |play|
+        plays.count { |play|
           play["typeDescKey"] == "goal" &&
-            play.dig("details", "scoringPlayerId") == player_id
+            play.dig("details", "scoringPlayerId").to_i == player_id_int
         }
       when "assists"
-        feed["plays"].count { |play|
+        plays.count { |play|
           play["typeDescKey"] == "goal" &&
-            (play.dig("details", "assist1PlayerId") == player_id ||
-             play.dig("details", "assist2PlayerId") == player_id)
+            (play.dig("details", "assist1PlayerId").to_i == player_id_int ||
+             play.dig("details", "assist2PlayerId").to_i == player_id_int)
         }
       when "points"
         goals = get_ingame_stats(player_id, "goals")
@@ -200,6 +210,10 @@ module RodTheBot
       else
         0
       end
+    end
+
+    def game_feed
+      @game_feed ||= NhlApi.fetch_pbp_feed(@game_id)
     end
 
     def get_player_career_stats_from_api(player_id)
