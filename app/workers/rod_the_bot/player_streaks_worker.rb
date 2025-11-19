@@ -137,11 +137,25 @@ module RodTheBot
 
       # Iterate from most recent to older games to capture the active win streak
       games.each do |game|
-        # For goalies, check if they got a win (wins > 0)
-        if game["wins"].to_i > 0 || game["decision"].to_s.upcase == "W"
+        # First, check if the goalie actually played (was the goaltender of record)
+        # A goalie played if they have a decision (W/L/OTL) or if any of wins/losses/otLosses > 0
+        decision = game["decision"].to_s.upcase
+        wins = game["wins"].to_i
+        losses = game["losses"].to_i
+        ot_losses = (game["otLosses"] || game["otl"] || 0).to_i
+
+        goalie_played = %w[W L OTL].include?(decision) ||
+          wins > 0 || losses > 0 || ot_losses > 0
+
+        # Skip games where the goalie didn't play (don't break the streak)
+        next unless goalie_played
+
+        # If they played and won, continue the streak
+        if wins > 0 || decision == "W"
           streak_length += 1
           streak_games << game
         else
+          # If they played and lost/OTL, break the streak
           break
         end
       end
@@ -197,7 +211,7 @@ module RodTheBot
       RodTheBot::Post.perform_async(first_chunk, first_key)
 
       # Post remaining chunks as replies
-      streak_chunks[1..].each_with_index do |chunk, index|
+      streak_chunks.drop(1).each_with_index do |chunk, index|
         chunk_key = "#{base_key}:#{index + 2}"
         parent_key = (index == 0) ? first_key : "#{base_key}:#{index + 1}"
         RodTheBot::Post.perform_in((index + 1).seconds, chunk, chunk_key, parent_key)
