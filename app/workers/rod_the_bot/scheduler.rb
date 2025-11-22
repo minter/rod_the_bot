@@ -26,6 +26,7 @@ module RodTheBot
 
       return if @game.nil? || @game["gameScheduleState"] != "OK"
 
+      Time.zone = TZInfo::Timezone.get(ENV["TIME_ZONE"])
       time = Time.zone.parse(@game["startTimeUTC"])
       time_string = time.strftime("%l:%M %p").strip + " " + Time.zone.tzinfo.abbreviation
       home = @game["homeTeam"]
