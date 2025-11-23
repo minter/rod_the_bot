@@ -9,10 +9,11 @@ module RodTheBot
       @game_id = game_id
       @feed = NhlApi.fetch_pbp_feed(game_id)
       plays = @feed&.dig("plays") || []
-      return if plays.empty?
 
-      game_final = plays.find { |play| play["typeDescKey"] == "game-end" }.present?
+      # Check if game is final using gameState (works even when plays are empty)
+      game_final = @feed&.dig("gameState") == "OFF" || plays.find { |play| play["typeDescKey"] == "game-end" }.present?
 
+      # Process plays if they exist
       plays.each do |play|
         process_play(play)
       end
