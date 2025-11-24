@@ -126,7 +126,7 @@ class NhlApi
     def officials(game_id)
       right_rail = fetch_right_rail_feed(game_id)
       officials_data = right_rail&.dig("gameInfo")
-      return { referees: [], linesmen: [] } unless officials_data
+      return {referees: [], linesmen: []} unless officials_data
 
       {
         referees: (officials_data["referees"] || []).map { |ref| ref["default"] },
@@ -160,8 +160,8 @@ class NhlApi
 
       return nil if scratches_data["homeTeam"]&.count.to_i > 6 || scratches_data["awayTeam"]&.count.to_i > 6
 
-      away_scratches = scratches_data["awayTeam"]&.empty? ? "None" : scratches_data["awayTeam"]&.join(", ") || "None"
-      home_scratches = scratches_data["homeTeam"]&.empty? ? "None" : scratches_data["homeTeam"]&.join(", ") || "None"
+      away_scratches = (scratches_data["awayTeam"] && scratches_data["awayTeam"].empty?) ? "None" : scratches_data["awayTeam"]&.join(", ") || "None"
+      home_scratches = (scratches_data["homeTeam"] && scratches_data["homeTeam"].empty?) ? "None" : scratches_data["homeTeam"]&.join(", ") || "None"
 
       "#{away_team}: #{away_scratches}\n#{home_team}: #{home_scratches}"
     end
