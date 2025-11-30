@@ -50,10 +50,16 @@ module RodTheBot
     private
 
     def format_post(leaders, title, period_state)
+      player_list = if leaders.empty?
+        "No players"
+      else
+        leaders.map { |player| "#{player[1][:name]} - #{player[1][:stat]}" }.join("\n")
+      end
+
       <<~POST
         #{title} for the #{your_team.fetch("commonName", {}).fetch("default", "")} #{period_state}
 
-        #{leaders.map { |player| "#{player[1][:name]} - #{player[1][:stat]}" }.join("\n")}
+        #{player_list}
       POST
     end
 
@@ -92,15 +98,19 @@ module RodTheBot
         player[:stat] = "#{minutes}:#{seconds.to_s.rjust(2, "0")}"
         player
       end
-      players.sort_by do |k, v|
+      leaders = players.sort_by do |k, v|
         toi_minutes, toi_seconds = v[:stat].split(":").map(&:to_i)
         [toi_minutes * 60 + toi_seconds, v[:name]]
-      end.last(5).reverse
+      end.last(5)
+      leaders.reverse!
     end
 
     def shots_on_goal_leaders
       players = create_players("sog")
-      players.sort_by { |k, v| [v[:stat], v[:name]] }.last(5).reverse
+      leaders = players.reject { |k, v| v[:stat] == 0 }
+        .sort_by { |k, v| [v[:stat], v[:name]] }
+        .last(5)
+      leaders.reverse!
     end
   end
 end
