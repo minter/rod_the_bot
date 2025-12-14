@@ -8,6 +8,9 @@ require "tmpdir"
 module RodTheBot
   class EdgeReplayWorker
     include Sidekiq::Worker
+    include ActiveSupport::Inflector
+    include RodTheBot::PeriodFormatter
+    include RodTheBot::PlayerFormatter
 
     # Constants from the PoC script
     DEFAULT_RINK_W = 2400.0
@@ -25,30 +28,67 @@ module RodTheBot
       "VAN" => "#00205B", "VGK" => "#B4975A", "WSH" => "#C8102E", "WPG" => "#041E42"
     }.freeze
 
-    def perform(game_id, event_id)
-      Rails.logger.info "EdgeReplayWorker: Generating replay for game #{game_id}, event #{event_id}"
+    def perform(game_id, event_id, redis_key = nil, retry_count = 0)
+      Rails.logger.info "EdgeReplayWorker: Generating replay for game #{game_id}, event #{event_id} (attempt #{retry_count + 1})"
 
       # Create output directory
       output_dir = Rails.root.join("tmp", "edge_replays")
       FileUtils.mkdir_p(output_dir)
 
+      # Check if replay already exists
+      output_path = output_dir.join("#{game_id}_#{event_id}_replay.mp4")
+      if output_path.exist?
+        Rails.logger.info "EdgeReplayWorker: Replay already exists at #{output_path}, skipping generation"
+        # If redis_key provided, post the existing replay
+        if redis_key
+          post_edge_replay(game_id, event_id, output_path.to_s, redis_key)
+        end
+        return output_path.to_s
+      end
+
       # Download EDGE JSON
       edge_json_path = download_edge_json(game_id, event_id, output_dir)
-      return nil unless edge_json_path
+      unless edge_json_path
+        Rails.logger.warn "EdgeReplayWorker: EDGE JSON not available for game #{game_id}, event #{event_id}"
+        # Retry if redis_key provided (meaning we want to post it)
+        if redis_key && retry_count < 5 # Limit retries to prevent infinite loops
+          Rails.logger.info "EdgeReplayWorker: Re-enqueuing in 90 seconds (retry #{retry_count + 1}/5)"
+          self.class.perform_in(90.seconds, game_id, event_id, redis_key, retry_count + 1)
+        end
+        return nil
+      end
 
       # Fetch game data to determine home/away teams and get logos
       game_data = fetch_game_data(game_id)
-      return nil unless game_data
+      unless game_data
+        Rails.logger.warn "EdgeReplayWorker: Game data not available for game #{game_id}"
+        # Retry if redis_key provided
+        if redis_key && retry_count < 5
+          Rails.logger.info "EdgeReplayWorker: Re-enqueuing in 90 seconds (retry #{retry_count + 1}/5)"
+          self.class.perform_in(90.seconds, game_id, event_id, redis_key, retry_count + 1)
+        end
+        return nil
+      end
 
       # Generate MP4
-      output_path = output_dir.join("#{game_id}_#{event_id}_replay.mp4")
       generate_replay(edge_json_path, output_path, game_data: game_data)
 
       Rails.logger.info "EdgeReplayWorker: Generated replay at #{output_path}"
+
+      # Post the replay if redis_key provided
+      if redis_key
+        post_edge_replay(game_id, event_id, output_path.to_s, redis_key)
+      end
+
       output_path.to_s
     rescue => e
       Rails.logger.error "EdgeReplayWorker failed: #{e.message}"
       Rails.logger.error e.backtrace.join("\n")
+      # Retry on error if redis_key provided
+      if redis_key && retry_count < 5
+        Rails.logger.info "EdgeReplayWorker: Re-enqueuing after error in 90 seconds (retry #{retry_count + 1}/5)"
+        self.class.perform_in(90.seconds, game_id, event_id, redis_key, retry_count + 1)
+      end
       nil
     end
 
@@ -242,7 +282,7 @@ module RodTheBot
       tf = rink_transform(options)
 
       # Get SVG path
-      svg_path = Rails.root.join("script", "Icehockeylayout.svg")
+      svg_path = Rails.root.join("config", "rink", "Icehockeylayout.svg")
       unless File.exist?(svg_path)
         raise "SVG rink template not found at: #{svg_path}"
       end
@@ -467,6 +507,66 @@ module RodTheBot
     rescue => e
       Rails.logger.error "Error downloading team logo: #{e.message}"
       nil
+    end
+
+    def post_edge_replay(game_id, event_id, video_path, redis_key)
+      # Fetch play data to format post text
+      pbp_feed = NhlApi.fetch_pbp_feed(game_id)
+      pbp_play = NhlApi.fetch_play(game_id, event_id)
+      return unless pbp_play && pbp_play["typeDescKey"] == "goal"
+
+      # Get roster data
+      players = NhlApi.game_rosters(game_id)
+
+      # Format post text
+      post_text = format_edge_replay_post(pbp_play, players, pbp_feed)
+
+      # Create a unique key for this EDGE replay post
+      edge_replay_key = "#{redis_key}:edge_replay:#{Time.now.to_i}"
+      parent_key = redis_key
+
+      # Post as reply to the original goal post
+      RodTheBot::Post.perform_async(post_text, edge_replay_key, parent_key, nil, [], video_path)
+    end
+
+    def format_edge_replay_post(play, players, feed)
+      # Format scorer with jersey number
+      scorer_id = play.dig("details", "scoringPlayerId")
+      scorer_name = if scorer_id
+        format_player_from_roster(players, scorer_id)
+      else
+        "Unknown Player"
+      end
+
+      team_abbrev = play.dig("details", "eventOwnerTeamId")
+      scoring_team = if feed["homeTeam"]["id"] == team_abbrev
+        feed["homeTeam"]["abbrev"]
+      else
+        feed["awayTeam"]["abbrev"]
+      end
+
+      time = play["timeInPeriod"]
+      period_name = format_period_name(play["periodDescriptor"]["number"])
+
+      # Format assists with jersey numbers
+      assist_names = []
+      if play.dig("details", "assist1PlayerId").present?
+        assist_names << format_player_from_roster(players, play.dig("details", "assist1PlayerId"))
+      end
+      if play.dig("details", "assist2PlayerId").present?
+        assist_names << format_player_from_roster(players, play.dig("details", "assist2PlayerId"))
+      end
+
+      assist_text = assist_names.empty? ? "" : " Assisted by #{assist_names.join(", ")}."
+
+      away_team = feed["awayTeam"]["abbrev"]
+      home_team = feed["homeTeam"]["abbrev"]
+      away_score = play.dig("details", "awayScore") || 0
+      home_score = play.dig("details", "homeScore") || 0
+      score = format("%s %d - %s %d", away_team, away_score, home_team, home_score)
+
+      "📊 EDGE replay: #{scorer_name} (#{scoring_team}) scores at #{time} of the #{period_name}." \
+      "#{assist_text} Score: #{score}"
     end
 
     def run_cmd!(cmd, label)

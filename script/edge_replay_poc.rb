@@ -149,9 +149,11 @@ def build_background!(background_path, options)
   # Compute the mapping in EDGE rink units for proper entity positioning
   tf = rink_transform(options)
 
-  # Get the directory where this script lives (to find the SVG)
+  # Get SVG path - check config/rink first, then fall back to script directory
+  config_svg_path = File.join(File.dirname(File.dirname(File.expand_path(__FILE__))), "config", "rink", "Icehockeylayout.svg")
   script_dir = File.dirname(File.expand_path(__FILE__))
-  svg_path = File.join(script_dir, "Icehockeylayout.svg")
+  script_svg_path = File.join(script_dir, "Icehockeylayout.svg")
+  svg_path = File.exist?(config_svg_path) ? config_svg_path : script_svg_path
 
   unless File.exist?(svg_path)
     raise "SVG rink template not found at: #{svg_path}"

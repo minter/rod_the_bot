@@ -69,6 +69,8 @@ module RodTheBot
       RodTheBot::Post.perform_async(post, redis_key, nil, nil, goal_images(players, @play))
       RodTheBot::ScoringChangeWorker.perform_in(600, game_id, play["eventId"], original_play, redis_key)
       RodTheBot::GoalHighlightWorker.perform_in(10, game_id, play["eventId"], redis_key) if scoring_team == @your_team
+      # Generate and post EDGE replay visualization (delay 1 minute to allow EDGE data to be available)
+      RodTheBot::EdgeReplayWorker.perform_in(1.minute, game_id, @play_id, redis_key)
 
       # Mark as completed only after successfully scheduling all workers
       REDIS.set(completion_key, "true", ex: 172800)

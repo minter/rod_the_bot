@@ -21,7 +21,7 @@ ENV RAILS_ENV="production" \
 # Throw-away build stage to reduce size of final image
 FROM base AS build
 
-# Install packages needed to build gems, Chromium, ffmpeg, and headless dependencies
+# Install packages needed to build gems, Chromium, ffmpeg, ImageMagick, librsvg, and headless dependencies
 RUN apt-get update -qq && \
     apt-get install --no-install-recommends -y \
     build-essential \
@@ -31,6 +31,8 @@ RUN apt-get update -qq && \
     chromium \
     chromium-sandbox \
     ffmpeg \
+    imagemagick \
+    librsvg2-bin \
     fonts-liberation \
     libasound2 \
     libatk-bridge2.0-0 \
@@ -72,12 +74,14 @@ RUN bundle config set --local frozen 'false' && \
 # Final stage for app image
 FROM base
 
-# Install Chromium, ffmpeg, and dependencies in the final stage
+# Install Chromium, ffmpeg, ImageMagick, librsvg, and dependencies in the final stage
 RUN apt-get update -qq && \
     apt-get install --no-install-recommends -y \
     chromium \
     chromium-sandbox \
     ffmpeg \
+    imagemagick \
+    librsvg2-bin \
     fonts-liberation \
     libasound2 \
     libatk-bridge2.0-0 \
