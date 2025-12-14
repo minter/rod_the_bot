@@ -13,9 +13,16 @@ module RodTheBot
     DEFAULT_RINK_W = 2400.0
     DEFAULT_RINK_H = 1020.0
 
+    # NHL team primary colors (hex codes)
     TEAM_COLORS = {
-      "CAR" => "#cc3333",
-      "PHI" => "#f74902"
+      "ANA" => "#B9975B", "ARI" => "#8C2633", "BOS" => "#FFB81C", "BUF" => "#003E7E",
+      "CGY" => "#C8102E", "CAR" => "#CC0000", "CHI" => "#C8102E", "COL" => "#6F263D",
+      "CBJ" => "#002654", "DAL" => "#006847", "DET" => "#CE1126", "EDM" => "#FF4C00",
+      "FLA" => "#C8102E", "LAK" => "#111111", "MIN" => "#154734", "MTL" => "#AF1E2D",
+      "NSH" => "#FFB81C", "NJD" => "#CE1126", "NYI" => "#00539B", "NYR" => "#0038A8",
+      "OTT" => "#C8102E", "PHI" => "#F74902", "PIT" => "#000000", "SJS" => "#006D75",
+      "SEA" => "#001628", "STL" => "#002F87", "TBL" => "#002868", "TOR" => "#00205B",
+      "VAN" => "#00205B", "VGK" => "#B4975A", "WSH" => "#C8102E", "WPG" => "#041E42"
     }.freeze
 
     def perform(game_id, event_id)
@@ -29,9 +36,13 @@ module RodTheBot
       edge_json_path = download_edge_json(game_id, event_id, output_dir)
       return nil unless edge_json_path
 
+      # Fetch game data to determine home/away teams and get logos
+      game_data = fetch_game_data(game_id)
+      return nil unless game_data
+
       # Generate MP4
       output_path = output_dir.join("#{game_id}_#{event_id}_replay.mp4")
-      generate_replay(edge_json_path, output_path)
+      generate_replay(edge_json_path, output_path, game_data: game_data)
 
       Rails.logger.info "EdgeReplayWorker: Generated replay at #{output_path}"
       output_path.to_s
@@ -100,7 +111,7 @@ module RodTheBot
         frames_dir = File.join(tmpdir, "frames")
         FileUtils.mkdir_p(frames_dir)
 
-        render_frames_imagemagick!(selected, options, frames_dir)
+        render_frames_imagemagick!(selected, options, frames_dir, tmpdir)
 
         tmp_video = File.join(tmpdir, "video.mp4")
         encode_video(frames_dir, tmp_video, options[:fps])
@@ -111,13 +122,17 @@ module RodTheBot
       output_path
     end
 
-    def render_frames_imagemagick!(selected, options, frames_dir)
+    def render_frames_imagemagick!(selected, options, frames_dir, tmpdir)
       background_path = File.join(frames_dir, "_background.png")
-      build_background!(background_path, options)
+      game_data = options[:game_data] || {}
+      build_background!(background_path, options, game_data, tmpdir)
 
       w = options[:width].to_i
       h = options[:height].to_i
       tf = rink_transform(options)
+
+      # Determine home team ID from game data
+      home_team_id = game_data.dig("homeTeam", "id")
 
       fps = options.fetch(:fps, 30).to_f
       speed = options.fetch(:speed, 1.0).to_f
@@ -147,18 +162,33 @@ module RodTheBot
 
         # Draw players
         players.each do |ent|
-          team = ent["teamAbbrev"].to_s
-          fill = TEAM_COLORS.fetch(team, "#444444")
+          team_abbrev = ent["teamAbbrev"].to_s
+          team_id = ent["teamId"]
+          is_home = team_id == home_team_id
+          primary_color = TEAM_COLORS.fetch(team_abbrev, "#444444")
+
           x = map_x(ent["x"], tf)
           y = map_y(ent["y"], tf)
           r = 18
 
-          cmd += [
-            "-stroke", "#ffffff",
-            "-strokewidth", "2",
-            "-fill", fill,
-            "-draw", "circle #{x},#{y} #{(x + r).round(2)},#{y}"
-          ]
+          if is_home
+            # Home team: solid primary color circle with white numbers
+            cmd += [
+              "-stroke", "none",
+              "-fill", primary_color,
+              "-draw", "circle #{x},#{y} #{(x + r).round(2)},#{y}"
+            ]
+            number_color = "#ffffff"
+          else
+            # Away team: white circle with primary color outline and primary color numbers
+            cmd += [
+              "-stroke", primary_color,
+              "-strokewidth", "2",
+              "-fill", "#ffffff",
+              "-draw", "circle #{x},#{y} #{(x + r).round(2)},#{y}"
+            ]
+            number_color = primary_color
+          end
 
           num = ent["sweaterNumber"]
           next if num.nil? || num == ""
@@ -167,7 +197,7 @@ module RodTheBot
           dy = (y - (h / 2.0)).round
           cmd += [
             "-gravity", "Center",
-            "-fill", "#ffffff",
+            "-fill", number_color,
             "-stroke", "none",
             "-pointsize", "16",
             "-annotate", "#{"+" if dx >= 0}#{dx}#{"+" if dy >= 0}#{dy}", num.to_s
@@ -206,7 +236,7 @@ module RodTheBot
       end
     end
 
-    def build_background!(background_path, options)
+    def build_background!(background_path, options, game_data, tmpdir)
       w = options[:width].to_i
       h = options[:height].to_i
       tf = rink_transform(options)
@@ -272,11 +302,45 @@ module RodTheBot
       png_x = tf[:x0].round - padding_px_x
       png_y = tf[:y0].round - padding_px_y
 
-      # Composite onto canvas
-      run_cmd!(
-        ["magick", "-size", "#{w}x#{h}", "xc:#0b0f14", tmp_rink_png, "-geometry", "+#{png_x}+#{png_y}", "-composite", background_path],
-        "Composite rink onto canvas"
-      )
+      # Composite rink onto canvas
+      cmd = [
+        "magick", "-size", "#{w}x#{h}", "xc:#0b0f14",
+        tmp_rink_png, "-geometry", "+#{png_x}+#{png_y}", "-composite"
+      ]
+
+      # Add home team logo overlay at center ice if available
+      home_team_logo_path = download_team_logo(game_data.dig("homeTeam", "logo"), tmpdir) if game_data.dig("homeTeam", "logo")
+      if home_team_logo_path && File.exist?(home_team_logo_path)
+        # Center ice position in EDGE coordinates: (1200, 510)
+        center_x = map_x(1200, tf)
+        center_y = map_y(510, tf)
+        # Center ice circle is 15 feet radius = 180 EDGE units radius = 360 EDGE units diameter
+        # Logo size: fill the center circle (use ~95% of circle diameter)
+        logo_size = (340 * tf[:scale]).round
+        logo_x = (center_x - logo_size / 2).round
+        logo_y = (center_y - logo_size / 2).round
+
+        # Convert SVG to PNG and make it semi-transparent (ghosted effect)
+        tmp_logo_png = File.join(tmpdir, "_logo.png")
+        tmp_logo_resized = File.join(tmpdir, "_logo_resized.png")
+
+        # Convert SVG to PNG first
+        run_cmd!(
+          ["rsvg-convert", "-w", logo_size.to_s, "-h", logo_size.to_s, "-o", tmp_logo_png, home_team_logo_path],
+          "Convert logo SVG to PNG"
+        )
+
+        # Apply transparency (ghosted effect - 15% opacity)
+        run_cmd!(
+          ["magick", tmp_logo_png, "-alpha", "set", "-channel", "A", "-evaluate", "multiply", "0.15", "+channel", tmp_logo_resized],
+          "Apply ghosted effect to logo"
+        )
+
+        cmd += [tmp_logo_resized, "-geometry", "+#{logo_x}+#{logo_y}", "-composite"]
+      end
+
+      cmd << background_path
+      run_cmd!(cmd, "Composite rink and logo onto canvas")
     end
 
     def encode_video(frames_dir, output_path, fps)
@@ -358,6 +422,51 @@ module RodTheBot
         start: 0,
         frames: nil
       }
+    end
+
+    def fetch_game_data(game_id)
+      game_data = NhlApi.fetch_landing_feed(game_id)
+      return nil unless game_data && game_data["homeTeam"] && game_data["awayTeam"]
+
+      game_data
+    rescue => e
+      Rails.logger.error "Error fetching game data: #{e.message}"
+      nil
+    end
+
+    def download_team_logo(logo_url, tmpdir)
+      return nil unless logo_url
+
+      # Extract team abbreviation from URL (e.g., "PHI_light.svg" -> "PHI")
+      team_abbrev = logo_url.match(%r{/([A-Z]+)_})&.[](1)
+      return nil unless team_abbrev
+
+      logo_path = File.join(tmpdir, "#{team_abbrev}_logo.svg")
+
+      # Download logo if not already cached
+      unless File.exist?(logo_path)
+        uri = URI.parse(logo_url)
+        http = Net::HTTP.new(uri.host, uri.port)
+        http.use_ssl = true
+
+        request = Net::HTTP::Get.new(uri.request_uri)
+        request["User-Agent"] = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"
+
+        response = http.request(request)
+
+        if response.is_a?(Net::HTTPSuccess)
+          File.binwrite(logo_path, response.body)
+          Rails.logger.info "Downloaded team logo: #{logo_url}"
+        else
+          Rails.logger.error "Failed to download logo from #{logo_url}: HTTP #{response.code}"
+          return nil
+        end
+      end
+
+      logo_path
+    rescue => e
+      Rails.logger.error "Error downloading team logo: #{e.message}"
+      nil
     end
 
     def run_cmd!(cmd, label)
