@@ -35,7 +35,7 @@ module RodTheBot
 
       Rails.logger.info "EdgeReplayWorker: Generated replay at #{output_path}"
       output_path.to_s
-    rescue StandardError => e
+    rescue => e
       Rails.logger.error "EdgeReplayWorker failed: #{e.message}"
       Rails.logger.error e.backtrace.join("\n")
       nil
@@ -73,7 +73,7 @@ module RodTheBot
       File.binwrite(json_path, response.body)
       Rails.logger.info "EdgeReplayWorker: Downloaded EDGE JSON to #{json_path}"
       json_path
-    rescue StandardError => e
+    rescue => e
       Rails.logger.error "Error downloading EDGE JSON: #{e.message}"
       nil
     end
@@ -170,7 +170,7 @@ module RodTheBot
             "-fill", "#ffffff",
             "-stroke", "none",
             "-pointsize", "16",
-            "-annotate", "#{dx >= 0 ? "+" : ""}#{dx}#{dy >= 0 ? "+" : ""}#{dy}", num.to_s
+            "-annotate", "#{"+" if dx >= 0}#{dx}#{"+" if dy >= 0}#{dy}", num.to_s
           ]
         end
 
@@ -218,6 +218,8 @@ module RodTheBot
       end
 
       # SVG ice surface coordinates
+      # These represent the actual ice surface in the SVG coordinate system
+      # EDGE coordinates (0,0) to (2400, 1020) map to this ice surface
       svg_ice_surface_x = 27.64
       svg_ice_surface_y = 27.09
       svg_ice_surface_width = 690.18
@@ -230,14 +232,19 @@ module RodTheBot
       svg_render_width = svg_ice_surface_width + (svg_padding * 2)
       svg_render_height = svg_ice_surface_height + (svg_padding * 2)
 
+      # Canvas pixel dimensions for the EDGE rink (0-2400, 0-1020)
       rink_width_px = (tf[:x1] - tf[:x0]).round
       rink_height_px = (tf[:y1] - tf[:y0]).round
 
-      padding_scale_x = svg_render_width / svg_ice_surface_width
-      padding_scale_y = svg_render_height / svg_ice_surface_height
+      # Calculate the scale factor from SVG ice surface to canvas pixels
+      # This ensures the SVG ice surface matches the EDGE rink size on canvas
+      svg_to_canvas_scale_x = rink_width_px.to_f / svg_ice_surface_width
+      svg_to_canvas_scale_y = rink_height_px.to_f / svg_ice_surface_height
 
-      render_width_px = (rink_width_px * padding_scale_x).round
-      render_height_px = (rink_height_px * padding_scale_y).round
+      # Render the SVG (with padding) at the correct size
+      # The rendered PNG will be larger than the ice surface due to padding
+      render_width_px = (svg_render_width * svg_to_canvas_scale_x).round
+      render_height_px = (svg_render_height * svg_to_canvas_scale_y).round
 
       # Convert SVG to PNG
       tmp_rink_png = File.join(File.dirname(background_path), "_rink_only.png")
@@ -255,10 +262,13 @@ module RodTheBot
         "Convert SVG to PNG"
       )
 
-      # Calculate positioning with padding offset
-      padding_px_x = (rink_width_px * (svg_padding / svg_ice_surface_width)).round
-      padding_px_y = (rink_height_px * (svg_padding / svg_ice_surface_height)).round
+      # Calculate where to position the rendered PNG on the canvas
+      # The ice surface portion of the PNG must align with tf[:x0], tf[:y0]
+      # The padding in the rendered PNG is at the edges
+      padding_px_x = (svg_padding * svg_to_canvas_scale_x).round
+      padding_px_y = (svg_padding * svg_to_canvas_scale_y).round
 
+      # Position the PNG so the ice surface corner aligns with the EDGE rink corner
       png_x = tf[:x0].round - padding_px_x
       png_y = tf[:y0].round - padding_px_y
 
@@ -358,4 +368,3 @@ module RodTheBot
     end
   end
 end
-
