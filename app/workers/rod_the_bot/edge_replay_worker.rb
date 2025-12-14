@@ -209,7 +209,7 @@ module RodTheBot
 
           x = map_x(ent["x"], tf)
           y = map_y(ent["y"], tf)
-          r = 18
+          r = 24
 
           if is_home
             # Home team: solid primary color circle with white numbers
@@ -239,7 +239,7 @@ module RodTheBot
             "-gravity", "Center",
             "-fill", number_color,
             "-stroke", "none",
-            "-pointsize", "16",
+            "-pointsize", "20",
             "-annotate", "#{"+" if dx >= 0}#{dx}#{"+" if dy >= 0}#{dy}", num.to_s
           ]
         end
