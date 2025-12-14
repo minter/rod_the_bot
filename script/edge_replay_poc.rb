@@ -48,7 +48,7 @@ def season_slug_from_game_id(game_id)
   "#{year}#{year + 1}"
 end
 
-def fetch_edge_event_json!(game_id:, event_id:, season_slug: nil, game_url: nil, user_agent: nil, out_json_path:, out_headers_path: nil)
+def fetch_edge_event_json!(game_id:, event_id:, out_json_path:, season_slug: nil, game_url: nil, user_agent: nil, out_headers_path: nil)
   season_slug ||= season_slug_from_game_id(game_id)
   event_id = event_id.to_i
   raise "Invalid --event (must be positive integer)" if event_id <= 0
@@ -84,7 +84,7 @@ def fetch_edge_event_json!(game_id:, event_id:, season_slug: nil, game_url: nil,
 
   if out_headers_path
     FileUtils.mkdir_p(File.dirname(out_headers_path))
-    headers = +"HTTP #{res.code}\n"
+    headers = "HTTP #{res.code}\n"
     res.each_header { |k, v| headers << "#{k}: #{v}\n" }
     File.write(out_headers_path, headers)
   end
@@ -150,7 +150,7 @@ def build_background!(background_path, options)
   tf = rink_transform(options)
 
   # Get SVG path - check config/rink first, then fall back to script directory
-  config_svg_path = File.join(File.dirname(File.dirname(File.expand_path(__FILE__))), "config", "rink", "Icehockeylayout.svg")
+  config_svg_path = File.join(File.dirname(File.expand_path(__FILE__), 2), "config", "rink", "Icehockeylayout.svg")
   script_dir = File.dirname(File.expand_path(__FILE__))
   script_svg_path = File.join(script_dir, "Icehockeylayout.svg")
   svg_path = File.exist?(config_svg_path) ? config_svg_path : script_svg_path
@@ -166,37 +166,37 @@ def build_background!(background_path, options)
   #
   # To show rounded board corners, we render a slightly larger area of the SVG,
   # but we must account for this when mapping EDGE coordinates.
-  
+
   # The actual ice surface in SVG units
   svg_ice_surface_x = 27.64
   svg_ice_surface_y = 27.09
   svg_ice_surface_width = 690.18
   svg_ice_surface_height = 293.32
-  
+
   # ViewBox for rendering (includes boards for rounded corners)
   # We add padding around the ice surface to show the board curves
   svg_padding = 15.6  # Padding in SVG units to show boards
   svg_render_x = svg_ice_surface_x - svg_padding
-  svg_render_y = svg_ice_surface_y - svg_padding  
+  svg_render_y = svg_ice_surface_y - svg_padding
   svg_render_width = svg_ice_surface_width + (svg_padding * 2)
   svg_render_height = svg_ice_surface_height + (svg_padding * 2)
-  
+
   # Calculate the size we need to render the SVG (including padding for boards)
   # The rink_transform tells us where the ice surface should fit on the canvas
   rink_width_px = (tf[:x1] - tf[:x0]).round
   rink_height_px = (tf[:y1] - tf[:y0]).round
-  
+
   # Calculate how much bigger the rendered SVG needs to be to include the padding
   # Padding is svg_padding on each side, so total render size is proportionally larger
   padding_scale_x = svg_render_width / svg_ice_surface_width
   padding_scale_y = svg_render_height / svg_ice_surface_height
-  
+
   render_width_px = (rink_width_px * padding_scale_x).round
   render_height_px = (rink_height_px * padding_scale_y).round
 
   # Step 1: Convert SVG to PNG with the viewBox that includes boards
   tmp_rink_png = File.join(File.dirname(background_path), "_rink_only.png")
-  
+
   # Create a modified SVG with adjusted viewBox to show ice + boards
   tmp_svg = File.join(File.dirname(background_path), "_rink_cropped.svg")
   svg_content = File.read(svg_path)
@@ -205,7 +205,7 @@ def build_background!(background_path, options)
     "viewBox=\"#{svg_render_x.round(2)} #{svg_render_y.round(2)} #{svg_render_width.round(2)} #{svg_render_height.round(2)}\""
   )
   File.write(tmp_svg, svg_content)
-  
+
   # Convert the cropped SVG to PNG
   svg_to_png_cmd = [
     "rsvg-convert",
@@ -221,7 +221,7 @@ def build_background!(background_path, options)
   # So we need to offset by the padding amount
   padding_px_x = (rink_width_px * (svg_padding / svg_ice_surface_width)).round
   padding_px_y = (rink_height_px * (svg_padding / svg_ice_surface_height)).round
-  
+
   png_x = tf[:x0].round - padding_px_x
   png_y = tf[:y0].round - padding_px_y
 
@@ -301,7 +301,7 @@ def render_frames_imagemagick!(selected, options, frames_dir)
         "-fill", "#ffffff",
         "-stroke", "none",
         "-pointsize", "16",
-        "-annotate", "#{dx >= 0 ? "+" : ""}#{dx}#{dy >= 0 ? "+" : ""}#{dy}", num.to_s
+        "-annotate", "#{"+" if dx >= 0}#{dx}#{"+" if dy >= 0}#{dy}", num.to_s
       ]
     end
 
@@ -414,7 +414,7 @@ def render_frames_chrome!(selected, options, frames_dir)
   browser = Watir::Browser.new(
     :chrome,
     headless: true,
-    options: { args: ["--window-size=#{w},#{h}"] }
+    options: {args: ["--window-size=#{w},#{h}"]}
   )
 
   begin
@@ -429,7 +429,11 @@ def render_frames_chrome!(selected, options, frames_dir)
       File.binwrite(png_path, Base64.decode64(b64))
     end
   ensure
-    browser.close rescue nil
+    begin
+      browser.close
+    rescue
+      nil
+    end
   end
 end
 
@@ -458,7 +462,7 @@ OptionParser.new do |opts|
   opts.on("--input PATH", "Path to evNNN.json (default: #{options[:input]})") { |v| options[:input] = v }
   opts.on("--game-id ID", "NHL game id (e.g. 2025020501). If --input is missing, we will fetch ev{--event}.json from wsr.nhle.com.") { |v| options[:game_id] = v }
   opts.on("--event N", Integer, "Event id (e.g. 544). Used with --game-id to fetch evN.json from wsr.nhle.com.") { |v| options[:event] = v }
-  opts.on("--season SLUG", "Season slug for sprites URL (e.g. 20252026). Defaults to #{'YYYY' + 'YYYY+1'} derived from --game-id.") { |v| options[:season] = v }
+  opts.on("--season SLUG", "Season slug for sprites URL (e.g. 20252026). Defaults to #{"YYYY" + "YYYY+1"} derived from --game-id.") { |v| options[:season] = v }
   opts.on("--game-url URL", "Referer URL to send when fetching (default: https://www.nhl.com/gamecenter/<game_id>/playbyplay)") { |v| options[:game_url] = v }
   opts.on("--user-agent UA", "User-Agent to send when fetching (default: a Chrome UA)") { |v| options[:user_agent] = v }
   opts.on("--out PATH", "Output mp4 path (default: #{options[:out]})") { |v| options[:out] = v }
@@ -557,5 +561,3 @@ Dir.mktmpdir("edge_replay_poc_") do |dir|
   puts "Frames: #{selected.length} (source #{File.basename(input_path)}; start=#{start_idx})"
   puts "FPS: #{options[:fps]}  Size: #{options[:width]}x#{options[:height]}  Renderer: #{renderer}"
 end
-
-
