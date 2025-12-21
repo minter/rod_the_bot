@@ -1,6 +1,6 @@
 source "https://gem.coop"
 
-ruby "3.4.7"
+ruby "3.4.8"
 
 # Bundle edge Rails instead: gem "rails", github: "rails/rails", branch: "main"
 gem "rails", "~> 8.1"
