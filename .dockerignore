@@ -29,3 +29,5 @@
 !/storage/.keep
 /tmp/storage/*
 !/tmp/storage/.keep
+
+/vendor/bundle
