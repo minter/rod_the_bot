@@ -523,10 +523,24 @@ module RodTheBot
 
       # Create a unique key for this EDGE replay post
       edge_replay_key = "#{redis_key}:edge_replay:#{Time.now.to_i}"
-      parent_key = redis_key
 
-      # Post as reply to the original goal post
-      RodTheBot::Post.perform_async(post_text, edge_replay_key, parent_key, nil, [], video_path)
+      # Determine parent_key: Use most recent reply if it exists, otherwise use goal post (root)
+      # Threading: Goal (root) -> most recent reply -> next reply -> etc.
+      # The Post worker will atomically update last_reply_key after successful posting
+      last_reply_tracker_key = "#{redis_key}:last_reply_key"
+      last_reply_key = REDIS.get(last_reply_tracker_key)
+
+      # Use last reply as parent if it exists, otherwise use root (goal post)
+      parent_key = last_reply_key || redis_key
+
+      if last_reply_key
+        Rails.logger.info "EdgeReplayWorker: Replying to most recent reply with key: #{parent_key}"
+      else
+        Rails.logger.info "EdgeReplayWorker: No previous replies, replying to goal post (root) with key: #{parent_key}"
+      end
+
+      # Post as reply - Post worker will update last_reply_key after successful post
+      RodTheBot::Post.perform_async(post_text, edge_replay_key, parent_key, nil, [], video_path, redis_key)
     end
 
     def format_edge_replay_post(play, players, feed)

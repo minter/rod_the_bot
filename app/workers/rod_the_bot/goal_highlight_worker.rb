@@ -8,9 +8,6 @@ module RodTheBot
     def perform(game_id, play_id, redis_key, initial_run_time = nil)
       initial_run_time ||= Time.now.to_i
 
-      # Store the original redis_key to use as parent_key
-      parent_key = redis_key
-
       # Create a new unique key for this highlight post
       highlight_key = "#{redis_key}:highlight:#{Time.now.to_i}"
 
@@ -33,14 +30,31 @@ module RodTheBot
       if @landing_play["highlightClipSharingUrl"].present?
         output_path = download_highlight(@landing_play["highlightClipSharingUrl"])
         post = format_post(@landing_play)
-        if output_path.include?("http")
-          RodTheBot::Post.perform_async(post, highlight_key, parent_key, output_path, [], nil)
+        
+        # Determine parent_key: Use most recent reply if it exists, otherwise use goal post (root)
+        # Threading: Goal (root) -> most recent reply -> next reply -> etc.
+        # The Post worker will atomically update last_reply_key after successful posting
+        last_reply_tracker_key = "#{redis_key}:last_reply_key"
+        last_reply_key = REDIS.get(last_reply_tracker_key)
+        
+        # Use last reply as parent if it exists, otherwise use root (goal post)
+        parent_key = last_reply_key || redis_key
+        
+        if last_reply_key
+          Rails.logger.info "GoalHighlightWorker: Replying to most recent reply with key: #{parent_key}"
         else
-          RodTheBot::Post.perform_async(post, highlight_key, parent_key, nil, [], output_path)
+          Rails.logger.info "GoalHighlightWorker: No previous replies, replying to goal post (root) with key: #{parent_key}"
+        end
+        
+        # Post as reply - Post worker will update last_reply_key after successful post
+        if output_path.include?("http")
+          RodTheBot::Post.perform_async(post, highlight_key, parent_key, output_path, [], nil, redis_key)
+        else
+          RodTheBot::Post.perform_async(post, highlight_key, parent_key, nil, [], output_path, redis_key)
         end
       else
-        # Use parent_key when rescheduling
-        self.class.perform_in(3.minutes, game_id, play_id, parent_key, initial_run_time)
+        # Pass redis_key (goal post key) when rescheduling
+        self.class.perform_in(3.minutes, game_id, play_id, redis_key, initial_run_time)
       end
     end
 

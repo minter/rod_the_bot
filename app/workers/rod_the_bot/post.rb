@@ -4,7 +4,7 @@ module RodTheBot
 
     attr_writer :bsky
 
-    def perform(post, key = nil, parent_key = nil, embed_url = nil, embed_images = [], video_file_path = nil)
+    def perform(post, key = nil, parent_key = nil, embed_url = nil, embed_images = [], video_file_path = nil, root_key = nil)
       create_session
       return if @bsky.nil?
 
@@ -27,6 +27,12 @@ module RodTheBot
       if ENV["BLUESKY_ENABLED"] == "true" && new_post && new_post["uri"]
         post_uri = new_post["uri"]
         REDIS.set(key, post_uri, ex: 172800) if key
+        
+        # Update last_reply_key tracker atomically after successful post
+        # This ensures threading stays correct even with concurrent workers
+        if root_key && parent_key && key
+          update_last_reply_tracker(root_key, key)
+        end
       end
 
       if ENV["DEBUG_POSTS"] == "true"
@@ -75,6 +81,14 @@ module RodTheBot
 
     def log_post(post)
       Rails.logger.info "DEBUG: #{post}" if ENV["DEBUG_POSTS"] == "true"
+    end
+
+    def update_last_reply_tracker(root_key, reply_key)
+      # Atomically update the last reply tracker for thread chaining
+      # This happens after successful posting, ensuring correct order
+      last_reply_tracker_key = "#{root_key}:last_reply_key"
+      REDIS.set(last_reply_tracker_key, reply_key, ex: 172800)
+      Rails.logger.info "Post: Updated last_reply_key tracker: #{last_reply_tracker_key} -> #{reply_key}"
     end
   end
 end
