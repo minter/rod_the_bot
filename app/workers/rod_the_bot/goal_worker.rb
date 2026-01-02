@@ -12,6 +12,12 @@ module RodTheBot
 
       return if @play.blank?
 
+      # Ensure this is actually a goal play - prevent processing non-goal events
+      unless @play["typeDescKey"] == "goal"
+        Rails.logger.warn "GoalWorker: Play #{@play_id} for game #{game_id} is not a goal (type: #{@play["typeDescKey"]}). Skipping."
+        return
+      end
+
       # Skip goals in the shootout
       return if @play["periodDescriptor"]["periodType"] == "SO"
 
@@ -30,10 +36,34 @@ module RodTheBot
       original_play = @play.deep_dup
 
       if @play["details"]["scoringPlayerId"].blank?
-        Rails.logger.info "GoalWorker: scoringPlayerId is blank for game #{game_id}, play #{@play_id}. Rescheduling in 60 seconds."
+        # Check if game is final - don't reschedule if game is over
+        game_final = @feed&.dig("gameState") == "OFF" || @feed&.dig("plays")&.find { |p| p["typeDescKey"] == "game-end" }.present?
+        
+        if game_final
+          Rails.logger.warn "GoalWorker: scoringPlayerId is blank for game #{game_id}, play #{@play_id}, but game is final. Giving up."
+          return
+        end
+
+        # Track retry count to prevent infinite rescheduling
+        retry_key = "#{game_id}:goal:retry:#{@play_id}"
+        retry_count = (REDIS.get(retry_key) || "0").to_i + 1
+        max_retries = 10 # 10 minutes max (10 retries * 60 seconds)
+
+        if retry_count >= max_retries
+          Rails.logger.warn "GoalWorker: scoringPlayerId is blank for game #{game_id}, play #{@play_id} after #{retry_count} retries. Giving up."
+          REDIS.del(retry_key)
+          return
+        end
+
+        REDIS.set(retry_key, retry_count.to_s, ex: 1800) # 30 minutes expiry
+        Rails.logger.info "GoalWorker: scoringPlayerId is blank for game #{game_id}, play #{@play_id}. Retry #{retry_count}/#{max_retries}. Rescheduling in 60 seconds."
         RodTheBot::GoalWorker.perform_in(60, game_id, @play)
         return
       end
+
+      # Clear retry count if we successfully got scoringPlayerId
+      retry_key = "#{game_id}:goal:retry:#{@play_id}"
+      REDIS.del(retry_key) if REDIS.exists?(retry_key)
 
       period_name = format_period_name(@play["periodDescriptor"]["number"])
 
