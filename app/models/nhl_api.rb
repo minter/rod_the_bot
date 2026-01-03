@@ -150,11 +150,11 @@ class NhlApi
         next unless team_info
 
         team_scratches = team_info["scratches"] || []
-        formatted_scratches = team_scratches.map do |player|
+        formatted_scratches = team_scratches.filter_map do |player|
           first_name = player.dig("firstName", "default") || ""
           last_name = player.dig("lastName", "default") || ""
           "#{first_name[0]}. #{last_name}" if first_name.present? && last_name.present?
-        end.compact
+        end
         scratches_data[team] = formatted_scratches
       end
 
@@ -188,6 +188,19 @@ class NhlApi
         }
       end
       players
+    end
+
+    def opponent_team_id(game_id)
+      feed = fetch_landing_feed(game_id)
+      return nil unless feed
+
+      your_team_id = ENV["NHL_TEAM_ID"].to_i
+      home_id = feed.dig("homeTeam", "id")
+      away_id = feed.dig("awayTeam", "id")
+
+      return nil unless home_id && away_id
+
+      (home_id.to_i == your_team_id) ? away_id.to_i : home_id.to_i
     end
 
     def current_season
@@ -337,6 +350,109 @@ class NhlApi
       end
 
       !team_still_in_playoffs
+    end
+
+    # EDGE API methods
+    def fetch_team_zone_time_details(team_id, season: nil, game_type: nil)
+      cache_key = if season && game_type
+        "edge_team_zone_time_#{team_id}_#{season}_#{game_type}"
+      else
+        "edge_team_zone_time_#{team_id}_now"
+      end
+
+      Rails.cache.fetch(cache_key, expires_in: 6.hours) do
+        path = if season && game_type
+          "/edge/team-zone-time-details/#{team_id}/#{season}/#{game_type}"
+        else
+          "/edge/team-zone-time-details/#{team_id}/now"
+        end
+        get(path)
+      end
+    end
+
+    def fetch_team_skating_speed_detail(team_id, season: nil, game_type: nil)
+      cache_key = if season && game_type
+        "edge_team_skating_speed_#{team_id}_#{season}_#{game_type}"
+      else
+        "edge_team_skating_speed_#{team_id}_now"
+      end
+
+      Rails.cache.fetch(cache_key, expires_in: 6.hours) do
+        path = if season && game_type
+          "/edge/team-skating-speed-detail/#{team_id}/#{season}/#{game_type}"
+        else
+          "/edge/team-skating-speed-detail/#{team_id}/now"
+        end
+        get(path)
+      end
+    end
+
+    def fetch_team_shot_speed_detail(team_id, season: nil, game_type: nil)
+      cache_key = if season && game_type
+        "edge_team_shot_speed_#{team_id}_#{season}_#{game_type}"
+      else
+        "edge_team_shot_speed_#{team_id}_now"
+      end
+
+      Rails.cache.fetch(cache_key, expires_in: 6.hours) do
+        path = if season && game_type
+          "/edge/team-shot-speed-detail/#{team_id}/#{season}/#{game_type}"
+        else
+          "/edge/team-shot-speed-detail/#{team_id}/now"
+        end
+        get(path)
+      end
+    end
+
+    def fetch_skater_zone_time(player_id, season: nil, game_type: nil)
+      cache_key = if season && game_type
+        "edge_skater_zone_time_#{player_id}_#{season}_#{game_type}"
+      else
+        "edge_skater_zone_time_#{player_id}_now"
+      end
+
+      Rails.cache.fetch(cache_key, expires_in: 8.hours) do
+        path = if season && game_type
+          "/edge/skater-zone-time/#{player_id}/#{season}/#{game_type}"
+        else
+          "/edge/skater-zone-time/#{player_id}/now"
+        end
+        get(path)
+      end
+    end
+
+    def fetch_skater_skating_speed_detail(player_id, season: nil, game_type: nil)
+      cache_key = if season && game_type
+        "edge_skater_skating_speed_#{player_id}_#{season}_#{game_type}"
+      else
+        "edge_skater_skating_speed_#{player_id}_now"
+      end
+
+      Rails.cache.fetch(cache_key, expires_in: 8.hours) do
+        path = if season && game_type
+          "/edge/skater-skating-speed-detail/#{player_id}/#{season}/#{game_type}"
+        else
+          "/edge/skater-skating-speed-detail/#{player_id}/now"
+        end
+        get(path)
+      end
+    end
+
+    def fetch_goalie_detail(player_id, season: nil, game_type: nil)
+      cache_key = if season && game_type
+        "edge_goalie_detail_#{player_id}_#{season}_#{game_type}"
+      else
+        "edge_goalie_detail_#{player_id}_now"
+      end
+
+      Rails.cache.fetch(cache_key, expires_in: 8.hours) do
+        path = if season && game_type
+          "/edge/goalie-detail/#{player_id}/#{season}/#{game_type}"
+        else
+          "/edge/goalie-detail/#{player_id}/now"
+        end
+        get(path)
+      end
     end
 
     private
