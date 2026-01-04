@@ -2,6 +2,7 @@ module RodTheBot
   class GameStartWorker
     include Sidekiq::Worker
     include RodTheBot::PlayerFormatter
+    include PlayerImageHelper
 
     def perform(game_id)
       @feed = NhlApi.fetch_pbp_feed(game_id)
@@ -117,39 +118,8 @@ module RodTheBot
     end
 
     def get_goalie_images(home_goalie, away_goalie)
-      home_goalie_image = if home_goalie["playerId"]
-        begin
-          player_feed = NhlApi.fetch_player_landing_feed(home_goalie["playerId"])
-          headshot = player_feed&.dig("headshot")
-          if headshot.nil?
-            Rails.logger.warn "GameStartWorker: No headshot found for home goalie #{home_goalie["playerId"]} - player_feed present: #{!player_feed.nil?}"
-          end
-          headshot
-        rescue => e
-          Rails.logger.error "GameStartWorker: Error fetching home goalie #{home_goalie["playerId"]} headshot: #{e.message}"
-          nil
-        end
-      else
-        Rails.logger.warn "GameStartWorker: Home goalie has no playerId"
-        nil
-      end
-
-      away_goalie_image = if away_goalie["playerId"]
-        begin
-          player_feed = NhlApi.fetch_player_landing_feed(away_goalie["playerId"])
-          headshot = player_feed&.dig("headshot")
-          if headshot.nil?
-            Rails.logger.warn "GameStartWorker: No headshot found for away goalie #{away_goalie["playerId"]} - player_feed present: #{!player_feed.nil?}"
-          end
-          headshot
-        rescue => e
-          Rails.logger.error "GameStartWorker: Error fetching away goalie #{away_goalie["playerId"]} headshot: #{e.message}"
-          nil
-        end
-      else
-        Rails.logger.warn "GameStartWorker: Away goalie has no playerId"
-        nil
-      end
+      home_goalie_image = fetch_player_headshot(home_goalie["playerId"])
+      away_goalie_image = fetch_player_headshot(away_goalie["playerId"])
 
       [home_goalie_image, away_goalie_image]
     end

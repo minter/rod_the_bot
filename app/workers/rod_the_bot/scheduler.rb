@@ -89,12 +89,15 @@ module RodTheBot
         RodTheBot::SeasonStatsWorker.perform_in(5.minutes, your_standings[:team_name])
         RodTheBot::UpcomingMilestonesWorker.perform_in(10.minutes)
         # EDGE stats posts
+        RodTheBot::EdgePlayerZoneTimeWorker.perform_in(14.minutes, game_id)
         RodTheBot::EdgeTeamSpeedWorker.perform_in(17.minutes, game_id)
         RodTheBot::EdgeTeamShotSpeedWorker.perform_in(19.minutes, game_id)
         RodTheBot::EdgeMatchupWorker.perform_in(20.minutes, game_id)
+        RodTheBot::EdgePlayerHotZonesWorker.perform_in(23.minutes, game_id)
         RodTheBot::EdgeSpecialTeamsWorker.perform_in(26.minutes, game_id)
         RodTheBot::EdgeEsMatchupWorker.perform_in(29.minutes, game_id)
         RodTheBot::EdgeSpeedDemonLeaderboardWorker.perform_in(30.minutes, game_id)
+        RodTheBot::EdgePlayerWorkloadWorker.perform_in(32.minutes, game_id)
       end
     end
 

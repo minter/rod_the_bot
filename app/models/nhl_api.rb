@@ -455,6 +455,40 @@ class NhlApi
       end
     end
 
+    def fetch_skater_shot_location_detail(player_id, season: nil, game_type: nil)
+      cache_key = if season && game_type
+        "edge_skater_shot_location_#{player_id}_#{season}_#{game_type}"
+      else
+        "edge_skater_shot_location_#{player_id}_now"
+      end
+
+      Rails.cache.fetch(cache_key, expires_in: 8.hours) do
+        path = if season && game_type
+          "/edge/skater-shot-location-detail/#{player_id}/#{season}/#{game_type}"
+        else
+          "/edge/skater-shot-location-detail/#{player_id}/now"
+        end
+        get(path)
+      end
+    end
+
+    def fetch_skater_skating_distance_detail(player_id, season: nil, game_type: nil)
+      cache_key = if season && game_type
+        "edge_skater_skating_distance_#{player_id}_#{season}_#{game_type}"
+      else
+        "edge_skater_skating_distance_#{player_id}_now"
+      end
+
+      Rails.cache.fetch(cache_key, expires_in: 8.hours) do
+        path = if season && game_type
+          "/edge/skater-skating-distance-detail/#{player_id}/#{season}/#{game_type}"
+        else
+          "/edge/skater-skating-distance-detail/#{player_id}/now"
+        end
+        get(path)
+      end
+    end
+
     private
 
     def league_schedule_for_now

@@ -1,6 +1,7 @@
 module RodTheBot
   class EdgeTeamSpeedWorker
     include Sidekiq::Worker
+    include PlayerImageHelper
 
     def perform(_game_id = nil)
       return if NhlApi.preseason?
@@ -11,8 +12,15 @@ module RodTheBot
 
       our_team_abbrev, opponent_team_abbrev, opponent_speed_data = fetch_opponent_data(team_id)
 
+      # Get player IDs for headshots
+      player_ids = []
+      player_ids << speed_data.dig("topSkatingSpeeds", 0, "player", "id") if speed_data.dig("topSkatingSpeeds", 0, "player")
+      player_ids << opponent_speed_data.dig("topSkatingSpeeds", 0, "player", "id") if opponent_speed_data&.dig("topSkatingSpeeds", 0, "player")
+
+      headshots = fetch_player_headshots(player_ids)
+
       post_text = format_team_speed_post(speed_data, opponent_speed_data, our_team_abbrev, opponent_team_abbrev)
-      RodTheBot::Post.perform_async(post_text) if post_text
+      RodTheBot::Post.perform_async(post_text, nil, nil, nil, headshots) if post_text
     rescue => e
       Rails.logger.error("EdgeTeamSpeedWorker error: #{e.message}")
       Rails.logger.error(e.backtrace.join("\n"))
