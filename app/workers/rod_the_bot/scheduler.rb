@@ -88,16 +88,53 @@ module RodTheBot
         RodTheBot::PlayerStreaksWorker.perform_in(3.minutes)
         RodTheBot::SeasonStatsWorker.perform_in(5.minutes, your_standings[:team_name])
         RodTheBot::UpcomingMilestonesWorker.perform_in(10.minutes)
-        # EDGE stats posts
-        RodTheBot::EdgePlayerZoneTimeWorker.perform_in(14.minutes, game_id)
-        RodTheBot::EdgeTeamSpeedWorker.perform_in(17.minutes, game_id)
-        RodTheBot::EdgeTeamShotSpeedWorker.perform_in(19.minutes, game_id)
-        RodTheBot::EdgeMatchupWorker.perform_in(20.minutes, game_id)
-        RodTheBot::EdgePlayerHotZonesWorker.perform_in(23.minutes, game_id)
-        RodTheBot::EdgeSpecialTeamsWorker.perform_in(26.minutes, game_id)
-        RodTheBot::EdgeEsMatchupWorker.perform_in(29.minutes, game_id)
-        RodTheBot::EdgeSpeedDemonLeaderboardWorker.perform_in(30.minutes, game_id)
-        RodTheBot::EdgePlayerWorkloadWorker.perform_in(32.minutes, game_id)
+
+        # Schedule EDGE stats posts dynamically based on time until game
+        schedule_edge_posts(game_id, time)
+      end
+    end
+
+    def schedule_edge_posts(game_id, game_time)
+      # Calculate time until game start
+      time_until_game = game_time - Time.now
+
+      # Leave 30 minute buffer before game for GameStream
+      buffer_before_game = 30.minutes
+
+      # Start EDGE posts after traditional posts finish (15 minutes)
+      edge_start_time = 15.minutes
+
+      # Calculate available window for EDGE posts
+      available_window = time_until_game - buffer_before_game - edge_start_time
+
+      # If window is negative or too short, use compressed schedule
+      if available_window < 0
+        Rails.logger.warn "Scheduler: Game too soon, skipping EDGE posts"
+        return
+      end
+
+      # Define EDGE workers in desired order
+      edge_workers = [
+        RodTheBot::EdgePlayerZoneTimeWorker,
+        RodTheBot::EdgeTeamSpeedWorker,
+        RodTheBot::EdgeTeamShotSpeedWorker,
+        RodTheBot::EdgeMatchupWorker,
+        RodTheBot::EdgePlayerHotZonesWorker,
+        RodTheBot::EdgeSpecialTeamsWorker,
+        RodTheBot::EdgeEsMatchupWorker,
+        RodTheBot::EdgeSpeedDemonLeaderboardWorker,
+        RodTheBot::EdgePlayerWorkloadWorker
+      ]
+
+      # Calculate interval between posts
+      num_workers = edge_workers.length
+      interval = available_window / (num_workers + 1) # +1 for even spacing
+
+      # Schedule each worker at calculated intervals
+      edge_workers.each_with_index do |worker, index|
+        delay = edge_start_time + (interval * (index + 1))
+        worker.perform_in(delay, game_id)
+        Rails.logger.info "Scheduler: #{worker.name} scheduled for #{delay.to_i / 60} minutes from now"
       end
     end
 
