@@ -64,7 +64,7 @@ module RodTheBot
       POST
 
       unique_players.each_with_index do |player, index|
-        post += "        #{index + 1}. #{player[:name]}: #{player[:speed]} mph\n"
+        post += "#{index + 1}. #{player[:name]}: #{player[:speed]} mph\n"
       end
 
       post

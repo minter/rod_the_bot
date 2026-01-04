@@ -5,15 +5,13 @@ module RodTheBot
     def perform(_game_id = nil)
       return if NhlApi.preseason?
 
-      # Get team ID from environment
       team_id = ENV["NHL_TEAM_ID"].to_i
-
-      # Fetch team shot speed data
       shot_data = NhlApi.fetch_team_shot_speed_detail(team_id)
       return unless shot_data && shot_data["shotSpeedDetails"]&.any?
 
-      # Format and post
-      post_text = format_team_shot_speed_post(shot_data)
+      our_team_abbrev, opponent_team_abbrev, opponent_shot_data = fetch_opponent_data(team_id)
+
+      post_text = format_team_shot_speed_post(shot_data, opponent_shot_data, our_team_abbrev, opponent_team_abbrev)
       RodTheBot::Post.perform_async(post_text) if post_text
     rescue => e
       Rails.logger.error("EdgeTeamShotSpeedWorker error: #{e.message}")
@@ -23,14 +21,53 @@ module RodTheBot
 
     private
 
-    def format_team_shot_speed_post(data)
+    def fetch_opponent_data(team_id)
+      today_game = NhlApi.todays_game
+      return [nil, nil, nil] unless today_game
+
+      game_feed = NhlApi.fetch_landing_feed(today_game["id"])
+      return [nil, nil, nil] unless game_feed
+
+      home_id = game_feed.dig("homeTeam", "id")
+      away_id = game_feed.dig("awayTeam", "id")
+
+      if home_id == team_id
+        our_abbrev = game_feed.dig("homeTeam", "abbrev")
+        opp_abbrev = game_feed.dig("awayTeam", "abbrev")
+        opponent_id = away_id
+      else
+        our_abbrev = game_feed.dig("awayTeam", "abbrev")
+        opp_abbrev = game_feed.dig("homeTeam", "abbrev")
+        opponent_id = home_id
+      end
+
+      opp_shot_data = opponent_id ? NhlApi.fetch_team_shot_speed_detail(opponent_id) : nil
+
+      [our_abbrev, opp_abbrev, opp_shot_data]
+    end
+
+    def format_team_shot_speed_post(data, opponent_data, our_team_abbrev, opponent_team_abbrev)
       all_positions = data["shotSpeedDetails"]&.find { |d| d["position"] == "all" }
       return nil unless all_positions
 
+      our_team_abbrev ||= ENV["NHL_TEAM_ABBREVIATION"]
+
+      post = "🎯 SHOT SPEED PREVIEW\n\n"
+      post += format_team_shot_stats(data, all_positions, our_team_abbrev)
+
+      if opponent_data && opponent_team_abbrev
+        opponent_positions = opponent_data["shotSpeedDetails"]&.find { |d| d["position"] == "all" }
+        post += "\n#{format_team_shot_stats(opponent_data, opponent_positions, opponent_team_abbrev)}" if opponent_positions
+      end
+
+      post
+    end
+
+    def format_team_shot_stats(data, all_positions, team_abbrev)
       top_shot_speed = all_positions["topShotSpeed"]
       avg_shot_speed = all_positions["avgShotSpeed"]
 
-      return nil unless top_shot_speed && avg_shot_speed
+      return "" unless top_shot_speed && avg_shot_speed
 
       top_speed_val = top_shot_speed["imperial"]&.round(2)
       top_speed_rank = top_shot_speed["rank"]
@@ -45,21 +82,17 @@ module RodTheBot
         nil
       end
 
-      team_abbrev = ENV["NHL_TEAM_ABBREVIATION"]
-      post = <<~POST
-        🎯 SHOT SPEED PREVIEW
-
+      stats = <<~STATS
         #{team_abbrev} shot speed:
-
         • Average: #{avg_speed_val} mph (##{avg_speed_rank} in NHL)
         • Hardest: #{top_speed_val} mph (##{top_speed_rank})
-      POST
+      STATS
 
       if player_name
-        post += "        • Hardest shot: #{player_name}\n"
+        stats += "• Hardest shot: #{player_name}\n"
       end
 
-      post
+      stats
     end
   end
 end
