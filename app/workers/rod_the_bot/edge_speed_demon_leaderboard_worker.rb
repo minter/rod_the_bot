@@ -3,9 +3,8 @@ require 'set'
 module RodTheBot
   class EdgeSpeedDemonLeaderboardWorker
     include Sidekiq::Worker
-    include ActiveSupport::Inflector
 
-    def perform(game_id = nil)
+    def perform(_game_id = nil)
       return if NhlApi.preseason?
 
       # Get team ID from environment
@@ -57,10 +56,11 @@ module RodTheBot
 
       return nil if unique_players.empty?
 
+      team_abbrev = ENV["NHL_TEAM_ABBREVIATION"]
       post = <<~POST
         💨 SPEED DEMONS
 
-        Top 3 fastest Hurricanes:
+        Top 3 fastest #{team_abbrev} players:
       POST
 
       unique_players.each_with_index do |player, index|

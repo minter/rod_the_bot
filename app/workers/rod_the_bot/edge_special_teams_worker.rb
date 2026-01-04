@@ -1,9 +1,8 @@
 module RodTheBot
   class EdgeSpecialTeamsWorker
     include Sidekiq::Worker
-    include ActiveSupport::Inflector
 
-    def perform(game_id = nil)
+    def perform(_game_id = nil)
       return if NhlApi.preseason?
 
       # Get team ID from environment
@@ -30,6 +29,7 @@ module RodTheBot
 
       return nil unless pp_data && pk_data
 
+      team_abbrev = ENV["NHL_TEAM_ABBREVIATION"]
       pp_oz_pct = (pp_data["offensiveZonePctg"] * 100).round(1)
       pp_oz_rank = pp_data["offensiveZoneRank"]
       pk_oz_pct = (pk_data["offensiveZonePctg"] * 100).round(1)
@@ -38,7 +38,7 @@ module RodTheBot
       <<~POST
         ⚡ SPECIAL TEAMS EDGE
 
-        Hurricanes special teams zone control:
+        #{team_abbrev} special teams zone control:
 
         🏒 Power Play
         • #{pp_oz_pct}% offensive zone time (##{pp_oz_rank} in NHL)

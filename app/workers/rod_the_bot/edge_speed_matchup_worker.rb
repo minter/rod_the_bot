@@ -1,7 +1,6 @@
 module RodTheBot
   class EdgeSpeedMatchupWorker
     include Sidekiq::Worker
-    include ActiveSupport::Inflector
 
     def perform(game_id)
       return if NhlApi.preseason?
@@ -16,19 +15,25 @@ module RodTheBot
 
       return unless your_speed_data && opp_speed_data
 
-      # Get opponent team name
+      # Get team abbreviations from game feed
       feed = NhlApi.fetch_landing_feed(game_id)
       return unless feed
 
-      opponent_team = if feed.dig("homeTeam", "id").to_i == opponent_team_id
-        feed["homeTeam"]
+      home_id = feed.dig("homeTeam", "id").to_i
+      your_team_abbrev = if home_id == your_team_id
+        feed.dig("homeTeam", "abbrev")
       else
-        feed["awayTeam"]
+        feed.dig("awayTeam", "abbrev")
       end
-      opponent_name = opponent_team.dig("commonName", "default") || "Opponent"
+
+      opponent_team_abbrev = if home_id == opponent_team_id
+        feed.dig("homeTeam", "abbrev")
+      else
+        feed.dig("awayTeam", "abbrev")
+      end
 
       # Format and post
-      post_text = format_speed_matchup_post(your_speed_data, opp_speed_data, opponent_name)
+      post_text = format_speed_matchup_post(your_speed_data, opp_speed_data, your_team_abbrev, opponent_team_abbrev)
       return unless post_text
 
       # Account for hashtags that will be added by Post worker
@@ -38,7 +43,7 @@ module RodTheBot
 
       # If post is too long, simplify it
       if post_text.length > max_content_length
-        post_text = format_speed_matchup_post(your_speed_data, opp_speed_data, opponent_name, include_bursts: false)
+        post_text = format_speed_matchup_post(your_speed_data, opp_speed_data, your_team_abbrev, opponent_team_abbrev, include_bursts: false)
       end
 
       RodTheBot::Post.perform_async(post_text) if post_text && post_text.length <= max_content_length
@@ -50,7 +55,7 @@ module RodTheBot
 
     private
 
-    def format_speed_matchup_post(your_data, opp_data, opponent_name, include_bursts: true)
+    def format_speed_matchup_post(your_data, opp_data, your_team_abbrev, opponent_team_abbrev, include_bursts: true)
       your_all = your_data["skatingSpeedDetails"]&.find { |d| d["positionCode"] == "all" }
       opp_all = opp_data["skatingSpeedDetails"]&.find { |d| d["positionCode"] == "all" }
 
@@ -76,19 +81,19 @@ module RodTheBot
       post = <<~POST
         💨 SPEED MATCHUP
 
-        Canes vs #{opponent_name}:
+        #{your_team_abbrev} vs #{opponent_team_abbrev}:
 
         🏒 Top Speed
-        • Canes: #{your_max_speed_val} mph (##{your_max_speed_rank})
-        • #{opponent_name}: #{opp_max_speed_val} mph (##{opp_max_speed_rank})
+        • #{your_team_abbrev}: #{your_max_speed_val} mph (##{your_max_speed_rank})
+        • #{opponent_team_abbrev}: #{opp_max_speed_val} mph (##{opp_max_speed_rank})
       POST
 
       if include_bursts
         post += <<~POST
 
           🏒 Bursts Over 22 mph
-          • Canes: #{your_bursts_val} (##{your_bursts_rank})
-          • #{opponent_name}: #{opp_bursts_val} (##{opp_bursts_rank})
+          • #{your_team_abbrev}: #{your_bursts_val} (##{your_bursts_rank})
+          • #{opponent_team_abbrev}: #{opp_bursts_val} (##{opp_bursts_rank})
         POST
       end
 

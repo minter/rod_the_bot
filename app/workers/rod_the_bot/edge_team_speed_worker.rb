@@ -1,9 +1,8 @@
 module RodTheBot
   class EdgeTeamSpeedWorker
     include Sidekiq::Worker
-    include ActiveSupport::Inflector
 
-    def perform(game_id = nil)
+    def perform(_game_id = nil)
       return if NhlApi.preseason?
 
       # Get team ID from environment
@@ -49,10 +48,11 @@ module RodTheBot
         nil
       end
 
+      team_abbrev = ENV["NHL_TEAM_ABBREVIATION"]
       post = <<~POST
         💨 TEAM SPEED PREVIEW
 
-        Hurricanes speed rankings:
+        #{team_abbrev} speed rankings:
 
         • Top speed: #{max_speed_val} mph (##{max_speed_rank} in NHL)
       POST
@@ -70,4 +70,3 @@ module RodTheBot
     end
   end
 end
-

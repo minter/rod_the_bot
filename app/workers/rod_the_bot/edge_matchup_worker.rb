@@ -1,7 +1,6 @@
 module RodTheBot
   class EdgeMatchupWorker
     include Sidekiq::Worker
-    include ActiveSupport::Inflector
 
     def perform(game_id)
       return if NhlApi.preseason?
@@ -16,19 +15,25 @@ module RodTheBot
 
       return unless your_zone_data && opp_zone_data
 
-      # Get opponent team name
+      # Get team abbreviations from game feed
       feed = NhlApi.fetch_landing_feed(game_id)
       return unless feed
 
-      opponent_team = if feed.dig("homeTeam", "id").to_i == opponent_team_id
-        feed["homeTeam"]
+      home_id = feed.dig("homeTeam", "id").to_i
+      your_team_abbrev = if home_id == your_team_id
+        feed.dig("homeTeam", "abbrev")
       else
-        feed["awayTeam"]
+        feed.dig("awayTeam", "abbrev")
       end
-      opponent_name = opponent_team.dig("commonName", "default") || "Opponent"
+
+      opponent_team_abbrev = if home_id == opponent_team_id
+        feed.dig("homeTeam", "abbrev")
+      else
+        feed.dig("awayTeam", "abbrev")
+      end
 
       # Format and post
-      post_text = format_matchup_post(your_zone_data, opp_zone_data, opponent_name)
+      post_text = format_matchup_post(your_zone_data, opp_zone_data, your_team_abbrev, opponent_team_abbrev)
       return unless post_text
 
       # Account for hashtags that will be added by Post worker
@@ -38,7 +43,7 @@ module RodTheBot
 
       # If post is too long, remove shot differential section
       if post_text.length > max_content_length
-        post_text = format_matchup_post(your_zone_data, opp_zone_data, opponent_name, include_shot_diff: false)
+        post_text = format_matchup_post(your_zone_data, opp_zone_data, your_team_abbrev, opponent_team_abbrev, include_shot_diff: false)
       end
 
       RodTheBot::Post.perform_async(post_text) if post_text && post_text.length <= max_content_length
@@ -50,7 +55,7 @@ module RodTheBot
 
     private
 
-    def format_matchup_post(your_data, opp_data, opponent_name, include_shot_diff: true)
+    def format_matchup_post(your_data, opp_data, your_team_abbrev, opponent_team_abbrev, include_shot_diff: true)
       your_all = your_data["zoneTimeDetails"]&.find { |d| d["strengthCode"] == "all" }
       opp_all = opp_data["zoneTimeDetails"]&.find { |d| d["strengthCode"] == "all" }
 
@@ -72,15 +77,15 @@ module RodTheBot
       post = <<~POST
         ⚔️ ZONE CONTROL BATTLE
 
-        Canes vs #{opponent_name}:
+        #{your_team_abbrev} vs #{opponent_team_abbrev}:
 
         🏒 Offensive Zone Time
-        • Canes: #{your_oz_pct}% (##{your_oz_rank})
-        • #{opponent_name}: #{opp_oz_pct}% (##{opp_oz_rank})
+        • #{your_team_abbrev}: #{your_oz_pct}% (##{your_oz_rank})
+        • #{opponent_team_abbrev}: #{opp_oz_pct}% (##{opp_oz_rank})
 
         🏒 Defensive Zone Time
-        • Canes: #{your_dz_pct}% (##{your_dz_rank} least)
-        • #{opponent_name}: #{opp_dz_pct}% (##{opp_dz_rank} least)
+        • #{your_team_abbrev}: #{your_dz_pct}% (##{your_dz_rank} least)
+        • #{opponent_team_abbrev}: #{opp_dz_pct}% (##{opp_dz_rank} least)
       POST
 
       if include_shot_diff && your_shot_diff["shotAttemptDifferential"] && opp_shot_diff["shotAttemptDifferential"]
@@ -89,11 +94,14 @@ module RodTheBot
         opp_shot_diff_val = opp_shot_diff["shotAttemptDifferential"].round(1)
         opp_shot_diff_rank = opp_shot_diff["shotAttemptDifferentialRank"]
 
+        your_sign = your_shot_diff_val >= 0 ? "+" : ""
+        opp_sign = opp_shot_diff_val >= 0 ? "+" : ""
+
         post += <<~POST
 
           🏒 Shot Differential
-          • Canes: +#{your_shot_diff_val} per game (##{your_shot_diff_rank})
-          • #{opponent_name}: +#{opp_shot_diff_val} per game (##{opp_shot_diff_rank})
+          • #{your_team_abbrev}: #{your_sign}#{your_shot_diff_val} per game (##{your_shot_diff_rank})
+          • #{opponent_team_abbrev}: #{opp_sign}#{opp_shot_diff_val} per game (##{opp_shot_diff_rank})
         POST
       end
 

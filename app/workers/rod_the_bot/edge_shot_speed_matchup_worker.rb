@@ -1,7 +1,6 @@
 module RodTheBot
   class EdgeShotSpeedMatchupWorker
     include Sidekiq::Worker
-    include ActiveSupport::Inflector
 
     def perform(game_id)
       return if NhlApi.preseason?
@@ -16,19 +15,25 @@ module RodTheBot
 
       return unless your_shot_data && opp_shot_data
 
-      # Get opponent team name
+      # Get team abbreviations from game feed
       feed = NhlApi.fetch_landing_feed(game_id)
       return unless feed
 
-      opponent_team = if feed.dig("homeTeam", "id").to_i == opponent_team_id
-        feed["homeTeam"]
+      home_id = feed.dig("homeTeam", "id").to_i
+      your_team_abbrev = if home_id == your_team_id
+        feed.dig("homeTeam", "abbrev")
       else
-        feed["awayTeam"]
+        feed.dig("awayTeam", "abbrev")
       end
-      opponent_name = opponent_team.dig("commonName", "default") || "Opponent"
+
+      opponent_team_abbrev = if home_id == opponent_team_id
+        feed.dig("homeTeam", "abbrev")
+      else
+        feed.dig("awayTeam", "abbrev")
+      end
 
       # Format and post
-      post_text = format_shot_speed_matchup_post(your_shot_data, opp_shot_data, opponent_name)
+      post_text = format_shot_speed_matchup_post(your_shot_data, opp_shot_data, your_team_abbrev, opponent_team_abbrev)
       return unless post_text
 
       # Account for hashtags that will be added by Post worker
@@ -45,7 +50,7 @@ module RodTheBot
 
     private
 
-    def format_shot_speed_matchup_post(your_data, opp_data, opponent_name)
+    def format_shot_speed_matchup_post(your_data, opp_data, your_team_abbrev, opponent_team_abbrev)
       your_all = your_data["shotSpeedDetails"]&.find { |d| d["position"] == "all" }
       opp_all = opp_data["shotSpeedDetails"]&.find { |d| d["position"] == "all" }
 
@@ -71,15 +76,15 @@ module RodTheBot
       <<~POST
         🎯 SHOT SPEED MATCHUP
 
-        Canes vs #{opponent_name}:
+        #{your_team_abbrev} vs #{opponent_team_abbrev}:
 
         🏒 Average Shot Speed
-        • Canes: #{your_avg_val} mph (##{your_avg_rank})
-        • #{opponent_name}: #{opp_avg_val} mph (##{opp_avg_rank})
+        • #{your_team_abbrev}: #{your_avg_val} mph (##{your_avg_rank})
+        • #{opponent_team_abbrev}: #{opp_avg_val} mph (##{opp_avg_rank})
 
         🏒 Hardest Shot
-        • Canes: #{your_top_val} mph (##{your_top_rank})
-        • #{opponent_name}: #{opp_top_val} mph (##{opp_top_rank})
+        • #{your_team_abbrev}: #{your_top_val} mph (##{your_top_rank})
+        • #{opponent_team_abbrev}: #{opp_top_val} mph (##{opp_top_rank})
       POST
     end
   end

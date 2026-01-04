@@ -96,7 +96,6 @@ module RodTheBot
         RodTheBot::EdgeSpeedMatchupWorker.perform_in(22.minutes, game_id)
         RodTheBot::EdgeShotSpeedMatchupWorker.perform_in(24.minutes, game_id)
         RodTheBot::EdgeSpecialTeamsWorker.perform_in(26.minutes, game_id)
-        RodTheBot::EdgeEvenStrengthWorker.perform_in(27.minutes, game_id)
         RodTheBot::EdgeEsMatchupWorker.perform_in(29.minutes, game_id)
         RodTheBot::EdgeSpeedDemonLeaderboardWorker.perform_in(30.minutes, game_id)
       end
