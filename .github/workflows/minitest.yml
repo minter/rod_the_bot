@@ -19,6 +19,7 @@ jobs:
         env: 
           RAILS_ENV: test
           TIME_ZONE: America/New_York
+          NHL_TEAM_ID: "12"
           NHL_TEAM_ABBREVIATION: CAR
         run: |
           bundle exec rails test

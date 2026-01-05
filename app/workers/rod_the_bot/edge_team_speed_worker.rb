@@ -3,14 +3,14 @@ module RodTheBot
     include Sidekiq::Worker
     include PlayerImageHelper
 
-    def perform(_game_id = nil)
+    def perform(game_id = nil)
       return if NhlApi.preseason?
 
       team_id = ENV["NHL_TEAM_ID"].to_i
       speed_data = NhlApi.fetch_team_skating_speed_detail(team_id)
       return unless speed_data && speed_data["skatingSpeedDetails"]&.any?
 
-      our_team_abbrev, opponent_team_abbrev, opponent_speed_data = fetch_opponent_data(team_id)
+      our_team_abbrev, opponent_team_abbrev, opponent_speed_data = fetch_opponent_data(game_id, team_id)
 
       # Get player IDs for headshots
       player_ids = []
@@ -29,11 +29,10 @@ module RodTheBot
 
     private
 
-    def fetch_opponent_data(team_id)
-      today_game = NhlApi.todays_game
-      return [nil, nil, nil] unless today_game
+    def fetch_opponent_data(game_id, team_id)
+      return [nil, nil, nil] unless game_id
 
-      game_feed = NhlApi.fetch_landing_feed(today_game["id"])
+      game_feed = NhlApi.fetch_landing_feed(game_id)
       return [nil, nil, nil] unless game_feed
 
       home_id = game_feed.dig("homeTeam", "id")
