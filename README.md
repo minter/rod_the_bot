@@ -37,7 +37,7 @@ This method requires you to have [Docker](https://docs.docker.com/get-docker/) a
 
 ### Raw source code (Hardest)
 
-This method requires you to be running on a system with Ruby 3+ and enough dev tools to build native extensions. You will also need a Redis instance running to store state. This has been tested on both Ubuntu 22.04 and OS X Sonoma, but does require a number of dependencies to be installed.
+This method requires you to be running on a system with Ruby 3.4.8+ and enough dev tools to build native extensions. You will also need a Redis instance running to store state. This has been tested on both Ubuntu 22.04 and OS X Sonoma, but does require a number of dependencies to be installed.
 
 **You will likely only want to use this method if you are planning on actively changing/contributing to the codebase.**
 
@@ -179,11 +179,14 @@ If you are running on Ubuntu or other Systemd-compatible Linux, you can use the 
 ## Technical Architecture
 
 Key system components and dependencies:
-* Ruby 3+: The language
-* Rails 7+: The framework
-* Sidekiq 7+: Background job processing
-* Redis 7+: State maintenance
+* Ruby 3.4.8: The language
+* Rails 8.1: The framework
+* Sidekiq 8: Background job processing
+* Redis 5 (client) / Redis 7+ (server): State maintenance
 * HTTParty: NHL API client
+* Watir + Chromium: Browser automation for NHL Edge stats
+* FFmpeg: Video processing for highlights and replays
+* ImageMagick + librsvg: Image processing
 
 ## Contributing
 
