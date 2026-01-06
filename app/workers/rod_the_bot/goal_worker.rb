@@ -38,7 +38,7 @@ module RodTheBot
       if @play["details"]["scoringPlayerId"].blank?
         # Check if game is final - don't reschedule if game is over
         game_final = @feed&.dig("gameState") == "OFF" || @feed&.dig("plays")&.find { |p| p["typeDescKey"] == "game-end" }.present?
-        
+
         if game_final
           Rails.logger.warn "GoalWorker: scoringPlayerId is blank for game #{game_id}, play #{@play_id}, but game is final. Giving up."
           return

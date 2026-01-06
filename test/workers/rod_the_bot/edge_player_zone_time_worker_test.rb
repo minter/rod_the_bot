@@ -32,7 +32,7 @@ class RodTheBot::EdgePlayerZoneTimeWorkerTest < ActiveSupport::TestCase
 
       assert_equal 1, RodTheBot::Post.jobs.size
       post = RodTheBot::Post.jobs.first["args"].first
-      
+
       expected_output = <<~POST
         🔍 EDGE SPOTLIGHT: Sebastian Aho
 
@@ -43,7 +43,7 @@ class RodTheBot::EdgePlayerZoneTimeWorkerTest < ActiveSupport::TestCase
 
         Season totals: 17G-25A = 42 points
       POST
-      
+
       assert_equal expected_output, post
     end
   end

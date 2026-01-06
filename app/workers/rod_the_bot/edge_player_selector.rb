@@ -1,7 +1,7 @@
 module RodTheBot
   module EdgePlayerSelector
     # Get players who are on roster, played in recent games, and meet criteria
-    def select_eligible_players(last_n_games: 5, min_games_played: 4, criteria:)
+    def select_eligible_players(criteria:, last_n_games: 5, min_games_played: 4)
       team_id = ENV["NHL_TEAM_ID"].to_i
       team_abbrev = ENV["NHL_TEAM_ABBREVIATION"]
 
@@ -39,7 +39,7 @@ module RodTheBot
     private
 
     def get_recent_game_ids(last_n)
-      team_abbrev = ENV["NHL_TEAM_ABBREVIATION"]
+      ENV["NHL_TEAM_ABBREVIATION"]
       recent_games = []
       days_back = 0
 
@@ -71,8 +71,8 @@ module RodTheBot
           next unless roster_player_ids.include?(player_id)
 
           player_stats[player_id][:games] += 1
-          player_stats[player_id][:points] += (player["points"] || 0)
-          player_stats[player_id][:goals] += (player["goals"] || 0)
+          player_stats[player_id][:points] += player["points"] || 0
+          player_stats[player_id][:goals] += player["goals"] || 0
           player_stats[player_id][:name] ||= player.dig("name", "default")
         end
       end
@@ -141,4 +141,3 @@ module RodTheBot
     end
   end
 end
-

@@ -94,8 +94,8 @@ module RodTheBot
         opp_shot_diff_val = opp_shot_diff["shotAttemptDifferential"].round(1)
         opp_shot_diff_rank = opp_shot_diff["shotAttemptDifferentialRank"]
 
-        your_sign = your_shot_diff_val >= 0 ? "+" : ""
-        opp_sign = opp_shot_diff_val >= 0 ? "+" : ""
+        your_sign = (your_shot_diff_val >= 0) ? "+" : ""
+        opp_sign = (opp_shot_diff_val >= 0) ? "+" : ""
 
         post += <<~POST
 

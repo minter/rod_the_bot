@@ -27,7 +27,7 @@ module RodTheBot
       if ENV["BLUESKY_ENABLED"] == "true" && new_post && new_post["uri"]
         post_uri = new_post["uri"]
         REDIS.set(key, post_uri, ex: 172800) if key
-        
+
         # Update last_reply_key tracker atomically after successful post
         # This ensures threading stays correct even with concurrent workers
         if root_key && parent_key && key

@@ -6,7 +6,7 @@ class RodTheBot::EdgeReplayWorkerTest < ActiveSupport::TestCase
     @worker = RodTheBot::EdgeReplayWorker.new
     ENV["NHL_TEAM_ID"] = "12"
     ENV["NHL_TEAM_ABBREVIATION"] = "CAR"
-    
+
     # Create output directory for tests
     @output_dir = Rails.root.join("tmp", "edge_replays")
     FileUtils.mkdir_p(@output_dir)
@@ -15,14 +15,14 @@ class RodTheBot::EdgeReplayWorkerTest < ActiveSupport::TestCase
   test "perform returns early if replay already exists" do
     game_id = 2025020660
     event_id = 544
-    
+
     # Create a dummy replay file
     output_path = @output_dir.join("#{game_id}_#{event_id}_replay.mp4")
     FileUtils.touch(output_path)
-    
+
     begin
       result = @worker.perform(game_id, event_id)
-      
+
       assert_equal output_path.to_s, result
       # Should not create a post job since no redis_key provided
       assert_equal 0, RodTheBot::Post.jobs.size
@@ -36,12 +36,12 @@ class RodTheBot::EdgeReplayWorkerTest < ActiveSupport::TestCase
     game_id = 2025020660
     event_id = 999999 # Non-existent event
     redis_key = "test_key"
-    
+
     # Stub download_edge_json to return nil (not available)
     @worker.stubs(:download_edge_json).returns(nil)
-    
+
     result = @worker.perform(game_id, event_id, redis_key, 0)
-    
+
     assert_nil result
     # Should schedule a retry
     assert_equal 1, RodTheBot::EdgeReplayWorker.jobs.size
@@ -51,12 +51,12 @@ class RodTheBot::EdgeReplayWorkerTest < ActiveSupport::TestCase
     game_id = 2025020660
     event_id = 999999
     redis_key = "test_key"
-    
+
     # Stub download_edge_json to return nil
     @worker.stubs(:download_edge_json).returns(nil)
-    
+
     result = @worker.perform(game_id, event_id, redis_key, 5) # Max retries
-    
+
     assert_nil result
     # Should not schedule another retry
     assert_equal 0, RodTheBot::EdgeReplayWorker.jobs.size
@@ -66,13 +66,13 @@ class RodTheBot::EdgeReplayWorkerTest < ActiveSupport::TestCase
     game_id = 2025020660
     event_id = 544
     redis_key = "test_key"
-    
+
     # Stub methods to simulate missing game data
     @worker.stubs(:download_edge_json).returns("/tmp/fake.json")
     @worker.stubs(:fetch_game_data).returns(nil)
-    
+
     result = @worker.perform(game_id, event_id, redis_key, 0)
-    
+
     assert_nil result
     # Should schedule a retry
     assert_equal 1, RodTheBot::EdgeReplayWorker.jobs.size
@@ -92,4 +92,3 @@ class RodTheBot::EdgeReplayWorkerTest < ActiveSupport::TestCase
     end
   end
 end
-

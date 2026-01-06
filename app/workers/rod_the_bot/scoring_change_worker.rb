@@ -27,10 +27,10 @@ module RodTheBot
       # Threading: Goal (root) -> most recent reply -> next reply -> etc.
       last_reply_tracker_key = "#{redis_key}:last_reply_key"
       last_reply_key = REDIS.get(last_reply_tracker_key)
-      
+
       # Use last reply as parent if it exists, otherwise use root (goal post)
       parent_key = last_reply_key || redis_key
-      
+
       if last_reply_key
         Rails.logger.info "ScoringChangeWorker: Replying to most recent reply with key: #{parent_key}"
       else
@@ -140,16 +140,16 @@ module RodTheBot
       # Threading: Goal (root) -> most recent reply -> next reply -> etc.
       last_reply_tracker_key = "#{redis_key}:last_reply_key"
       last_reply_key = REDIS.get(last_reply_tracker_key)
-      
+
       # Use last reply as parent if it exists, otherwise use root (goal post)
       parent_key = last_reply_key || redis_key
-      
+
       if last_reply_key
         Rails.logger.info "ScoringChangeWorker (overturned): Replying to most recent reply with key: #{parent_key}"
       else
         Rails.logger.info "ScoringChangeWorker (overturned): No previous replies, replying to goal post (root) with key: #{parent_key}"
       end
-      
+
       # Find challenge event near the original goal time
       challenge_event = find_challenge_near_goal(
         original_play["timeInPeriod"],
@@ -183,7 +183,7 @@ module RodTheBot
 
       # Post as reply to most recent reply (or goal if no replies yet)
       overturn_key = "#{redis_key}:overturn:#{Time.now.to_i}"
-      
+
       # Post as reply - Post worker will update last_reply_key after successful post
       RodTheBot::Post.perform_async(post, overturn_key, parent_key, nil, nil, nil, redis_key)
 

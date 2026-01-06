@@ -6,14 +6,14 @@ class RodTheBot::EdgePlayerHotZonesWorkerTest < ActiveSupport::TestCase
     @worker = RodTheBot::EdgePlayerHotZonesWorker.new
     ENV["NHL_TEAM_ID"] = "12"
     ENV["NHL_TEAM_ABBREVIATION"] = "CAR"
-    
+
     # Stub preseason check
     NhlApi.stubs(:preseason?).returns(false)
   end
 
   test "perform creates post for eligible player with elite shot zones" do
     game_id = 2025020660
-    
+
     # Stub the player selection to return a known player
     eligible_player = {
       id: 8478427,  # Sebastian Aho
@@ -24,15 +24,15 @@ class RodTheBot::EdgePlayerHotZonesWorkerTest < ActiveSupport::TestCase
       assists: 2,
       games_played: 4
     }
-    
+
     @worker.stubs(:select_eligible_players).returns([eligible_player])
-    
+
     VCR.use_cassette("edge_player_hot_zones_8478427") do
       @worker.perform(game_id)
-      
+
       assert_equal 1, RodTheBot::Post.jobs.size
       post = RodTheBot::Post.jobs.first["args"].first
-      
+
       expected_output = <<~POST.chomp
         🎯 WHERE SEBASTIAN AHO SCORES
 
@@ -43,7 +43,7 @@ class RodTheBot::EdgePlayerHotZonesWorkerTest < ActiveSupport::TestCase
 
         Watch for #20 in these areas tonight.
       POST
-      
+
       assert_equal expected_output, post
     end
   end
@@ -51,23 +51,23 @@ class RodTheBot::EdgePlayerHotZonesWorkerTest < ActiveSupport::TestCase
   test "perform returns early if preseason" do
     NhlApi.unstub(:preseason?)
     NhlApi.stubs(:preseason?).returns(true)
-    
+
     @worker.perform(2025020660)
-    
+
     assert_equal 0, RodTheBot::Post.jobs.size
   end
 
   test "perform returns early if no eligible players" do
     @worker.stubs(:select_eligible_players).returns([])
-    
+
     @worker.perform(2025020660)
-    
+
     assert_equal 0, RodTheBot::Post.jobs.size
   end
 
   test "perform includes player headshot in post" do
     game_id = 2025020660
-    
+
     eligible_player = {
       id: 8478427,
       name: "Sebastian Aho",
@@ -77,12 +77,12 @@ class RodTheBot::EdgePlayerHotZonesWorkerTest < ActiveSupport::TestCase
       assists: 2,
       games_played: 4
     }
-    
+
     @worker.stubs(:select_eligible_players).returns([eligible_player])
-    
+
     VCR.use_cassette("edge_player_hot_zones_8478427") do
       @worker.perform(game_id)
-      
+
       assert_equal 1, RodTheBot::Post.jobs.size
       # Check that images array is passed (5th argument)
       images = RodTheBot::Post.jobs.first["args"][4]
@@ -96,4 +96,3 @@ class RodTheBot::EdgePlayerHotZonesWorkerTest < ActiveSupport::TestCase
     Sidekiq::Worker.clear_all
   end
 end
-

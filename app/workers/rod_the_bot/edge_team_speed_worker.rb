@@ -88,8 +88,6 @@ module RodTheBot
       top_speed_player = data["topSkatingSpeeds"]&.first
       player_name = if top_speed_player && top_speed_player["player"]
         "#{top_speed_player["player"]["firstName"]["default"]} #{top_speed_player["player"]["lastName"]["default"]}"
-      else
-        nil
       end
 
       stats = <<~STATS

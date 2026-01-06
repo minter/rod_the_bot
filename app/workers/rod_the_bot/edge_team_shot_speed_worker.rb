@@ -85,8 +85,6 @@ module RodTheBot
       hardest_shot_player = data["hardestShots"]&.first
       player_name = if hardest_shot_player && hardest_shot_player["player"]
         "#{hardest_shot_player["player"]["firstName"]["default"]} #{hardest_shot_player["player"]["lastName"]["default"]}"
-      else
-        nil
       end
 
       stats = <<~STATS
