@@ -159,7 +159,8 @@ GEM
     mini_magick (5.3.1)
       logger
     mini_mime (1.1.5)
-    minitest (5.27.0)
+    minitest (6.0.1)
+      prism (~> 1.5)
     mocha (3.0.1)
       ruby2_keywords (>= 0.0.5)
     mock_redis (0.53.0)
@@ -367,7 +368,7 @@ DEPENDENCIES
   debug
   dotenv-rails (~> 3)
   httparty (~> 0)
-  minitest (~> 5.25)
+  minitest (~> 6.0)
   mocha
   mock_redis
   net-smtp (~> 0.5.1)
