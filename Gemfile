@@ -29,7 +29,7 @@ gem "streamio-ffmpeg", ">= 3.0.2"
 gem "uri", ">= 1.0.3"
 
 group :test do
-  gem "minitest", "~> 5.25"
+  gem "minitest", "~> 6.0"
   gem "timecop"
   gem "vcr"
   gem "webmock"
