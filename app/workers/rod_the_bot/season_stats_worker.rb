@@ -15,7 +15,7 @@ module RodTheBot
       goalie_post = <<~POST
         🥅 #{@season_type} goaltending stats for the #{your_team}
 
-        #{goalie_stats.sort_by { |k, v| v[:wins] }.reverse.map { |player| "#{player[1][:name]}: #{player[1][:wins]}-#{player[1][:losses]}, #{player[1][:save_percentage]} SV%, #{player[1][:goals_against_average]} GAA" }.join("\n")}
+        #{goalie_stats.sort_by { |k, v| v[:wins] }.reverse.map { |player| "#{player[1][:name]}: #{player[1][:wins]}-#{player[1][:losses]}-#{player[1][:overtime_losses]}, #{player[1][:save_percentage]} SV%, #{player[1][:goals_against_average]} GAA" }.join("\n")}
       POST
 
       skater_points_leader_post = <<~POST
@@ -120,6 +120,7 @@ module RodTheBot
           games: player["gamesPlayed"],
           wins: player["wins"],
           losses: player["losses"],
+          overtime_losses: player["overtimeLosses"],
           save_percentage: sprintf("%.3f", player["savePercentage"].round(3)),
           goals_against_average: sprintf("%.2f", player["goalsAgainstAverage"].round(2))
         }
