@@ -32,6 +32,25 @@ module RodTheBot
 
       # Store pre-game career stats for milestone detection (skip in preseason)
       RodTheBot::PregameStatsWorker.perform_async(game_id) unless NhlApi.preseason?
+
+      # Post EDGE stats for goalies (after game start post)
+      unless NhlApi.preseason?
+        our_goalie, opponent_goalie = if home_team_id == ENV["NHL_TEAM_ID"].to_i
+          [home_goalie, away_goalie]
+        else
+          [away_goalie, home_goalie]
+        end
+
+        # Post fortress zones for our goalie (2 min after game start)
+        if our_goalie["playerId"]
+          RodTheBot::EdgeGoalieWorker.perform_in(2.minutes, game_id, our_goalie["playerId"])
+        end
+
+        # Post goalie matchup comparison (4 min after game start)
+        if our_goalie["playerId"] && opponent_goalie["playerId"]
+          RodTheBot::EdgeGoalieMatchupWorker.perform_in(4.minutes, game_id, our_goalie["playerId"], opponent_goalie["playerId"])
+        end
+      end
     end
 
     private

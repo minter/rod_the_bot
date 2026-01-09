@@ -1,0 +1,85 @@
+---
+http_interactions:
+- request:
+    method: get
+    uri: https://api-web.nhle.com/v1/edge/goalie-detail/8479496/now
+    body:
+      encoding: US-ASCII
+      string: ''
+    headers:
+      Accept-Encoding:
+      - gzip;q=1.0,deflate;q=0.6,identity;q=0.3
+      Accept:
+      - "*/*"
+      User-Agent:
+      - Ruby
+  response:
+    status:
+      code: 307
+      message: Temporary Redirect
+    headers:
+      Date:
+      - Wed, 08 Jan 2026 18:00:00 GMT
+      Content-Length:
+      - '0'
+      Connection:
+      - keep-alive
+      Location:
+      - https://api-web.nhle.com/v1/edge/goalie-detail/8479496/20252026/2
+    body:
+      encoding: UTF-8
+      string: ''
+  recorded_at: Wed, 08 Jan 2026 18:00:00 GMT
+- request:
+    method: get
+    uri: https://api-web.nhle.com/v1/edge/goalie-detail/8479496/20252026/2
+    body:
+      encoding: US-ASCII
+      string: ''
+    headers:
+      Accept-Encoding:
+      - gzip;q=1.0,deflate;q=0.6,identity;q=0.3
+      Accept:
+      - "*/*"
+      User-Agent:
+      - Ruby
+  response:
+    status:
+      code: 200
+      message: OK
+    headers:
+      Date:
+      - Wed, 08 Jan 2026 18:00:00 GMT
+      Content-Type:
+      - application/json
+    body:
+      encoding: ASCII-8BIT
+      string: '{"player":{"id":8479496,"firstName":{"default":"Pyotr"},"lastName":{"default":"Kochetkov"},"sweaterNumber":52,"shootsCatches":"L","headshot":"https://assets.nhle.com/mugs/nhl/20242025/CAR/8479496.png","team":{"id":12,"abbrev":"CAR"},"wins":18,"losses":5,"overtimeLosses":2,"goalsAgainstAvg":2.33,"savePctg":0.910,"gamesPlayed":25},"stats":{"goalsAgainstAvg":{"value":2.33,"percentile":0.9180,"leagueAvg":2.95},"gamesAbove900":{"value":0.5625,"percentile":0.6721,"leagueAvg":0.5031},"goalDifferentialPer60":{"value":1.35,"percentile":0.9672,"leagueAvg":0.11},"goalSupportAvg":{"value":3.67,"percentile":0.9508,"leagueAvg":2.95},"pointPctg":{"value":0.8438,"percentile":0.9836,"leagueAvg":0.4799}},"shotLocationSummary":[{"locationCode":"all","goalsAgainst":38,"saves":346,"savePctg":0.9010}],"shotLocationDetails":[{"area":"Low Slot","saves":104,"savePctg":0.8889,"savePctgPercentile":0.9500,"goalsAgainst":13},{"area":"High Slot","saves":85,"savePctg":0.8378,"savePctgPercentile":0.9200,"goalsAgainst":16},{"area":"L Circle","saves":42,"savePctg":0.9130,"savePctgPercentile":0.8800,"goalsAgainst":4},{"area":"R Circle","saves":38,"savePctg":0.9268,"savePctgPercentile":0.8500,"goalsAgainst":3},{"area":"L Point","saves":12,"savePctg":0.9230,"savePctgPercentile":0.7500,"goalsAgainst":1},{"area":"R Point","saves":10,"savePctg":0.9090,"savePctgPercentile":0.7200,"goalsAgainst":1},{"area":"L Corner","saves":8,"savePctg":1.0000,"savePctgPercentile":0.9800,"goalsAgainst":0},{"area":"R Corner","saves":7,"savePctg":1.0000,"savePctgPercentile":0.9700,"goalsAgainst":0},{"area":"Behind Net","saves":5,"savePctg":1.0000,"savePctgPercentile":0.9000,"goalsAgainst":0},{"area":"Crease","saves":15,"savePctg":0.7500,"savePctgPercentile":0.6500,"goalsAgainst":5},{"area":"L Net Side","saves":6,"savePctg":0.8571,"savePctgPercentile":0.7000,"goalsAgainst":1},{"area":"R Net Side","saves":6,"savePctg":0.8571,"savePctgPercentile":0.6800,"goalsAgainst":1},{"area":"Center Point","saves":4,"savePctg":1.0000,"savePctgPercentile":0.8000,"goalsAgainst":0},{"area":"Outside L","saves":3,"savePctg":1.0000,"savePctgPercentile":0.7500,"goalsAgainst":0},{"area":"Outside R","saves":2,"savePctg":1.0000,"savePctgPercentile":0.7200,"goalsAgainst":0},{"area":"Offensive Neutral Zone","saves":1,"savePctg":1.0000,"savePctgPercentile":0.5000,"goalsAgainst":0},{"area":"Beyond Red Line","saves":0,"savePctg":0.0000,"savePctgPercentile":0.0000,"goalsAgainst":0}]}'
+  recorded_at: Wed, 08 Jan 2026 18:00:00 GMT
+- request:
+    method: get
+    uri: https://api-web.nhle.com/v1/player/8479496/landing
+    body:
+      encoding: US-ASCII
+      string: ''
+    headers:
+      Accept-Encoding:
+      - gzip;q=1.0,deflate;q=0.6,identity;q=0.3
+      Accept:
+      - "*/*"
+      User-Agent:
+      - Ruby
+  response:
+    status:
+      code: 200
+      message: OK
+    headers:
+      Date:
+      - Wed, 08 Jan 2026 18:00:00 GMT
+      Content-Type:
+      - application/json
+    body:
+      encoding: ASCII-8BIT
+      string: '{"playerId":8479496,"firstName":{"default":"Pyotr"},"lastName":{"default":"Kochetkov"},"sweaterNumber":52,"headshot":"https://assets.nhle.com/mugs/nhl/20242025/CAR/8479496.png","teamId":12,"teamAbbrev":"CAR","position":"G","shootsCatches":"L"}'
+  recorded_at: Wed, 08 Jan 2026 18:00:00 GMT
+recorded_with: VCR 6.2.0
