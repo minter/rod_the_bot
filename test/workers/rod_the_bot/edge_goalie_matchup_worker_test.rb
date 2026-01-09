@@ -58,7 +58,7 @@ class RodTheBot::EdgeGoalieMatchupWorkerTest < ActiveSupport::TestCase
     assert_equal 0, RodTheBot::Post.jobs.size
   end
 
-  test "perform posts as reply to game start thread" do
+  test "perform posts as reply to EDGE STATS post" do
     game_id = 2025020660
     our_goalie_id = 8479496
     opp_goalie_id = 8476883
@@ -68,13 +68,13 @@ class RodTheBot::EdgeGoalieMatchupWorkerTest < ActiveSupport::TestCase
 
       assert_equal 1, RodTheBot::Post.jobs.size
 
-      # Check that parent_key is set for threading
+      # Check that parent_key points to edge_goalie post
       args = RodTheBot::Post.jobs.first["args"]
       post_key = args[1]
       parent_key = args[2]
 
       assert_match(/edge_goalie_matchup_#{game_id}/, post_key)
-      assert_match(/game_start_#{game_id}/, parent_key)
+      assert_match(/edge_goalie_#{game_id}/, parent_key)
     end
   end
 

@@ -22,9 +22,9 @@ module RodTheBot
       # Get both goalie headshots
       goalie_images = fetch_player_headshots([our_goalie_id, opponent_goalie_id])
 
-      # Post as reply to game start thread
+      # Post as reply to EDGE STATS post
       current_date = Time.now.strftime("%Y%m%d")
-      parent_key = "game_start_#{game_id}:#{current_date}"
+      parent_key = "edge_goalie_#{game_id}:#{current_date}"
       post_key = "edge_goalie_matchup_#{game_id}:#{current_date}"
 
       RodTheBot::Post.perform_async(post_text, post_key, parent_key, nil, goalie_images)

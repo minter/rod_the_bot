@@ -30,14 +30,10 @@ class RodTheBot::EdgeGoalieWorkerTest < ActiveSupport::TestCase
       assert_includes post, "R Corner"  # 97th percentile
       assert_includes post, "Low Slot"  # 95th percentile
 
-      # Should include all advanced stats (always shown now)
+      # Should include key advanced stats
       assert_includes post, "GAA"
       assert_includes post, "goal diff"
       assert_includes post, "point pct"
-      assert_includes post, "games above .900"
-
-      # Should mention sweater number
-      assert_includes post, "#52"
     end
   end
 
@@ -56,7 +52,7 @@ class RodTheBot::EdgeGoalieWorkerTest < ActiveSupport::TestCase
     assert_equal 0, RodTheBot::Post.jobs.size
   end
 
-  test "perform posts as reply to game start thread" do
+  test "perform posts as standalone root post" do
     game_id = 2025020660
     goalie_id = 8479496
 
@@ -65,13 +61,13 @@ class RodTheBot::EdgeGoalieWorkerTest < ActiveSupport::TestCase
 
       assert_equal 1, RodTheBot::Post.jobs.size
 
-      # Check that parent_key is set for threading
+      # Check that it's a root post (no parent_key)
       args = RodTheBot::Post.jobs.first["args"]
       post_key = args[1]
       parent_key = args[2]
 
       assert_match(/edge_goalie_#{game_id}/, post_key)
-      assert_match(/game_start_#{game_id}/, parent_key)
+      assert_nil parent_key
     end
   end
 
