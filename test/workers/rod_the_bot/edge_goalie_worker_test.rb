@@ -23,9 +23,8 @@ class RodTheBot::EdgeGoalieWorkerTest < ActiveSupport::TestCase
 
       # Check the post includes key elements
       assert_includes post, "EDGE STATS: PYOTR KOCHETKOV"
-      assert_includes post, "Best save zones"
 
-      # Should include top save zones
+      # Should include top save zones (no header to save chars)
       assert_includes post, "L Corner"  # 98th percentile
       assert_includes post, "R Corner"  # 97th percentile
       assert_includes post, "Low Slot"  # 95th percentile
