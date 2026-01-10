@@ -9,23 +9,39 @@ class RodTheBot::ThreeMinuteRecapWorkerTest < ActiveSupport::TestCase
   end
 
   def test_perform_with_available_recap
-    skip "ThreeMinuteRecapWorker is currently disabled in GameStream"
-    VCR.use_cassette("nhl_game_#{@game_id}_with_recap") do
-      assert_difference -> { RodTheBot::Post.jobs.size }, 1 do
-        assert_no_difference -> { RodTheBot::ThreeMinuteRecapWorker.jobs.size } do
-          @worker.perform(@game_id)
-        end
+    mock_boxscore = {
+      "gameDate" => "2024-10-11",
+      "awayTeam" => {"abbrev" => "TBL"},
+      "homeTeam" => {"abbrev" => "CAR"}
+    }
+    mock_right_rail = {"gameVideo" => {"threeMinRecap" => 6342049144112}}
+    mock_game_data = {
+      "id" => @game_id,
+      "gameScheduleState" => "OK",
+      "awayTeam" => {"placeName" => {"default" => "Tampa Bay"}},
+      "homeTeam" => {"placeName" => {"default" => "Carolina"}},
+      "startTimeUTC" => "2024-10-11T23:00:00Z"
+    }
+    mock_schedule = {"gameWeek" => [{"games" => [mock_game_data]}]}
+
+    NhlApi.stubs(:fetch_boxscore_feed).returns(mock_boxscore)
+    NhlApi.stubs(:fetch_right_rail_feed).returns(mock_right_rail)
+    NhlApi.stubs(:fetch_league_schedule).returns(mock_schedule)
+
+    assert_difference -> { RodTheBot::Post.jobs.size }, 1 do
+      assert_no_difference -> { RodTheBot::ThreeMinuteRecapWorker.jobs.size } do
+        @worker.perform(@game_id)
       end
     end
 
     last_job = RodTheBot::Post.jobs.last
-    assert_match(/The three-minute recap for .+ at .+ on .+ is now available!/, last_job["args"].first)
-    assert_match %r{https://nhl.com/.*}, last_job["args"].last
+    assert_match(/The recap for .+ at .+ on .+ is now available!/, last_job["args"].first)
+    assert_match %r{https://www.nhl.com/video/tbl-at-car-recap-6342049144112}, last_job["args"].last
   end
 
   def test_perform_without_available_recap
-    skip "ThreeMinuteRecapWorker is currently disabled in GameStream"
     mock_boxscore = {"gameDate" => "2024-10-11"}
+    mock_right_rail = {"gameVideo" => {}}
     mock_game_data = {
       "id" => @game_id,
       "gameScheduleState" => "OK",
@@ -37,6 +53,7 @@ class RodTheBot::ThreeMinuteRecapWorkerTest < ActiveSupport::TestCase
     mock_schedule = {"gameWeek" => [{"games" => [mock_game_data]}]}
 
     NhlApi.stubs(:fetch_boxscore_feed).returns(mock_boxscore)
+    NhlApi.stubs(:fetch_right_rail_feed).returns(mock_right_rail)
     NhlApi.stubs(:fetch_league_schedule).returns(mock_schedule)
 
     assert_no_difference -> { RodTheBot::Post.jobs.size } do
@@ -51,8 +68,8 @@ class RodTheBot::ThreeMinuteRecapWorkerTest < ActiveSupport::TestCase
   end
 
   def test_perform_with_invalid_game_schedule_state
-    skip "ThreeMinuteRecapWorker is currently disabled in GameStream"
     mock_boxscore = {"gameDate" => "2024-10-11"}
+    mock_right_rail = {"gameVideo" => {"threeMinRecap" => 123456}}
     mock_game_data = {
       "id" => @game_id,
       "gameScheduleState" => "NOT_OK",
@@ -64,6 +81,7 @@ class RodTheBot::ThreeMinuteRecapWorkerTest < ActiveSupport::TestCase
     mock_schedule = {"gameWeek" => [{"games" => [mock_game_data]}]}
 
     NhlApi.stubs(:fetch_boxscore_feed).returns(mock_boxscore)
+    NhlApi.stubs(:fetch_right_rail_feed).returns(mock_right_rail)
     NhlApi.stubs(:fetch_league_schedule).returns(mock_schedule)
 
     assert_no_difference -> { RodTheBot::Post.jobs.size } do
@@ -74,11 +92,12 @@ class RodTheBot::ThreeMinuteRecapWorkerTest < ActiveSupport::TestCase
   end
 
   def test_perform_with_nil_game
-    skip "ThreeMinuteRecapWorker is currently disabled in GameStream"
     mock_boxscore = {"gameDate" => "2024-10-11"}
+    mock_right_rail = {"gameVideo" => {"threeMinRecap" => 123456}}
     mock_schedule = {"gameWeek" => [{"games" => []}]}
 
     NhlApi.stubs(:fetch_boxscore_feed).returns(mock_boxscore)
+    NhlApi.stubs(:fetch_right_rail_feed).returns(mock_right_rail)
     NhlApi.stubs(:fetch_league_schedule).returns(mock_schedule)
 
     assert_no_difference -> { RodTheBot::Post.jobs.size } do
@@ -89,14 +108,13 @@ class RodTheBot::ThreeMinuteRecapWorkerTest < ActiveSupport::TestCase
   end
 
   def test_format_recap
-    skip "ThreeMinuteRecapWorker is currently disabled in GameStream"
     mock_game_data = {
       "awayTeam" => {"placeName" => {"default" => "Tampa Bay"}},
       "homeTeam" => {"placeName" => {"default" => "Carolina"}},
       "startTimeUTC" => "2024-10-11T23:00:00Z"
     }
 
-    expected_output = "The three-minute recap for Tampa Bay at Carolina on Friday, October 11 2024 is now available!\n"
+    expected_output = "The recap for Tampa Bay at Carolina on Friday, October 11 2024 is now available!\n"
 
     assert_equal expected_output, @worker.send(:format_recap, mock_game_data)
   end

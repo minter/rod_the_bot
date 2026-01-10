@@ -21,8 +21,7 @@ module RodTheBot
       if game_final
         RodTheBot::FinalScoreWorker.perform_in(60, game_id)
         RodTheBot::ThreeStarsWorker.perform_in(90, game_id)
-        # Disabling due to this data not appearing to be available in the API
-        # RodTheBot::ThreeMinuteRecapWorker.perform_in(600, game_id)
+        RodTheBot::ThreeMinuteRecapWorker.perform_in(600, game_id)
       else
         RodTheBot::GameStream.perform_in(30, game_id)
       end

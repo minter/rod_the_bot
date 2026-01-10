@@ -18,7 +18,7 @@ module RodTheBot
         recap_id = rr["gameVideo"]["threeMinRecap"]
         away_code = boxscore["awayTeam"]["abbrev"].downcase
         home_code = boxscore["homeTeam"]["abbrev"].downcase
-        RodTheBot::Post.perform_async(post, nil, nil, "https://nhl.com/video/#{away_code}-at-#{home_code}-recap-#{recap_id}")
+        RodTheBot::Post.perform_async(post, nil, nil, "https://www.nhl.com/video/#{away_code}-at-#{home_code}-recap-#{recap_id}")
       end
     end
 
@@ -39,7 +39,7 @@ module RodTheBot
       home_team = game["homeTeam"]["placeName"]["default"]
       time = Time.zone.parse(game["startTimeUTC"])
       <<~POST
-        The three-minute recap for #{away_team} at #{home_team} on #{time.strftime("%A, %B %d %Y")} is now available!
+        The recap for #{away_team} at #{home_team} on #{time.strftime("%A, %B %d %Y")} is now available!
       POST
     end
   end
