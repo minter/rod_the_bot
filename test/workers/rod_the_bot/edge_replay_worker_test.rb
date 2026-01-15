@@ -10,6 +10,7 @@ class RodTheBot::EdgeReplayWorkerTest < ActiveSupport::TestCase
     # Create output directory for tests
     @output_dir = Rails.root.join("tmp", "edge_replays")
     FileUtils.mkdir_p(@output_dir)
+    @created_files = []
   end
 
   test "perform returns early if replay already exists" do
@@ -19,17 +20,13 @@ class RodTheBot::EdgeReplayWorkerTest < ActiveSupport::TestCase
     # Create a dummy replay file
     output_path = @output_dir.join("#{game_id}_#{event_id}_replay.mp4")
     FileUtils.touch(output_path)
+    @created_files << output_path
 
-    begin
-      result = @worker.perform(game_id, event_id)
+    result = @worker.perform(game_id, event_id)
 
-      assert_equal output_path.to_s, result
-      # Should not create a post job since no redis_key provided
-      assert_equal 0, RodTheBot::Post.jobs.size
-    ensure
-      # Cleanup
-      File.delete(output_path) if File.exist?(output_path)
-    end
+    assert_equal output_path.to_s, result
+    # Should not create a post job since no redis_key provided
+    assert_equal 0, RodTheBot::Post.jobs.size
   end
 
   test "perform retries if EDGE JSON not available" do
@@ -86,9 +83,8 @@ class RodTheBot::EdgeReplayWorkerTest < ActiveSupport::TestCase
 
   def teardown
     Sidekiq::Worker.clear_all
-    # Clean up any test files
-    Dir.glob(@output_dir.join("*_replay.mp4")).each do |file|
-      File.delete(file) if File.basename(file).start_with?("2025020660")
+    @created_files.each do |file|
+      File.delete(file) if File.exist?(file)
     end
   end
 end
