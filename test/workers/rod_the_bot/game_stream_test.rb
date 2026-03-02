@@ -16,12 +16,10 @@ class RodTheBot::GameStreamTest < ActiveSupport::TestCase
 
   test "perform processes plays correctly" do
     VCR.use_cassette("game_stream_#{@game_id}_in_progress", allow_playback_repeats: true) do
-      # Allow both goal-specific keys (completed/scheduled) and regular event keys
-      # Goals use: "#{game_id}:goal:completed:#{eventId}" and "#{game_id}:goal:scheduled:#{eventId}"
-      # Other plays use: "#{game_id}:#{eventId}"
+      # Allow all Redis GET calls (logging + deduplication checks)
       REDIS.expects(:get).with(regexp_matches(/#{@game_id}/)).returns(nil).at_least_once
-      # Goals set scheduled key with 300s expiration, other plays set with 172800s expiration
-      REDIS.expects(:set).with(regexp_matches(/#{@game_id}/), "true", ex: anything).returns("OK").at_least_once
+      # Atomic SET NX for deduplication
+      REDIS.expects(:set).with(regexp_matches(/#{@game_id}/), "true", has_entries(nx: true)).returns(true).at_least_once
 
       @game_stream.perform(@game_id)
 
@@ -40,11 +38,11 @@ class RodTheBot::GameStreamTest < ActiveSupport::TestCase
 
     play = {"typeDescKey" => "goal", "eventId" => "73"}
 
-    # For goals, the code checks completed key twice (once for logging, once for condition)
-    # and scheduled key twice (once for logging, once for condition)
+    # For goals: logging block checks completed + scheduled keys, then dedup checks completed again
     REDIS.expects(:get).with("#{@game_id}:goal:completed:73").returns(nil).twice
-    REDIS.expects(:get).with("#{@game_id}:goal:scheduled:73").returns(nil).twice
-    REDIS.expects(:set).with("#{@game_id}:goal:scheduled:73", "true", ex: 300).returns("OK")
+    REDIS.expects(:get).with("#{@game_id}:goal:scheduled:73").returns(nil).once
+    # Atomic SET NX on scheduled key for deduplication
+    REDIS.expects(:set).with("#{@game_id}:goal:scheduled:73", "true", nx: true, ex: 300).returns(true)
 
     @game_stream.instance_variable_set(:@game_id, @game_id)
     @game_stream.send(:process_play, play)

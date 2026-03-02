@@ -2,7 +2,9 @@ module RodTheBot
   class ThreeMinuteRecapWorker
     include Sidekiq::Worker
 
-    def perform(game_id)
+    MAX_RETRIES = 6 # 1 hour max (6 retries * 10 minutes)
+
+    def perform(game_id, retry_count = 0)
       boxscore = NhlApi.fetch_boxscore_feed(game_id)
       rr = NhlApi.fetch_right_rail_feed(game_id)
       gamedate = boxscore["gameDate"]
@@ -12,7 +14,11 @@ module RodTheBot
       return if game["gameScheduleState"] != "OK"
 
       if rr["gameVideo"].blank? || rr["gameVideo"]["threeMinRecap"].blank?
-        RodTheBot::ThreeMinuteRecapWorker.perform_in(600, game_id)
+        if retry_count < MAX_RETRIES
+          RodTheBot::ThreeMinuteRecapWorker.perform_in(600, game_id, retry_count + 1)
+        else
+          Rails.logger.warn "ThreeMinuteRecapWorker: Recap unavailable for game #{game_id} after #{retry_count} retries. Giving up."
+        end
       else
         post = format_recap(game)
         recap_id = rr["gameVideo"]["threeMinRecap"]
@@ -20,6 +26,10 @@ module RodTheBot
         home_code = boxscore["homeTeam"]["abbrev"].downcase
         RodTheBot::Post.perform_async(post, nil, nil, "https://www.nhl.com/video/#{away_code}-at-#{home_code}-recap-#{recap_id}")
       end
+    rescue NhlApi::APIError => e
+      Rails.logger.error "ThreeMinuteRecapWorker: API error for game #{game_id}: #{e.message}"
+    rescue => e
+      Rails.logger.error "ThreeMinuteRecapWorker: Unexpected error for game #{game_id}: #{e.class} - #{e.message}\n#{e.backtrace&.first(5)&.join("\n")}"
     end
 
     private

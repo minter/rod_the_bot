@@ -25,6 +25,12 @@ module RodTheBot
       else
         RodTheBot::GameStream.perform_in(30, game_id)
       end
+    rescue NhlApi::APIError => e
+      Rails.logger.error "GameStream: API error for game #{game_id}: #{e.message}. Retrying in 30 seconds."
+      RodTheBot::GameStream.perform_in(30, game_id)
+    rescue => e
+      Rails.logger.error "GameStream: Unexpected error for game #{game_id}: #{e.class} - #{e.message}\n#{e.backtrace&.first(5)&.join("\n")}"
+      RodTheBot::GameStream.perform_in(30, game_id)
     end
 
     private
@@ -49,34 +55,29 @@ module RodTheBot
         Rails.logger.info "GameStream: Found goal event #{play["eventId"]} for game #{game_id}. Already completed: #{already_completed}, Already scheduled: #{already_scheduled}, worker_class: #{worker_class.inspect}"
       end
 
-      if REDIS.get(redis_key).nil?
-        # For goals, use a temporary "scheduled" key to prevent duplicate scheduling
-        # This expires after 5 minutes (enough time for the 90s delay + processing)
-        if play["typeDescKey"] == "goal"
-          scheduled_key = "#{game_id}:goal:scheduled:#{play["eventId"]}"
-          if REDIS.get(scheduled_key).nil?
-            worker_class.perform_in(delay, game_id, play)
-            REDIS.set(scheduled_key, "true", ex: 300) # 5 minutes
-          end
-        else
+      if play["typeDescKey"] == "goal"
+        # Use atomic SET NX to prevent duplicate goal scheduling across concurrent workers
+        scheduled_key = "#{game_id}:goal:scheduled:#{play["eventId"]}"
+        if REDIS.get(redis_key).nil? && REDIS.set(scheduled_key, "true", nx: true, ex: 300)
           worker_class.perform_in(delay, game_id, play)
-          REDIS.set(redis_key, "true", ex: 172800)
         end
-
-        # Schedule milestone check with delay to allow NHL API stats to update (only during regular season and playoffs)
-        schedule_milestone_check(play) unless NhlApi.preseason?
+      elsif REDIS.set(redis_key, "true", nx: true, ex: 172800)
+        # Use atomic SET NX to prevent duplicate event processing
+        worker_class.perform_in(delay, game_id, play)
       end
+
+      # Schedule milestone check with delay to allow NHL API stats to update (only during regular season and playoffs)
+      schedule_milestone_check(play) unless NhlApi.preseason?
     end
 
     def schedule_milestone_check(play)
       # Schedule milestone check immediately since we calculate from pre-game stats
-      # Use a unique Redis key to prevent duplicate milestone checks
+      # Use atomic SET NX to prevent duplicate milestone checks
       milestone_key = "#{game_id}:milestone:#{play["eventId"]}"
 
-      if REDIS.get(milestone_key).nil?
+      if REDIS.set(milestone_key, "true", nx: true, ex: 172800)
         # Check immediately (30 seconds after the play) using pre-game stats + in-game calculation
         RodTheBot::MilestoneCheckerWorker.perform_in(30, game_id, play)
-        REDIS.set(milestone_key, "true", ex: 172800)
       end
     end
 

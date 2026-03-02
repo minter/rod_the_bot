@@ -20,6 +20,10 @@ module RodTheBot
 
       RodTheBot::Post.perform_async(end_of_period_post)
       RodTheBot::EndOfPeriodStatsWorker.perform_in(60, game_id, period_descriptor.fetch("number", 1))
+    rescue NhlApi::APIError => e
+      Rails.logger.error "EndOfPeriodWorker: API error for game #{game_id}: #{e.message}"
+    rescue => e
+      Rails.logger.error "EndOfPeriodWorker: Unexpected error for game #{game_id}: #{e.class} - #{e.message}\n#{e.backtrace&.first(5)&.join("\n")}"
     end
 
     private

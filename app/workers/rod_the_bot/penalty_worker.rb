@@ -62,7 +62,9 @@ module RodTheBot
       "game-misconduct-head-coach" => "Game Misconduct (Head Coach)"
     }.freeze
 
-    def perform(game_id, play)
+    MAX_DESC_RETRIES = 12 # 2 minutes max (12 retries * 10 seconds)
+
+    def perform(game_id, play, desc_retry_count = 0)
       @feed = NhlApi.fetch_pbp_feed(game_id)
       return if play.blank?
 
@@ -71,7 +73,11 @@ module RodTheBot
 
       # Check if descKey is still "minor" and re-queue if so
       if @play["details"]["descKey"] == "minor"
-        self.class.perform_in(10.seconds, game_id, play) # Re-queue the job after 10 seconds
+        if desc_retry_count < MAX_DESC_RETRIES
+          self.class.perform_in(10.seconds, game_id, play, desc_retry_count + 1)
+        else
+          Rails.logger.warn "PenaltyWorker: descKey still 'minor' for game #{game_id}, play #{play["eventId"]} after #{desc_retry_count} retries. Posting with generic description."
+        end
         return
       end
 
@@ -149,6 +155,10 @@ module RodTheBot
       headshot = penalized_player_landing_feed&.dig("headshot")
       images = headshot ? [headshot] : []
       RodTheBot::Post.perform_async(post, nil, nil, nil, images)
+    rescue NhlApi::APIError => e
+      Rails.logger.error "PenaltyWorker: API error for game #{game_id}: #{e.message}"
+    rescue => e
+      Rails.logger.error "PenaltyWorker: Unexpected error for game #{game_id}: #{e.class} - #{e.message}\n#{e.backtrace&.first(5)&.join("\n")}"
     end
 
     def build_players(feed)

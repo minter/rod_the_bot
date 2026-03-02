@@ -6,6 +6,7 @@ module RodTheBot
     include RodTheBot::PlayerFormatter
 
     def perform(game_id, play)
+      @game_id = game_id
       @feed = NhlApi.fetch_pbp_feed(game_id)
       @play_id = play["eventId"]
       @play = NhlApi.fetch_play(game_id, @play_id)
@@ -104,6 +105,10 @@ module RodTheBot
 
       # Mark as completed only after successfully scheduling all workers
       REDIS.set(completion_key, "true", ex: 172800)
+    rescue NhlApi::APIError => e
+      Rails.logger.error "GoalWorker: API error for game #{@game_id}, play #{play["eventId"]}: #{e.message}"
+    rescue => e
+      Rails.logger.error "GoalWorker: Unexpected error for game #{@game_id}, play #{play["eventId"]}: #{e.class} - #{e.message}\n#{e.backtrace&.first(5)&.join("\n")}"
     end
 
     def build_post(scoring_team:, modifiers:, players:, play:, period_name:, away:, home:)

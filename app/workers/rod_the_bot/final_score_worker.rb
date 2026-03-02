@@ -19,6 +19,10 @@ module RodTheBot
 
       RodTheBot::Post.perform_async(post)
       RodTheBot::EndOfPeriodStatsWorker.perform_async(game_id, "")
+    rescue NhlApi::APIError => e
+      Rails.logger.error "FinalScoreWorker: API error for game #{game_id}: #{e.message}"
+    rescue => e
+      Rails.logger.error "FinalScoreWorker: Unexpected error for game #{game_id}: #{e.class} - #{e.message}\n#{e.backtrace&.first(5)&.join("\n")}"
     end
 
     private

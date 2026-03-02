@@ -5,16 +5,24 @@ module RodTheBot
 
     attr_reader :feed
 
-    def perform(game_id)
+    MAX_RETRIES = 15 # 15 minutes max (15 retries * 60 seconds)
+
+    def perform(game_id, retry_count = 0)
       @game_id = game_id
       @feed = NhlApi.fetch_landing_feed(game_id)
 
       if feed["summary"].present? && feed["summary"]["threeStars"].present?
         post = format_three_stars(feed["summary"]["threeStars"])
         post_three_stars(post)
+      elsif retry_count < MAX_RETRIES
+        RodTheBot::ThreeStarsWorker.perform_in(60, game_id, retry_count + 1)
       else
-        RodTheBot::ThreeStarsWorker.perform_in(60, game_id)
+        Rails.logger.warn "ThreeStarsWorker: Three stars data unavailable for game #{game_id} after #{retry_count} retries. Giving up."
       end
+    rescue NhlApi::APIError => e
+      Rails.logger.error "ThreeStarsWorker: API error for game #{game_id}: #{e.message}"
+    rescue => e
+      Rails.logger.error "ThreeStarsWorker: Unexpected error for game #{game_id}: #{e.class} - #{e.message}\n#{e.backtrace&.first(5)&.join("\n")}"
     end
 
     private

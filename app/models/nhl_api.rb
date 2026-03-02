@@ -502,6 +502,8 @@ class NhlApi
       raise APIError, "API request failed: #{response.code}" unless response.success?
 
       response.parsed_response
+    rescue Net::OpenTimeout, Net::ReadTimeout, SocketError, Errno::ECONNREFUSED, Errno::ECONNRESET => e
+      raise APIError, "Network error fetching #{path}: #{e.class} - #{e.message}"
     end
 
     def format_value(value, category)

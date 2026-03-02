@@ -38,6 +38,17 @@ module RodTheBot
       if ENV["DEBUG_POSTS"] == "true"
         log_post(post)
       end
+    rescue => e
+      Rails.logger.error "Post: Failed to post to Bluesky: #{e.class} - #{e.message}\n#{e.backtrace&.first(5)&.join("\n")}"
+    ensure
+      # Always clean up video files to prevent accumulation
+      if video_file_path
+        begin
+          File.unlink(video_file_path) if File.exist?(video_file_path)
+        rescue => e
+          Rails.logger.warn "Post: Failed to clean up video file #{video_file_path}: #{e.message}"
+        end
+      end
     end
 
     private
@@ -62,9 +73,7 @@ module RodTheBot
       # Filter out nil values from embed_images - Bsky client expects String (URL) or File objects only
       embed_images = Array(embed_images).compact
 
-      post = @bsky.create_post(post, embed_url: embed_url, embed_images: embed_images, embed_video: embed_video)
-      File.unlink(embed_video) if embed_video && File.exist?(embed_video)
-      post
+      @bsky.create_post(post, embed_url: embed_url, embed_images: embed_images, embed_video: embed_video)
     end
 
     def create_reply(reply_uri, post, embed_url: nil, embed_images: [], embed_video: nil)
@@ -74,9 +83,7 @@ module RodTheBot
       embed_images = Array(embed_images).compact
 
       Rails.logger.info "Creating reply to #{reply_uri} with post #{post} and embed_url #{embed_url}"
-      post = @bsky.create_reply(reply_uri, post, embed_url: embed_url, embed_images: embed_images, embed_video: embed_video)
-      File.unlink(embed_video) if embed_video && File.exist?(embed_video)
-      post
+      @bsky.create_reply(reply_uri, post, embed_url: embed_url, embed_images: embed_images, embed_video: embed_video)
     end
 
     def log_post(post)

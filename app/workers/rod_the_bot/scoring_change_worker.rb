@@ -68,6 +68,10 @@ module RodTheBot
 
       # Post as reply - Post worker will update last_reply_key after successful post
       RodTheBot::Post.perform_async(post, scoring_key, parent_key, nil, goal_images(players, @play), nil, redis_key)
+    rescue NhlApi::APIError => e
+      Rails.logger.error "ScoringChangeWorker: API error for game #{game_id}, play #{play_id}: #{e.message}"
+    rescue => e
+      Rails.logger.error "ScoringChangeWorker: Unexpected error for game #{game_id}, play #{play_id}: #{e.class} - #{e.message}\n#{e.backtrace&.first(5)&.join("\n")}"
     end
 
     def build_players(feed)

@@ -22,6 +22,10 @@ module RodTheBot
         post = format_post(period_descriptor, home, away)
         RodTheBot::Post.perform_async(post)
       end
+    rescue NhlApi::APIError => e
+      Rails.logger.error "PeriodStartWorker: API error for game #{game_id}: #{e.message}"
+    rescue => e
+      Rails.logger.error "PeriodStartWorker: Unexpected error for game #{game_id}: #{e.class} - #{e.message}\n#{e.backtrace&.first(5)&.join("\n")}"
     end
 
     def format_post(period_descriptor, home, away)

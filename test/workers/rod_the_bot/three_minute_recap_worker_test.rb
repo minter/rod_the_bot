@@ -63,7 +63,7 @@ class RodTheBot::ThreeMinuteRecapWorkerTest < ActiveSupport::TestCase
     end
 
     last_job = RodTheBot::ThreeMinuteRecapWorker.jobs.last
-    assert_equal [@game_id], last_job["args"]
+    assert_equal [@game_id, 1], last_job["args"]
     assert_in_delta 600, last_job["at"] - Time.now.to_f, 1
   end
 
