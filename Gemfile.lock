@@ -1,6 +1,6 @@
 GIT
   remote: https://github.com/minter/bskyrb.git
-  revision: dee41991abb96661d15d9ffc4c6e574384bc4849
+  revision: e769b13a3bbf9dc306e335ee9fd19d4ad6260ade
   branch: main
   specs:
     bskyrb (0.5.3)
@@ -92,7 +92,7 @@ GEM
       securerandom (>= 0.3)
       tzinfo (~> 2.0, >= 2.0.5)
       uri (>= 0.13.1)
-    addressable (2.8.8)
+    addressable (2.8.9)
       public_suffix (>= 2.0.2, < 8.0)
     ast (2.4.3)
     base64 (0.3.0)
@@ -167,7 +167,7 @@ GEM
     mock_redis (0.53.0)
       redis (~> 5)
     msgpack (1.8.0)
-    multi_json (1.18.0)
+    multi_json (1.19.1)
     multi_xml (0.8.1)
       bigdecimal (>= 3.1, < 5)
     net-imap (0.6.2)
@@ -213,7 +213,7 @@ GEM
     psych (5.3.1)
       date
       stringio
-    public_suffix (7.0.0)
+    public_suffix (7.0.2)
     raabro (1.4.0)
     racc (1.8.1)
     rack (3.2.5)
