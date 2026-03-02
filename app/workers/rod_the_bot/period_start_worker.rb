@@ -11,8 +11,11 @@ module RodTheBot
       home = feed.fetch("homeTeam", {})
       away = feed.fetch("awayTeam", {})
 
-      # Skip posting the start of the shootout
-      return if play["periodDescriptor"]["periodType"] == "SO"
+      # Trigger shootout worker instead of regular period start
+      if play["periodDescriptor"]["periodType"] == "SO"
+        RodTheBot::ShootoutWorker.perform_in(30, game_id)
+        return
+      end
 
       period_descriptor = play.fetch("periodDescriptor", {})
       if period_descriptor.fetch("number") == 1

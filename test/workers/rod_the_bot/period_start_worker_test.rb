@@ -51,7 +51,7 @@ class RodTheBot::PeriodStartWorkerTest < ActiveSupport::TestCase
     end
   end
 
-  test "perform for shootout" do
+  test "perform for shootout triggers ShootoutWorker" do
     game_id = "2023020341"
     VCR.use_cassette("nhl_gamecenter_pbp_#{game_id}") do
       play = {
@@ -62,7 +62,11 @@ class RodTheBot::PeriodStartWorkerTest < ActiveSupport::TestCase
       RodTheBot::GameStartWorker.expects(:perform_async).never
       RodTheBot::Post.expects(:perform_async).never
 
+      Sidekiq::Worker.clear_all
       @worker.perform(game_id, play)
+
+      assert_equal 1, RodTheBot::ShootoutWorker.jobs.size
+      assert_equal [game_id], RodTheBot::ShootoutWorker.jobs.first["args"]
     end
   end
 end
