@@ -13,6 +13,8 @@ class RodTheBot::EdgeTeamShotSpeedWorkerTest < ActiveSupport::TestCase
 
   test "perform creates post with shot speed data" do
     game_id = 2025020660
+    NhlApi.stubs(:roster).with("CAR").returns({8482100 => {}})
+    NhlApi.stubs(:roster).with("NJD").returns({8479772 => {}})
 
     VCR.use_cassette("edge_team_shot_speed_#{game_id}") do
       @worker.perform(game_id)
@@ -55,8 +57,26 @@ class RodTheBot::EdgeTeamShotSpeedWorkerTest < ActiveSupport::TestCase
     assert_equal 0, RodTheBot::Post.jobs.size
   end
 
+  test "filters out traded players and shows next active player" do
+    game_id = 2025020660
+    # Simulate Nikishin being traded - CAR roster only has a different player
+    NhlApi.stubs(:roster).with("CAR").returns({8479407 => {}})
+    NhlApi.stubs(:roster).with("NJD").returns({8479772 => {}})
+
+    VCR.use_cassette("edge_team_shot_speed_#{game_id}") do
+      @worker.perform(game_id)
+
+      assert_equal 1, RodTheBot::Post.jobs.size
+      post = RodTheBot::Post.jobs.first["args"].first
+      # Should not show Nikishin since he's no longer on the roster
+      assert_not_includes post, "Alexander Nikishin"
+    end
+  end
+
   test "perform includes player headshots when available" do
     game_id = 2025020660
+    NhlApi.stubs(:roster).with("CAR").returns({8482100 => {}})
+    NhlApi.stubs(:roster).with("NJD").returns({8479772 => {}})
 
     VCR.use_cassette("edge_team_shot_speed_#{game_id}") do
       @worker.perform(game_id)
@@ -67,6 +87,22 @@ class RodTheBot::EdgeTeamShotSpeedWorkerTest < ActiveSupport::TestCase
       assert_kind_of Array, images
       # Should have up to 2 images (hardest shot from each team)
       assert_operator images.compact.length, :<=, 2
+    end
+  end
+
+  test "filters out Justin Faulk (traded from STL) for STL @ CAR game" do
+    game_id = 2025021033
+
+    VCR.use_cassette("edge_team_shot_speed_#{game_id}") do
+      @worker.perform(game_id)
+
+      assert_equal 1, RodTheBot::Post.jobs.size
+      post = RodTheBot::Post.jobs.first["args"].first
+      # Faulk (8475753) was traded to DET mid-season and should not appear
+      assert_not_includes post, "Justin Faulk"
+      # The next active STL player should be shown instead
+      assert_includes post, "Jimmy Snuggerud"
+      assert_includes post, "STL shot speed:"
     end
   end
 

@@ -12,6 +12,11 @@ module RodTheBot
 
       our_team_abbrev, opponent_team_abbrev, opponent_speed_data = fetch_opponent_data(game_id, team_id)
 
+      # Filter top speeds to only players currently on each roster
+      our_abbrev = our_team_abbrev || ENV["NHL_TEAM_ABBREVIATION"]
+      speed_data = filter_to_active_players(speed_data, "topSkatingSpeeds", our_abbrev)
+      opponent_speed_data = filter_to_active_players(opponent_speed_data, "topSkatingSpeeds", opponent_team_abbrev)
+
       # Get player IDs for headshots
       player_ids = []
       player_ids << speed_data.dig("topSkatingSpeeds", 0, "player", "id") if speed_data.dig("topSkatingSpeeds", 0, "player")
@@ -51,6 +56,14 @@ module RodTheBot
       opp_speed_data = opponent_id ? NhlApi.fetch_team_skating_speed_detail(opponent_id) : nil
 
       [our_abbrev, opp_abbrev, opp_speed_data]
+    end
+
+    def filter_to_active_players(data, players_key, team_abbrev)
+      return data unless data && team_abbrev
+
+      roster = NhlApi.roster(team_abbrev)
+      active = data[players_key]&.select { |p| roster.key?(p.dig("player", "id")) } || []
+      data.merge(players_key => active)
     end
 
     def format_team_speed_post(data, opponent_data, our_team_abbrev, opponent_team_abbrev)
