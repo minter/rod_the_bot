@@ -106,6 +106,30 @@ class RodTheBot::GoalWorkerTest < ActiveSupport::TestCase
     end
   end
 
+  def test_penalty_shot_goal
+    @game_id = "2025021094"
+    @play_id = "153"
+    VCR.use_cassette("nhl_game_#{@game_id}_goal_play_#{@play_id}", allow_playback_repeats: true) do
+      feed = NhlApi.fetch_pbp_feed(@game_id)
+      play = feed["plays"].find { |play| play["eventId"].to_i == @play_id.to_i }
+
+      @goal_worker.perform(@game_id, play)
+
+      assert_equal 1, RodTheBot::Post.jobs.size
+      assert_equal 1, RodTheBot::ScoringChangeWorker.jobs.size
+      expected_output = <<~POST
+        🎉 Hurricanes Penalty Shot GOOOOOOOAL!
+
+        🚨 #50 Eric Robinson (12)
+        🍎 Unassisted
+        ⏱️  12:35 2nd Period
+
+        CAR 2 - TOR 1
+      POST
+      assert_equal expected_output, RodTheBot::Post.jobs.first["args"].first
+    end
+  end
+
   def test_home_eng
     @game_id = "2023020702"
     @play_id = "859"

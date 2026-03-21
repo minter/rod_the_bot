@@ -101,7 +101,7 @@ module RodTheBot
       RodTheBot::ScoringChangeWorker.perform_in(600, game_id, play["eventId"], original_play, redis_key)
       RodTheBot::GoalHighlightWorker.perform_in(10, game_id, play["eventId"], redis_key) if scoring_team == @your_team
       # Generate and post EDGE replay visualization (delay 1 minute to allow EDGE data to be available)
-      RodTheBot::EdgeReplayWorker.perform_in(1.minute, game_id, @play_id, redis_key)
+      RodTheBot::EdgeReplayWorker.perform_in(1.minute, game_id, @play_id, redis_key) unless penalty_shot?(@play["situationCode"].to_s)
 
       # Mark as completed only after successfully scheduling all workers
       REDIS.set(completion_key, "true", ex: 172800)
@@ -196,11 +196,20 @@ module RodTheBot
         end
 
       modifiers = []
-      modifiers << "Shorthanded" if scoring_team_players < opposing_team_players
-      modifiers << "Power Play" if scoring_team_players > opposing_team_players
-      modifiers << "Empty Net" if opposing_team_goalies == 0
+      if penalty_shot?(situation_code)
+        modifiers << "Penalty Shot"
+      else
+        modifiers << "Shorthanded" if scoring_team_players < opposing_team_players
+        modifiers << "Power Play" if scoring_team_players > opposing_team_players
+        modifiers << "Empty Net" if opposing_team_goalies == 0
+      end
 
       modifiers.empty? ? "" : " " + modifiers.join(", ")
+    end
+
+    def penalty_shot?(situation_code)
+      away_goalies, away_skaters, home_skaters, home_goalies = situation_code.chars.map(&:to_i)
+      (away_goalies + away_skaters) == 1 && (home_goalies + home_skaters) == 1
     end
   end
 end
