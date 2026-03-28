@@ -162,6 +162,70 @@ class RodTheBot::GameStartWorkerTest < ActiveSupport::TestCase
     end
   end
 
+  test "re-queues when home goalie is missing and retries remain" do
+    NhlApi.expects(:fetch_pbp_feed).returns({
+      "summary" => {
+        "iceSurface" => {
+          "homeTeam" => {"goalies" => []},
+          "awayTeam" => {"goalies" => [{"playerId" => "456", "name" => {"default" => "Away Goalie"}}]}
+        }
+      },
+      "homeTeam" => {"id" => 1},
+      "awayTeam" => {"id" => 2}
+    })
+
+    RodTheBot::GameStartWorker.expects(:perform_in).with(30.seconds, @game_id, 1).once
+    RodTheBot::Post.expects(:perform_async).never
+
+    @game_start_worker.perform(@game_id, 0)
+  end
+
+  test "re-queues when away goalie is missing and retries remain" do
+    NhlApi.expects(:fetch_pbp_feed).returns({
+      "summary" => {
+        "iceSurface" => {
+          "homeTeam" => {"goalies" => [{"playerId" => "123", "name" => {"default" => "Home Goalie"}}]},
+          "awayTeam" => {"goalies" => []}
+        }
+      },
+      "homeTeam" => {"id" => 1},
+      "awayTeam" => {"id" => 2}
+    })
+
+    RodTheBot::GameStartWorker.expects(:perform_in).with(30.seconds, @game_id, 1).once
+    RodTheBot::Post.expects(:perform_async).never
+
+    @game_start_worker.perform(@game_id, 0)
+  end
+
+  test "proceeds with unknown goalies when retries exhausted" do
+    NhlApi.expects(:fetch_pbp_feed).returns({
+      "id" => @game_id,
+      "summary" => {
+        "iceSurface" => {
+          "homeTeam" => {"goalies" => []},
+          "awayTeam" => {"goalies" => []}
+        }
+      },
+      "gameType" => 2,
+      "venue" => {"default" => "Test Arena"},
+      "homeTeam" => {"id" => 1, "abbrev" => "HOME", "commonName" => {"default" => "Home Team"}},
+      "awayTeam" => {"id" => 2, "abbrev" => "AWAY", "commonName" => {"default" => "Away Team"}}
+    })
+
+    NhlApi.expects(:game_rosters).with(@game_id).returns({})
+    NhlApi.expects(:officials).returns({referees: ["Ref1"], linesmen: ["Lines1"]})
+    NhlApi.expects(:scratches).returns(nil)
+
+    REDIS.expects(:set).with("game:#{@game_id}:current_goalie:1", "", ex: 28800).once
+    REDIS.expects(:set).with("game:#{@game_id}:current_goalie:2", "", ex: 28800).once
+
+    RodTheBot::Post.expects(:perform_async).once
+    RodTheBot::Post.expects(:perform_in).once
+
+    @game_start_worker.perform(@game_id, 5)
+  end
+
   test "get_goalie_images handles nil player_id" do
     home_goalie = {"playerId" => nil, "sweaterNumber" => "?", "name" => {"default" => "Unknown Goalie"}}
     away_goalie = {"playerId" => nil, "sweaterNumber" => "?", "name" => {"default" => "Unknown Goalie"}}

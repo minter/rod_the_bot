@@ -4,11 +4,22 @@ module RodTheBot
     include RodTheBot::PlayerFormatter
     include PlayerImageHelper
 
-    def perform(game_id)
+    MAX_GOALIE_RETRIES = 5
+    GOALIE_RETRY_INTERVAL = 30.seconds
+
+    def perform(game_id, retry_count = 0)
       @feed = NhlApi.fetch_pbp_feed(game_id)
       home_goalie = find_starting_goalie("homeTeam")
-      home_goalie_record = find_goalie_record(home_goalie["playerId"])
       away_goalie = find_starting_goalie("awayTeam")
+
+      # Re-queue if either goalie is missing and we haven't exhausted retries
+      if (home_goalie["playerId"].nil? || away_goalie["playerId"].nil?) && retry_count < MAX_GOALIE_RETRIES
+        Rails.logger.info "GameStartWorker: Missing goalie data for game #{game_id}, re-queuing (attempt #{retry_count + 1}/#{MAX_GOALIE_RETRIES})"
+        self.class.perform_in(GOALIE_RETRY_INTERVAL, game_id, retry_count + 1)
+        return
+      end
+
+      home_goalie_record = find_goalie_record(home_goalie["playerId"])
       away_goalie_record = find_goalie_record(away_goalie["playerId"])
       goalie_images = get_goalie_images(home_goalie, away_goalie)
 
