@@ -116,7 +116,7 @@ module RodTheBot
 
       period_name = format_period_name(@play["periodDescriptor"]["number"])
 
-      post += if play["details"]["typeCode"] == "BEN"
+      post += if @play["details"]["typeCode"] == "BEN"
         served_by_player_name = format_player_from_roster(players, served_player_id)
         <<~POST
           Bench Minor - #{format_penalty_name(@play["details"]["descKey"])}
@@ -124,7 +124,7 @@ module RodTheBot
 
           That's a #{@play["details"]["duration"]} minute penalty at #{@play["timeInPeriod"]} of the #{period_name}
         POST
-      elsif play["details"]["typeCode"] == "PS"
+      elsif @play["details"]["typeCode"] == "PS"
         main_player_name = format_player_from_roster(players, committed_player_id)
         <<~POST
           #{main_player_name} - #{format_penalty_name(@play["details"]["descKey"].sub(/^ps-/, ""))}
