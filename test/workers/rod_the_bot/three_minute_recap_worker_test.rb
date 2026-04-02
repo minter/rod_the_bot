@@ -36,7 +36,7 @@ class RodTheBot::ThreeMinuteRecapWorkerTest < ActiveSupport::TestCase
 
     last_job = RodTheBot::Post.jobs.last
     assert_match(/The recap for .+ at .+ on .+ is now available!/, last_job["args"].first)
-    assert_match %r{https://www.nhl.com/video/tbl-at-car-recap-6342049144112}, last_job["args"].last
+    assert_match %r{https://www\.nhl\.com/video/tbl-at-car-recap-6342049144112}, last_job["args"].last
   end
 
   def test_perform_without_available_recap
