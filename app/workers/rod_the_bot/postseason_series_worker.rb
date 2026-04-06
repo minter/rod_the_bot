@@ -4,22 +4,35 @@ module RodTheBot
 
     def perform
       carousel = NhlApi.fetch_postseason_carousel
+      return if carousel.blank?
+
       rounds = carousel["rounds"]
-      current_round = carousel["currentRound"]
-      current_series = fetch_current_series(rounds, current_round)
+      return if rounds.blank?
+
+      current_series = fetch_current_series(rounds)
+      return if current_series.blank?
+
       post = format_series(current_series)
       RodTheBot::Post.perform_async(post)
     end
 
     private
 
-    def fetch_current_series(rounds, current_round)
-      current_series = rounds.find { |round| round["roundNumber"] == current_round }
-      if current_round > 1 && current_series["series"].select { |s| s["bottomSeed"]["wins"] > 0 || s["topSeed"]["wins"] > 0 }.blank?
-        # We're past round 1, and no games played in the "current round", so report the previous round
-        current_series = rounds.find { |round| round["roundNumber"] == (current_round - 1) }
-      end
-      current_series
+    # Prefer the earliest round that still has an undecided series, so we keep posting that
+    # round until every series has a winner—even if the API's currentRound advances early.
+    def fetch_current_series(rounds)
+      sorted = rounds.sort_by { |r| r["roundNumber"].to_i }
+      incomplete = sorted.find { |round| round_in_progress?(round) }
+      incomplete || sorted.last
+    end
+
+    def round_in_progress?(round)
+      (round["series"] || []).any? { |series| !series_decided?(series) }
+    end
+
+    def series_decided?(series)
+      needed = series["neededToWin"]
+      series["topSeed"]["wins"] == needed || series["bottomSeed"]["wins"] == needed
     end
 
     def format_series(current_series)
