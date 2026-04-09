@@ -101,7 +101,7 @@ module RodTheBot
       game_chunks[1..].each_with_index do |chunk, index|
         chunk_key = "#{base_key}:#{index + 2}"
         parent_key = (index == 0) ? first_key : "#{base_key}:#{index + 1}"
-        RodTheBot::Post.perform_in((index + 1).seconds, chunk, chunk_key, parent_key)
+        RodTheBot::Post.perform_in(((index + 1) * 30).seconds, chunk, chunk_key, parent_key)
       end
     end
 
