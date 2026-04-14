@@ -168,7 +168,7 @@ GEM
     mock_redis (0.53.0)
       redis (~> 5)
     msgpack (1.8.0)
-    multi_json (1.20.0)
+    multi_json (1.20.1)
     multi_xml (0.8.1)
       bigdecimal (>= 3.1, < 5)
     net-imap (0.6.3)
@@ -257,7 +257,7 @@ GEM
       tsort (>= 0.2)
       zeitwerk (~> 2.6)
     rainbow (3.1.1)
-    rake (13.3.1)
+    rake (13.4.1)
     rdoc (7.2.0)
       erb
       psych (>= 4.0.0)
