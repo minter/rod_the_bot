@@ -148,6 +148,21 @@ module RodTheBot
       media
     end
 
+    private
+
+    def playoff_series_state(series_status)
+      top_wins = series_status["topSeedWins"]
+      bottom_wins = series_status["bottomSeedWins"]
+
+      if top_wins == bottom_wins
+        "Series tied #{top_wins}-#{bottom_wins}"
+      elsif top_wins > bottom_wins
+        "#{series_status["topSeedTeamAbbrev"]} leads #{top_wins}-#{bottom_wins}"
+      else
+        "#{series_status["bottomSeedTeamAbbrev"]} leads #{bottom_wins}-#{top_wins}"
+      end
+    end
+
     def record(team)
       record = "(#{team[:wins]}-#{team[:losses]}-#{team[:ot]}, #{team[:points]} #{"point".pluralize(team[:points])})\n"
       record += "#{ordinalize team[:division_rank]} in the #{team[:division_name]}" unless team[:division_name] == "Unknown"

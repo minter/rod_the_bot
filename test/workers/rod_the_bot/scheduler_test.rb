@@ -91,6 +91,21 @@ class RodTheBot::SchedulerTest < ActiveSupport::TestCase
     end
   end
 
+  def test_playoff_series_state_tied
+    series = {"topSeedWins" => 0, "bottomSeedWins" => 0, "topSeedTeamAbbrev" => "CAR", "bottomSeedTeamAbbrev" => "OTT"}
+    assert_equal "Series tied 0-0", @worker.send(:playoff_series_state, series)
+  end
+
+  def test_playoff_series_state_top_seed_leads
+    series = {"topSeedWins" => 2, "bottomSeedWins" => 1, "topSeedTeamAbbrev" => "CAR", "bottomSeedTeamAbbrev" => "OTT"}
+    assert_equal "CAR leads 2-1", @worker.send(:playoff_series_state, series)
+  end
+
+  def test_playoff_series_state_bottom_seed_leads
+    series = {"topSeedWins" => 1, "bottomSeedWins" => 2, "topSeedTeamAbbrev" => "CAR", "bottomSeedTeamAbbrev" => "OTT"}
+    assert_equal "OTT leads 2-1", @worker.send(:playoff_series_state, series)
+  end
+
   def teardown
     Sidekiq::Worker.clear_all
     NhlApi.unstub(:current_season)
