@@ -57,10 +57,29 @@ module RodTheBot
 
             #{away_standings[:team_name]}
 
-            at 
+            at
 
             #{home_standings[:team_name]}
-            
+
+            ⏰ #{time_string}
+            📍 #{venue["default"]}
+            📺 #{tv}
+          POST
+        elsif NhlApi.postseason? && @game["seriesStatus"]
+          seed_labels = NhlApi.playoff_seed_labels
+          away_seed = seed_labels[away["abbrev"]] ? "(#{seed_labels[away["abbrev"]]}) " : ""
+          home_seed = seed_labels[home["abbrev"]] ? "(#{seed_labels[home["abbrev"]]}) " : ""
+          <<~POST
+            🗣️ It's a #{your_standings[:team_name]} Playoff Gameday!
+
+            #{playoff_status_line(@game["seriesStatus"])}
+
+            #{away_seed}#{away_standings[:team_name]}
+
+            at
+
+            #{home_seed}#{home_standings[:team_name]}
+
             ⏰ #{time_string}
             📍 #{venue["default"]}
             📺 #{tv}
@@ -72,11 +91,11 @@ module RodTheBot
             #{away_standings[:team_name]}
             #{record(away_standings)}
 
-            at 
+            at
 
             #{home_standings[:team_name]}
             #{record(home_standings)}
-            
+
             ⏰ #{time_string}
             📍 #{venue["default"]}
             📺 #{tv}

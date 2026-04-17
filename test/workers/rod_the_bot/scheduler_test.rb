@@ -37,17 +37,17 @@ class RodTheBot::SchedulerTest < ActiveSupport::TestCase
 
         expected_output = <<~POST
           🗣️ It's a Carolina Hurricanes Gameday!
-          
+
           Buffalo Sabres
           (10-11-2, 22 points)
           6th in the Atlantic
-          
-          at 
-          
+
+          at
+
           Carolina Hurricanes
           (13-8-1, 27 points)
           2nd in the Metropolitan
-          
+
           ⏰ 7:00 PM EST
           📍 PNC Arena
           📺 BSSO
@@ -71,13 +71,13 @@ class RodTheBot::SchedulerTest < ActiveSupport::TestCase
 
         expected_output = <<~POST
           🗣️ It's a Carolina Hurricanes Preseason Gameday!
-          
+
           Florida Panthers
-          
-          at 
-          
+
+          at
+
           Carolina Hurricanes
-          
+
           ⏰ 6:00 PM EDT
           📍 Lenovo Center
           📺 NHLN
@@ -128,6 +128,181 @@ class RodTheBot::SchedulerTest < ActiveSupport::TestCase
       "bottomSeedTeamAbbrev" => "OTT"
     }
     assert_equal "Round 2, Game 4 — CAR leads 2-1", @worker.send(:playoff_status_line, series)
+  end
+
+  def test_perform_postseason_gameday
+    game = {
+      "id" => 2025030134,
+      "gameScheduleState" => "OK",
+      "startTimeUTC" => "2026-04-24T23:00:00Z",
+      "venue" => {"default" => "Lenovo Center"},
+      "homeTeam" => {"id" => 12, "abbrev" => "CAR", "logo" => "home.svg"},
+      "awayTeam" => {"id" => 9, "abbrev" => "OTT", "logo" => "away.svg"},
+      "tvBroadcasts" => [
+        {"countryCode" => "US", "market" => "N", "network" => "ESPN"}
+      ],
+      "seriesStatus" => {
+        "round" => 1,
+        "gameNumberOfSeries" => 4,
+        "topSeedTeamAbbrev" => "CAR",
+        "topSeedWins" => 2,
+        "bottomSeedTeamAbbrev" => "OTT",
+        "bottomSeedWins" => 1,
+        "neededToWin" => 4
+      }
+    }
+
+    NhlApi.stubs(:offseason?).returns(false)
+    NhlApi.stubs(:preseason?).returns(false)
+    NhlApi.stubs(:postseason?).returns(true)
+    NhlApi.stubs(:todays_game).returns(game)
+    NhlApi.stubs(:team_standings).with("CAR").returns({team_name: "Carolina Hurricanes"})
+    NhlApi.stubs(:team_standings).with("OTT").returns({team_name: "Ottawa Senators"})
+    NhlApi.stubs(:playoff_seed_labels).returns({"CAR" => "M1", "OTT" => "WC2"})
+
+    Timecop.freeze(Date.new(2026, 4, 24)) do
+      @worker.perform
+    end
+
+    expected_output = <<~POST
+      🗣️ It's a Carolina Hurricanes Playoff Gameday!
+
+      Round 1, Game 4 — CAR leads 2-1
+
+      (WC2) Ottawa Senators
+
+      at
+
+      (M1) Carolina Hurricanes
+
+      ⏰ 7:00 PM EDT
+      📍 Lenovo Center
+      📺 ESPN
+    POST
+
+    assert_equal 1, RodTheBot::Post.jobs.size
+    assert_equal expected_output, RodTheBot::Post.jobs.first["args"].first
+  end
+
+  def test_perform_postseason_gameday_series_tied
+    game = {
+      "id" => 2025030131,
+      "gameScheduleState" => "OK",
+      "startTimeUTC" => "2026-04-18T19:00:00Z",
+      "venue" => {"default" => "Lenovo Center"},
+      "homeTeam" => {"id" => 12, "abbrev" => "CAR", "logo" => "home.svg"},
+      "awayTeam" => {"id" => 9, "abbrev" => "OTT", "logo" => "away.svg"},
+      "tvBroadcasts" => [
+        {"countryCode" => "US", "market" => "N", "network" => "ESPN"}
+      ],
+      "seriesStatus" => {
+        "round" => 1,
+        "gameNumberOfSeries" => 1,
+        "topSeedTeamAbbrev" => "CAR",
+        "topSeedWins" => 0,
+        "bottomSeedTeamAbbrev" => "OTT",
+        "bottomSeedWins" => 0,
+        "neededToWin" => 4
+      }
+    }
+
+    NhlApi.stubs(:offseason?).returns(false)
+    NhlApi.stubs(:preseason?).returns(false)
+    NhlApi.stubs(:postseason?).returns(true)
+    NhlApi.stubs(:todays_game).returns(game)
+    NhlApi.stubs(:team_standings).with("CAR").returns({team_name: "Carolina Hurricanes"})
+    NhlApi.stubs(:team_standings).with("OTT").returns({team_name: "Ottawa Senators"})
+    NhlApi.stubs(:playoff_seed_labels).returns({"CAR" => "M1", "OTT" => "WC2"})
+
+    Timecop.freeze(Date.new(2026, 4, 18)) do
+      @worker.perform
+    end
+
+    post = RodTheBot::Post.jobs.first["args"].first
+    assert_includes post, "🗣️ It's a Carolina Hurricanes Playoff Gameday!"
+    assert_includes post, "Round 1, Game 1 — Series tied 0-0"
+    assert_includes post, "(WC2) Ottawa Senators"
+    assert_includes post, "(M1) Carolina Hurricanes"
+  end
+
+  def test_perform_postseason_gameday_without_seed_labels
+    game = {
+      "id" => 2025030131,
+      "gameScheduleState" => "OK",
+      "startTimeUTC" => "2026-04-18T19:00:00Z",
+      "venue" => {"default" => "Lenovo Center"},
+      "homeTeam" => {"id" => 12, "abbrev" => "CAR", "logo" => "home.svg"},
+      "awayTeam" => {"id" => 9, "abbrev" => "OTT", "logo" => "away.svg"},
+      "tvBroadcasts" => [
+        {"countryCode" => "US", "market" => "N", "network" => "ESPN"}
+      ],
+      "seriesStatus" => {
+        "round" => 1,
+        "gameNumberOfSeries" => 1,
+        "topSeedTeamAbbrev" => "CAR",
+        "topSeedWins" => 0,
+        "bottomSeedTeamAbbrev" => "OTT",
+        "bottomSeedWins" => 0,
+        "neededToWin" => 4
+      }
+    }
+
+    NhlApi.stubs(:offseason?).returns(false)
+    NhlApi.stubs(:preseason?).returns(false)
+    NhlApi.stubs(:postseason?).returns(true)
+    NhlApi.stubs(:todays_game).returns(game)
+    NhlApi.stubs(:team_standings).with("CAR").returns({team_name: "Carolina Hurricanes"})
+    NhlApi.stubs(:team_standings).with("OTT").returns({team_name: "Ottawa Senators"})
+    NhlApi.stubs(:playoff_seed_labels).returns({})
+
+    Timecop.freeze(Date.new(2026, 4, 18)) do
+      @worker.perform
+    end
+
+    post = RodTheBot::Post.jobs.first["args"].first
+    assert_includes post, "Playoff Gameday!"
+    assert_includes post, "Ottawa Senators"
+    assert_includes post, "Carolina Hurricanes"
+    refute_includes post, "()"
+    refute_includes post, "(WC"
+    refute_includes post, "(M"
+  end
+
+  def test_perform_postseason_gameday_falls_back_without_series_status
+    game = {
+      "id" => 2025030131,
+      "gameScheduleState" => "OK",
+      "startTimeUTC" => "2026-04-18T19:00:00Z",
+      "venue" => {"default" => "Lenovo Center"},
+      "homeTeam" => {"id" => 12, "abbrev" => "CAR", "logo" => "home.svg"},
+      "awayTeam" => {"id" => 9, "abbrev" => "OTT", "logo" => "away.svg"},
+      "tvBroadcasts" => [
+        {"countryCode" => "US", "market" => "N", "network" => "ESPN"}
+      ]
+      # seriesStatus intentionally absent
+    }
+
+    NhlApi.stubs(:offseason?).returns(false)
+    NhlApi.stubs(:preseason?).returns(false)
+    NhlApi.stubs(:postseason?).returns(true)
+    NhlApi.stubs(:todays_game).returns(game)
+    NhlApi.stubs(:team_standings).with("CAR").returns({
+      team_name: "Carolina Hurricanes", wins: 40, losses: 20, ot: 5,
+      points: 85, division_rank: 1, division_name: "Metropolitan"
+    })
+    NhlApi.stubs(:team_standings).with("OTT").returns({
+      team_name: "Ottawa Senators", wins: 38, losses: 25, ot: 4,
+      points: 80, division_rank: 5, division_name: "Atlantic"
+    })
+
+    Timecop.freeze(Date.new(2026, 4, 18)) do
+      @worker.perform
+    end
+
+    post = RodTheBot::Post.jobs.first["args"].first
+    refute_includes post, "Playoff Gameday"
+    assert_includes post, "🗣️ It's a Carolina Hurricanes Gameday!"
+    assert_includes post, "(40-20-5, 85 points)"
   end
 
   def teardown
