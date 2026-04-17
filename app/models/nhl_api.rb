@@ -50,6 +50,25 @@ class NhlApi
       end
     end
 
+    def playoff_seed_labels
+      standings = fetch_standings
+      return {} unless standings && standings["standings"]
+
+      standings["standings"].each_with_object({}) do |team, map|
+        abbrev = team.dig("teamAbbrev", "default")
+        next unless abbrev
+
+        wildcard = team["wildcardSequence"].to_i
+        if wildcard > 0
+          map[abbrev] = "WC#{wildcard}"
+        else
+          div = team["divisionAbbrev"]
+          seq = team["divisionSequence"]
+          map[abbrev] = "#{div}#{seq}" if div && seq
+        end
+      end
+    end
+
     def fetch_scores(date: Date.yesterday.strftime("%Y-%m-%d"))
       Rails.cache.fetch("scores_#{date}", expires_in: 18.hours) do
         response = get("/score/#{date}")

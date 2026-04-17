@@ -63,12 +63,45 @@ class RodTheBot::PostseasonSeriesWorkerTest < ActiveSupport::TestCase
       ]
     }
     NhlApi.expects(:fetch_postseason_carousel).returns(carousel)
+    NhlApi.expects(:playoff_seed_labels).returns({})
     @worker.perform
     assert_equal 1, RodTheBot::Post.jobs.size
     post = RodTheBot::Post.jobs.first["args"].first
     assert_includes post, "First Round"
     assert_includes post, "CAR"
     assert_includes post, "FLA"
+  end
+
+  def test_perform_includes_seed_labels
+    carousel = {
+      "rounds" => [
+        round_data(1, "First Round", [
+          series_data("BUF", 0, "BOS", 0)
+        ])
+      ]
+    }
+    NhlApi.expects(:fetch_postseason_carousel).returns(carousel)
+    NhlApi.expects(:playoff_seed_labels).returns({"BUF" => "A1", "BOS" => "WC1"})
+    @worker.perform
+    post = RodTheBot::Post.jobs.first["args"].first
+    assert_includes post, "(A1) BUF"
+    assert_includes post, "(WC1) BOS"
+  end
+
+  def test_perform_handles_missing_seed_labels_gracefully
+    carousel = {
+      "rounds" => [
+        round_data(1, "First Round", [
+          series_data("CAR", 2, "OTT", 1)
+        ])
+      ]
+    }
+    NhlApi.expects(:fetch_postseason_carousel).returns(carousel)
+    NhlApi.expects(:playoff_seed_labels).returns({})
+    @worker.perform
+    post = RodTheBot::Post.jobs.first["args"].first
+    assert_includes post, "CAR 2 - OTT 1"
+    refute_includes post, "()"
   end
 
   private

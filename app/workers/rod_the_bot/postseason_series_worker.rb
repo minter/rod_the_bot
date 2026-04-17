@@ -12,7 +12,8 @@ module RodTheBot
       current_series = fetch_current_series(rounds)
       return if current_series.blank?
 
-      post = format_series(current_series)
+      seed_labels = NhlApi.playoff_seed_labels
+      post = format_series(current_series, seed_labels)
       RodTheBot::Post.perform_async(post)
     end
 
@@ -35,7 +36,7 @@ module RodTheBot
       series["topSeed"]["wins"] == needed || series["bottomSeed"]["wins"] == needed
     end
 
-    def format_series(current_series)
+    def format_series(current_series, seed_labels = {})
       post = "📋 Here are the playoff matchups for the #{current_series["roundLabel"].tr("-", " ").titlecase}:\n\n"
       current_series["series"].each do |series|
         top_seed_won = series["topSeed"]["wins"] == series["neededToWin"]
@@ -50,7 +51,12 @@ module RodTheBot
           trophy_suffix = " 🏆"
         end
 
-        post += "#{trophy_prefix}#{series["topSeed"]["abbrev"]} #{series["topSeed"]["wins"]} - #{series["bottomSeed"]["abbrev"]} #{series["bottomSeed"]["wins"]}#{trophy_suffix}\n\n"
+        top_abbrev = series["topSeed"]["abbrev"]
+        bottom_abbrev = series["bottomSeed"]["abbrev"]
+        top_label = seed_labels[top_abbrev] ? "(#{seed_labels[top_abbrev]}) " : ""
+        bottom_label = seed_labels[bottom_abbrev] ? "(#{seed_labels[bottom_abbrev]}) " : ""
+
+        post += "#{trophy_prefix}#{top_label}#{top_abbrev} #{series["topSeed"]["wins"]} - #{bottom_label}#{bottom_abbrev} #{series["bottomSeed"]["wins"]}#{trophy_suffix}\n\n"
       end
       post
     end
