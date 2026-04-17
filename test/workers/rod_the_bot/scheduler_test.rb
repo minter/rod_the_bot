@@ -106,6 +106,30 @@ class RodTheBot::SchedulerTest < ActiveSupport::TestCase
     assert_equal "OTT leads 2-1", @worker.send(:playoff_series_state, series)
   end
 
+  def test_playoff_status_line_game_one
+    series = {
+      "round" => 1,
+      "gameNumberOfSeries" => 1,
+      "topSeedWins" => 0,
+      "bottomSeedWins" => 0,
+      "topSeedTeamAbbrev" => "CAR",
+      "bottomSeedTeamAbbrev" => "OTT"
+    }
+    assert_equal "Round 1, Game 1 — Series tied 0-0", @worker.send(:playoff_status_line, series)
+  end
+
+  def test_playoff_status_line_mid_series
+    series = {
+      "round" => 2,
+      "gameNumberOfSeries" => 4,
+      "topSeedWins" => 2,
+      "bottomSeedWins" => 1,
+      "topSeedTeamAbbrev" => "CAR",
+      "bottomSeedTeamAbbrev" => "OTT"
+    }
+    assert_equal "Round 2, Game 4 — CAR leads 2-1", @worker.send(:playoff_status_line, series)
+  end
+
   def teardown
     Sidekiq::Worker.clear_all
     NhlApi.unstub(:current_season)

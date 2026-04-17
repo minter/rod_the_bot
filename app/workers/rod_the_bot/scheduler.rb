@@ -150,6 +150,10 @@ module RodTheBot
 
     private
 
+    def playoff_status_line(series_status)
+      "Round #{series_status["round"]}, Game #{series_status["gameNumberOfSeries"]} \u2014 #{playoff_series_state(series_status)}"
+    end
+
     def playoff_series_state(series_status)
       top_wins = series_status["topSeedWins"]
       bottom_wins = series_status["bottomSeedWins"]
