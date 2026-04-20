@@ -21,31 +21,31 @@ module RodTheBot
       skater_points_leader_post = <<~POST
         📈 #{@season_type} points leaders for the #{your_team}
 
-        #{skater_stats.sort_by { |k, v| v[:points] }.last(5).reverse.map { |player| "#{player[1][:name]}: #{player[1][:points]} #{"point".pluralize(player[1][:points])}, (#{player[1][:goals]} G, #{player[1][:assists]} A)" }.join("\n")}
+        #{top_skaters(skater_stats, :points).map { |player| "#{player[1][:name]}: #{player[1][:points]} #{"point".pluralize(player[1][:points])}, (#{player[1][:goals]} G, #{player[1][:assists]} A)" }.join("\n")}
       POST
 
       time_on_ice_leader_post = <<~POST
         ⏱️ #{@season_type} time on ice leaders for the #{your_team}
 
-        #{skater_stats.sort_by { |k, v| v[:time_on_ice] }.last(5).reverse.map { |player| "#{player[1][:name]}: #{Time.at(player[1][:time_on_ice]).strftime("%M:%S")}" }.join("\n")}
+        #{top_skaters(skater_stats, :time_on_ice).map { |player| "#{player[1][:name]}: #{Time.at(player[1][:time_on_ice]).strftime("%M:%S")}" }.join("\n")}
       POST
 
       goal_leader_post = <<~POST
         🚨 #{@season_type} goal scoring leaders for the #{your_team}
 
-        #{skater_stats.sort_by { |k, v| v[:goals] }.last(5).reverse.map { |player| "#{player[1][:name]}: #{player[1][:goals]} #{"goal".pluralize(player[1][:goals])}" }.join("\n")}
+        #{top_skaters(skater_stats, :goals).map { |player| "#{player[1][:name]}: #{player[1][:goals]} #{"goal".pluralize(player[1][:goals])}" }.join("\n")}
       POST
 
       assist_leader_post = <<~POST
         🏒 #{@season_type} assist leaders for the #{your_team}
 
-        #{skater_stats.sort_by { |k, v| v[:assists] }.last(5).reverse.map { |player| "#{player[1][:name]}: #{player[1][:assists]} #{"assist".pluralize(player[1][:assists])}" }.join("\n")}
+        #{top_skaters(skater_stats, :assists).map { |player| "#{player[1][:name]}: #{player[1][:assists]} #{"assist".pluralize(player[1][:assists])}" }.join("\n")}
       POST
 
       pim_leader_post = <<~POST
         🚔 #{@season_type} penalty minute leaders for the #{your_team}
 
-        #{skater_stats.sort_by { |k, v| v[:pim] }.last(5).reverse.map { |player| "#{player[1][:name]}: #{player[1][:pim]} #{"min".pluralize(player[1][:pim])}" }.join("\n")}
+        #{top_skaters(skater_stats, :pim).map { |player| "#{player[1][:name]}: #{player[1][:pim]} #{"min".pluralize(player[1][:pim])}" }.join("\n")}
       POST
 
       team_season_stats_post_1 = <<~POST
@@ -126,6 +126,13 @@ module RodTheBot
         }
       end
       [skater_stats, goalie_stats]
+    end
+
+    def top_skaters(skater_stats, stat_key, limit: 5)
+      skater_stats.reject { |_, v| v[stat_key].to_f.zero? }
+        .sort_by { |_, v| v[stat_key] }
+        .last(limit)
+        .reverse
     end
 
     def fetch_stats_and_rank(stat)
