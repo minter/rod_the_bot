@@ -143,10 +143,9 @@ class RodTheBot::SchedulerTest < ActiveSupport::TestCase
       ],
       "seriesStatus" => {
         "round" => 1,
+        "seriesLetter" => "C",
         "gameNumberOfSeries" => 4,
-        "topSeedTeamAbbrev" => "CAR",
         "topSeedWins" => 2,
-        "bottomSeedTeamAbbrev" => "OTT",
         "bottomSeedWins" => 1,
         "neededToWin" => 4
       }
@@ -159,6 +158,7 @@ class RodTheBot::SchedulerTest < ActiveSupport::TestCase
     NhlApi.stubs(:team_standings).with("CAR").returns({team_name: "Carolina Hurricanes"})
     NhlApi.stubs(:team_standings).with("OTT").returns({team_name: "Ottawa Senators"})
     NhlApi.stubs(:playoff_seed_labels).returns({"CAR" => "M1", "OTT" => "WC2"})
+    NhlApi.stubs(:fetch_postseason_carousel).returns(carousel_stub("C", top: "CAR", bottom: "OTT"))
 
     Timecop.freeze(Date.new(2026, 4, 24)) do
       @worker.perform
@@ -197,10 +197,9 @@ class RodTheBot::SchedulerTest < ActiveSupport::TestCase
       ],
       "seriesStatus" => {
         "round" => 1,
+        "seriesLetter" => "C",
         "gameNumberOfSeries" => 1,
-        "topSeedTeamAbbrev" => "CAR",
         "topSeedWins" => 0,
-        "bottomSeedTeamAbbrev" => "OTT",
         "bottomSeedWins" => 0,
         "neededToWin" => 4
       }
@@ -213,6 +212,7 @@ class RodTheBot::SchedulerTest < ActiveSupport::TestCase
     NhlApi.stubs(:team_standings).with("CAR").returns({team_name: "Carolina Hurricanes"})
     NhlApi.stubs(:team_standings).with("OTT").returns({team_name: "Ottawa Senators"})
     NhlApi.stubs(:playoff_seed_labels).returns({"CAR" => "M1", "OTT" => "WC2"})
+    NhlApi.stubs(:fetch_postseason_carousel).returns(carousel_stub("C", top: "CAR", bottom: "OTT"))
 
     Timecop.freeze(Date.new(2026, 4, 18)) do
       @worker.perform
@@ -238,10 +238,9 @@ class RodTheBot::SchedulerTest < ActiveSupport::TestCase
       ],
       "seriesStatus" => {
         "round" => 1,
+        "seriesLetter" => "C",
         "gameNumberOfSeries" => 1,
-        "topSeedTeamAbbrev" => "CAR",
         "topSeedWins" => 0,
-        "bottomSeedTeamAbbrev" => "OTT",
         "bottomSeedWins" => 0,
         "neededToWin" => 4
       }
@@ -254,6 +253,7 @@ class RodTheBot::SchedulerTest < ActiveSupport::TestCase
     NhlApi.stubs(:team_standings).with("CAR").returns({team_name: "Carolina Hurricanes"})
     NhlApi.stubs(:team_standings).with("OTT").returns({team_name: "Ottawa Senators"})
     NhlApi.stubs(:playoff_seed_labels).returns({})
+    NhlApi.stubs(:fetch_postseason_carousel).returns(carousel_stub("C", top: "CAR", bottom: "OTT"))
 
     Timecop.freeze(Date.new(2026, 4, 18)) do
       @worker.perform
@@ -305,8 +305,104 @@ class RodTheBot::SchedulerTest < ActiveSupport::TestCase
     assert_includes post, "(40-20-5, 85 points)"
   end
 
+  def test_perform_postseason_gameday_resolves_leader_from_carousel
+    game = {
+      "id" => 2025030132,
+      "gameScheduleState" => "OK",
+      "startTimeUTC" => "2026-04-20T23:30:00Z",
+      "venue" => {"default" => "Lenovo Center"},
+      "homeTeam" => {"id" => 12, "abbrev" => "CAR", "logo" => "home.svg"},
+      "awayTeam" => {"id" => 9, "abbrev" => "OTT", "logo" => "away.svg"},
+      "tvBroadcasts" => [
+        {"countryCode" => "US", "market" => "N", "network" => "ESPN"}
+      ],
+      "seriesStatus" => {
+        "round" => 1,
+        "seriesLetter" => "C",
+        "gameNumberOfSeries" => 2,
+        "topSeedWins" => 1,
+        "bottomSeedWins" => 0,
+        "neededToWin" => 4
+      }
+    }
+
+    NhlApi.stubs(:offseason?).returns(false)
+    NhlApi.stubs(:preseason?).returns(false)
+    NhlApi.stubs(:postseason?).returns(true)
+    NhlApi.stubs(:todays_game).returns(game)
+    NhlApi.stubs(:team_standings).with("CAR").returns({team_name: "Carolina Hurricanes"})
+    NhlApi.stubs(:team_standings).with("OTT").returns({team_name: "Ottawa Senators"})
+    NhlApi.stubs(:playoff_seed_labels).returns({"CAR" => "M1", "OTT" => "WC2"})
+    NhlApi.stubs(:fetch_postseason_carousel).returns(carousel_stub("C", top: "CAR", bottom: "OTT"))
+
+    Timecop.freeze(Date.new(2026, 4, 20)) do
+      @worker.perform
+    end
+
+    post = RodTheBot::Post.jobs.first["args"].first
+    assert_includes post, "Round 1, Game 2 — CAR leads 1-0"
+    refute_match(/— leads 1-0/, post, "team abbreviation must precede 'leads'")
+  end
+
+  def test_perform_postseason_gameday_without_carousel_falls_back
+    game = {
+      "id" => 2025030132,
+      "gameScheduleState" => "OK",
+      "startTimeUTC" => "2026-04-20T23:30:00Z",
+      "venue" => {"default" => "Lenovo Center"},
+      "homeTeam" => {"id" => 12, "abbrev" => "CAR", "logo" => "home.svg"},
+      "awayTeam" => {"id" => 9, "abbrev" => "OTT", "logo" => "away.svg"},
+      "tvBroadcasts" => [
+        {"countryCode" => "US", "market" => "N", "network" => "ESPN"}
+      ],
+      "seriesStatus" => {
+        "round" => 1,
+        "seriesLetter" => "C",
+        "gameNumberOfSeries" => 2,
+        "topSeedWins" => 1,
+        "bottomSeedWins" => 0,
+        "neededToWin" => 4
+      }
+    }
+
+    NhlApi.stubs(:offseason?).returns(false)
+    NhlApi.stubs(:preseason?).returns(false)
+    NhlApi.stubs(:postseason?).returns(true)
+    NhlApi.stubs(:todays_game).returns(game)
+    NhlApi.stubs(:team_standings).with("CAR").returns({team_name: "Carolina Hurricanes"})
+    NhlApi.stubs(:team_standings).with("OTT").returns({team_name: "Ottawa Senators"})
+    NhlApi.stubs(:playoff_seed_labels).returns({})
+    NhlApi.stubs(:fetch_postseason_carousel).returns(nil)
+
+    Timecop.freeze(Date.new(2026, 4, 20)) do
+      @worker.perform
+    end
+
+    post = RodTheBot::Post.jobs.first["args"].first
+    assert_includes post, "Playoff Gameday"
+    assert_includes post, "Round 1, Game 2"
+  end
+
   def teardown
     Sidekiq::Worker.clear_all
     NhlApi.unstub(:current_season)
+  end
+
+  private
+
+  def carousel_stub(series_letter, top:, bottom:)
+    {
+      "rounds" => [
+        {
+          "series" => [
+            {
+              "seriesLetter" => series_letter,
+              "topSeed" => {"abbrev" => top},
+              "bottomSeed" => {"abbrev" => bottom}
+            }
+          ]
+        }
+      ]
+    }
   end
 end

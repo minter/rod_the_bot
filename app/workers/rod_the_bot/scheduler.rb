@@ -69,10 +69,11 @@ module RodTheBot
           seed_labels = NhlApi.playoff_seed_labels
           away_seed = seed_labels[away["abbrev"]] ? "(#{seed_labels[away["abbrev"]]}) " : ""
           home_seed = seed_labels[home["abbrev"]] ? "(#{seed_labels[home["abbrev"]]}) " : ""
+          series_status = @game["seriesStatus"].merge(series_seed_abbrevs(@game["seriesStatus"]["seriesLetter"]))
           <<~POST
             🗣️ It's a #{your_standings[:team_name]} Playoff Gameday!
 
-            #{playoff_status_line(@game["seriesStatus"])}
+            #{playoff_status_line(series_status)}
 
             #{away_seed}#{away_standings[:team_name]}
 
@@ -171,6 +172,22 @@ module RodTheBot
 
     def playoff_status_line(series_status)
       "Round #{series_status["round"]}, Game #{series_status["gameNumberOfSeries"]} \u2014 #{playoff_series_state(series_status)}"
+    end
+
+    def series_seed_abbrevs(series_letter)
+      return {} unless series_letter
+
+      carousel = NhlApi.fetch_postseason_carousel
+      return {} unless carousel
+
+      series = (carousel["rounds"] || []).flat_map { |round| round["series"] || [] }
+        .find { |s| s["seriesLetter"] == series_letter }
+      return {} unless series
+
+      {
+        "topSeedTeamAbbrev" => series.dig("topSeed", "abbrev"),
+        "bottomSeedTeamAbbrev" => series.dig("bottomSeed", "abbrev")
+      }.compact
     end
 
     def playoff_series_state(series_status)
