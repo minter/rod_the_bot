@@ -5,7 +5,7 @@ class RodTheBot::ShotChartAnimator
     NHL_X_RANGE   = 200.0
     NHL_Y_RANGE   = 85.0
 
-    module_function
+    extend self
 
     # Canonical orientation: home team always attacks right.
     # Flip both coords for periods where home defends right (i.e., attacks left).
