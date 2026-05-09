@@ -1,0 +1,45 @@
+require "test_helper"
+
+class RodTheBot::EndOfPeriodShotChartWorkerTest < ActiveSupport::TestCase
+  def setup
+    Sidekiq::Worker.clear_all
+    @game_id = 2024020477
+  end
+
+  def test_posts_video_when_service_returns_path
+    fake_path = Pathname.new("test/fixtures/files/test_shot_chart.mp4")
+    feed = {"homeTeam" => {"abbrev" => "EDM", "sog" => 21}, "awayTeam" => {"abbrev" => "VGK", "sog" => 17}}
+    NhlApi.stubs(:fetch_pbp_feed).with(@game_id).returns(feed)
+    RodTheBot::ShotChartAnimator.any_instance.stubs(:call).returns(fake_path)
+
+    RodTheBot::EndOfPeriodShotChartWorker.new.perform(@game_id, 1)
+
+    assert_equal 1, RodTheBot::Post.jobs.size
+    args = RodTheBot::Post.jobs.first["args"]
+    expected_text = <<~POST
+      🏒 Shot chart through the 1st period.
+
+      VGK: 17 SOG
+      EDM: 21 SOG
+    POST
+    assert_equal expected_text, args[0]
+    # Post.perform args: post, key, parent_key, embed_url, embed_images, video_file_path, root_key
+    assert_equal fake_path.to_s, args[5]
+  end
+
+  def test_no_op_when_service_returns_nil
+    NhlApi.stubs(:fetch_pbp_feed).returns({"homeTeam" => {}, "awayTeam" => {}})
+    RodTheBot::ShotChartAnimator.any_instance.stubs(:call).returns(nil)
+
+    RodTheBot::EndOfPeriodShotChartWorker.new.perform(@game_id, 1)
+
+    assert_equal 0, RodTheBot::Post.jobs.size
+  end
+
+  def test_swallows_exceptions
+    NhlApi.stubs(:fetch_pbp_feed).raises(StandardError, "boom")
+
+    RodTheBot::EndOfPeriodShotChartWorker.new.perform(@game_id, 1)
+    assert_equal 0, RodTheBot::Post.jobs.size
+  end
+end
