@@ -17,6 +17,9 @@ class RodTheBot::EndOfPeriodWorkerTest < ActiveSupport::TestCase
 
       assert_equal 1, RodTheBot::Post.jobs.size
       assert_equal 1, RodTheBot::EndOfPeriodStatsWorker.jobs.size
+      assert_equal 1, RodTheBot::EndOfPeriodShotChartWorker.jobs.size
+      shot_chart_args = RodTheBot::EndOfPeriodShotChartWorker.jobs.first["args"]
+      assert_equal [@game_id, 1], shot_chart_args
     end
   end
 
