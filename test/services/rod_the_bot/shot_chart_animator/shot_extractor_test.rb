@@ -12,9 +12,9 @@ class RodTheBot::ShotChartAnimator::ShotExtractorTest < ActiveSupport::TestCase
 
     refute_empty shots
     assert(shots.all? { |s| %w[shot-on-goal goal].include?(s[:type]) },
-           "extractor should keep only SOG and goals")
+      "extractor should keep only SOG and goals")
     assert(shots.all? { |s| s[:period] <= 1 },
-           "should not include shots from later periods")
+      "should not include shots from later periods")
   end
 
   def test_drops_shots_with_missing_coordinates
@@ -76,6 +76,6 @@ class RodTheBot::ShotChartAnimator::ShotExtractorTest < ActiveSupport::TestCase
 
     shots = SE.call(feed: feed, through_period: 2)
     assert_equal [[1, "02:00"], [1, "19:00"], [2, "01:00"]],
-                 shots.map { |s| [s[:period], s[:time_in_period]] }
+      shots.map { |s| [s[:period], s[:time_in_period]] }
   end
 end

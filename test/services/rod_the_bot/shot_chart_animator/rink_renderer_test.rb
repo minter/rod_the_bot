@@ -16,7 +16,7 @@ class RodTheBot::ShotChartAnimator::RinkRendererTest < ActiveSupport::TestCase
     Dir.mktmpdir do |tmp|
       # Create a fake logo PNG (any valid PNG content)
       fake_logo = File.join(tmp, "logo.png")
-      MiniMagick::Tool.new("magick") do |c|
+      MiniMagick::Tool.new(RodTheBot::ShotChartAnimator::IM_BINARY) do |c|
         c.size("64x64")
         c.canvas("#FF0000")
         c << fake_logo

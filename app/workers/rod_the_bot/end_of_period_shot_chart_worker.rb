@@ -1,6 +1,7 @@
 module RodTheBot
   class EndOfPeriodShotChartWorker
     include Sidekiq::Worker
+
     sidekiq_options retry: false
 
     PERIOD_NAMES = {1 => "1st", 2 => "2nd", 3 => "3rd", 4 => "OT"}.freeze

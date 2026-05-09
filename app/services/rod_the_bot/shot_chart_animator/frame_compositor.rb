@@ -12,7 +12,7 @@ module RodTheBot
       FONT_CANDIDATES = [
         "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf", # Debian/Docker
         "/System/Library/Fonts/Supplemental/Arial.ttf",                   # macOS
-        "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",                # other Linux fallback
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"                # other Linux fallback
       ].freeze
       FONT = FONT_CANDIDATES.find { |p| File.exist?(p) }
 
@@ -22,25 +22,25 @@ module RodTheBot
       #   - the most-recent new shot may have new_shot_scale applied (pop)
       #   - optional active_caption (timestamp near most-recent shot)
       def compose(rink_path:, out_path:, prior_shots:, new_shots:,
-                  new_shot_scale:, active_caption:,
-                  away_abbrev:, home_abbrev:, away_color:, home_color:,
-                  period_label:, away_sog:, home_sog:)
-        raise "No suitable font found. Candidates checked: #{FONT_CANDIDATES.join(', ')}" if FONT.nil?
+        new_shot_scale:, active_caption:,
+        away_abbrev:, home_abbrev:, away_color:, home_color:,
+        period_label:, away_sog:, home_sog:)
+        raise "No suitable font found. Candidates checked: #{FONT_CANDIDATES.join(", ")}" if FONT.nil?
 
-        MiniMagick::Tool.new("magick") do |c|
+        MiniMagick::Tool.new(RodTheBot::ShotChartAnimator::IM_BINARY) do |c|
           c << rink_path
 
           # Prior-period shots (70% opacity)
           prior_shots.each do |shot|
             draw_shot(c, shot, scale: 1.0, opacity: 0.7,
-                      home_color: home_color, away_color: away_color)
+              home_color: home_color, away_color: away_color)
           end
 
           # New-period shots (100% opacity); last one gets the pop scale
           new_shots.each_with_index do |shot, i|
             scale = (i == new_shots.length - 1) ? new_shot_scale : 1.0
             draw_shot(c, shot, scale: scale, opacity: 1.0,
-                      home_color: home_color, away_color: away_color)
+              home_color: home_color, away_color: away_color)
           end
 
           # Active caption near the most-recent shot

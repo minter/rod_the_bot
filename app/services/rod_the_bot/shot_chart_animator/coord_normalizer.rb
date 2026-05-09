@@ -1,9 +1,9 @@
 class RodTheBot::ShotChartAnimator
   module CoordNormalizer
-    CANVAS_WIDTH  = 1200
+    CANVAS_WIDTH = 1200
     CANVAS_HEIGHT = 510
-    NHL_X_RANGE   = 200.0
-    NHL_Y_RANGE   = 85.0
+    NHL_X_RANGE = 200.0
+    NHL_Y_RANGE = 85.0
 
     extend self
 
@@ -19,7 +19,7 @@ class RodTheBot::ShotChartAnimator
 
     def to_canvas(nhl_x, nhl_y)
       cx = (nhl_x + 100.0) / NHL_X_RANGE * CANVAS_WIDTH
-      cy = (nhl_y + 42.5)  / NHL_Y_RANGE * CANVAS_HEIGHT
+      cy = (nhl_y + 42.5) / NHL_Y_RANGE * CANVAS_HEIGHT
       [cx, cy]
     end
   end

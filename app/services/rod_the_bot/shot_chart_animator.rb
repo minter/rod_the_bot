@@ -1,19 +1,23 @@
 require "mini_magick"
 require "fileutils"
-require "pathname"
 require "tmpdir"
 require "open3"
 
 module RodTheBot
   class ShotChartAnimator
+    # ImageMagick 7 ships a unified `magick` binary; ImageMagick 6 ships only
+    # `convert`/`mogrify`/etc. Detect at load time so we can run on either
+    # (Docker prod has IM7; the CI runner has IM6).
+    IM_BINARY = (system("which magick > /dev/null 2>&1") ? "magick" : "convert").freeze
+
     INTRO_SECONDS = 1.0
     OUTRO_SECONDS = 3.0
-    POP_SECONDS   = 0.3
-    POP_FRAMES    = 4
-    TOTAL_BUDGET  = 50.0
-    FRAME_FPS     = 30
+    POP_SECONDS = 0.3
+    POP_FRAMES = 4
+    TOTAL_BUDGET = 50.0
+    FRAME_FPS = 30
     MAX_VIDEO_BYTES = 50 * 1024 * 1024
-    MAX_VIDEO_SECS  = 60
+    MAX_VIDEO_SECS = 60
 
     TEAM_COLORS = {
       "ANA" => "#F47A38", "ARI" => "#8C2633", "BOS" => "#FFB81C", "BUF" => "#003087",
@@ -66,13 +70,13 @@ module RodTheBot
       concat_lines = []
 
       intro_path = render_frame(rink_path, frame_dir.join("intro.png").to_s,
-                  prior_shots: prior, new_shots: [], new_shot_scale: 1.0,
-                  active_caption: nil,
-                  away_abbrev: away["abbrev"], home_abbrev: home["abbrev"],
-                  away_color: away_color, home_color: home_color,
-                  period_label: period_label,
-                  away_sog: sog_progression[:start_away],
-                  home_sog: sog_progression[:start_home])
+        prior_shots: prior, new_shots: [], new_shot_scale: 1.0,
+        active_caption: nil,
+        away_abbrev: away["abbrev"], home_abbrev: home["abbrev"],
+        away_color: away_color, home_color: home_color,
+        period_label: period_label,
+        away_sog: sog_progression[:start_away],
+        home_sog: sog_progression[:start_home])
       concat_lines << format_concat(intro_path, INTRO_SECONDS)
 
       revealed = []
@@ -86,35 +90,35 @@ module RodTheBot
           scale = pop_scale(k)
           path = frame_dir.join("shot_#{i}_pop_#{k}.png").to_s
           render_frame(rink_path, path,
-                      prior_shots: prior, new_shots: revealed, new_shot_scale: scale,
-                      active_caption: shot[:time_in_period],
-                      away_abbrev: away["abbrev"], home_abbrev: home["abbrev"],
-                      away_color: away_color, home_color: home_color,
-                      period_label: period_label,
-                      away_sog: sog[:away], home_sog: sog[:home])
+            prior_shots: prior, new_shots: revealed, new_shot_scale: scale,
+            active_caption: shot[:time_in_period],
+            away_abbrev: away["abbrev"], home_abbrev: home["abbrev"],
+            away_color: away_color, home_color: home_color,
+            period_label: period_label,
+            away_sog: sog[:away], home_sog: sog[:home])
           concat_lines << format_concat(path, POP_SECONDS / POP_FRAMES)
         end
 
         path = frame_dir.join("shot_#{i}_settled.png").to_s
         render_frame(rink_path, path,
-                    prior_shots: prior, new_shots: revealed, new_shot_scale: 1.0,
-                    active_caption: nil,
-                    away_abbrev: away["abbrev"], home_abbrev: home["abbrev"],
-                    away_color: away_color, home_color: home_color,
-                    period_label: period_label,
-                    away_sog: sog[:away], home_sog: sog[:home])
+          prior_shots: prior, new_shots: revealed, new_shot_scale: 1.0,
+          active_caption: nil,
+          away_abbrev: away["abbrev"], home_abbrev: home["abbrev"],
+          away_color: away_color, home_color: home_color,
+          period_label: period_label,
+          away_sog: sog[:away], home_sog: sog[:home])
         concat_lines << format_concat(path, dwell)
       end
 
       outro_path = frame_dir.join("outro.png").to_s
       render_frame(rink_path, outro_path,
-                  prior_shots: prior, new_shots: current, new_shot_scale: 1.0,
-                  active_caption: nil,
-                  away_abbrev: away["abbrev"], home_abbrev: home["abbrev"],
-                  away_color: away_color, home_color: home_color,
-                  period_label: period_label,
-                  away_sog: sog_progression[:after_each].last&.dig(:away) || sog_progression[:start_away],
-                  home_sog: sog_progression[:after_each].last&.dig(:home) || sog_progression[:start_home])
+        prior_shots: prior, new_shots: current, new_shot_scale: 1.0,
+        active_caption: nil,
+        away_abbrev: away["abbrev"], home_abbrev: home["abbrev"],
+        away_color: away_color, home_color: home_color,
+        period_label: period_label,
+        away_sog: sog_progression[:after_each].last&.dig(:away) || sog_progression[:start_away],
+        home_sog: sog_progression[:after_each].last&.dig(:home) || sog_progression[:start_home])
       concat_lines << format_concat(outro_path, OUTRO_SECONDS)
 
       concat_file = frame_dir.join("concat.txt")

@@ -28,9 +28,9 @@ module RodTheBot
 
           team_id = details["eventOwnerTeamId"]
           team_side = if team_id == home_id then :home
-                      elsif team_id == away_id then :away
-                      else :unknown
-                      end
+          elsif team_id == away_id then :away
+          else :unknown
+          end
 
           {
             event_id: play["eventId"],

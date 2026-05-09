@@ -9,24 +9,24 @@ module RodTheBot
       W = CoordNormalizer::CANVAS_WIDTH   # 1200
       H = CoordNormalizer::CANVAS_HEIGHT  # 510
 
-      ICE_COLOR    = "#E8F4F8"
-      OUTLINE      = "#000000"
-      GOAL_LINE    = "#C8102E"
-      BLUE_LINE    = "#003DA5"
-      CENTER_RED   = "#C8102E"
-      FACEOFF_RED  = "#C8102E"
-      CENTER_BLUE  = "#003DA5"
+      ICE_COLOR = "#E8F4F8"
+      OUTLINE = "#000000"
+      GOAL_LINE = "#C8102E"
+      BLUE_LINE = "#003DA5"
+      CENTER_RED = "#C8102E"
+      FACEOFF_RED = "#C8102E"
+      CENTER_BLUE = "#003DA5"
 
       # Rink geometry (pixels, 6px/ft)
-      CORNER_R     = 168  # 28ft * 6
-      GOAL_X_LEFT  = 66   # 11ft * 6
+      CORNER_R = 168  # 28ft * 6
+      GOAL_X_LEFT = 66   # 11ft * 6
       GOAL_X_RIGHT = 1134 # (200-11)ft * 6
-      CENTER_X     = 600
-      CENTER_Y     = 255
-      BLUE_LEFT    = 450  # 75ft * 6
-      BLUE_RIGHT   = 750  # 125ft * 6
-      CREASE_R     = 36   # 6ft * 6
-      CIRCLE_R     = 90   # 15ft * 6
+      CENTER_X = 600
+      CENTER_Y = 255
+      BLUE_LEFT = 450  # 75ft * 6
+      BLUE_RIGHT = 750  # 125ft * 6
+      CREASE_R = 36   # 6ft * 6
+      CIRCLE_R = 90   # 15ft * 6
 
       # Faceoff circle centers: 31ft from left/right end, 22ft from top/bottom
       # Left end:  x = 31*6 = 186; Right end: x = (200-31)*6 = 1014
@@ -43,7 +43,7 @@ module RodTheBot
       # For x=66: horizontal distance from corner center = 168-66 = 102
       # Vertical offset = sqrt(168^2 - 102^2) = sqrt(28224-10404) = sqrt(17820) ≈ 133.5
       GOAL_LINE_INTERSECT_OFFSET = Math.sqrt(CORNER_R**2 - (CORNER_R - GOAL_X_LEFT)**2)
-      GOAL_LINE_Y_TOP    = (CORNER_R - GOAL_LINE_INTERSECT_OFFSET).round  # ≈ 35
+      GOAL_LINE_Y_TOP = (CORNER_R - GOAL_LINE_INTERSECT_OFFSET).round  # ≈ 35
       GOAL_LINE_Y_BOTTOM = (H - CORNER_R + GOAL_LINE_INTERSECT_OFFSET).round  # ≈ 476
 
       def call(out_path, home_logo_path: nil, away_logo_path: nil)
@@ -65,7 +65,7 @@ module RodTheBot
       private
 
       def draw_base_rink(target_path)
-        MiniMagick::Tool.new("magick") do |c|
+        MiniMagick::Tool.new(RodTheBot::ShotChartAnimator::IM_BINARY) do |c|
           c.size("#{W}x#{H}")
           c.canvas(ICE_COLOR)
 
@@ -126,12 +126,12 @@ module RodTheBot
           # Left crease: arc from (66, 255-36) to (66, 255+36) sweeping RIGHT into ice
           # SVG arc: M startX,startY A rx,ry x-rot large-arc sweep endX,endY
           # sweep-flag=1 means clockwise; for left goal the bulge is to the right (into ice)
-          left_top_y    = CENTER_Y - CREASE_R   # 255 - 36 = 219
+          left_top_y = CENTER_Y - CREASE_R   # 255 - 36 = 219
           left_bottom_y = CENTER_Y + CREASE_R   # 255 + 36 = 291
           c.draw "path 'M #{GOAL_X_LEFT},#{left_top_y} A #{CREASE_R},#{CREASE_R} 0 0 1 #{GOAL_X_LEFT},#{left_bottom_y}'"
 
           # Right crease: bulges LEFT into ice (sweep-flag=0 → counter-clockwise)
-          right_top_y    = CENTER_Y - CREASE_R
+          right_top_y = CENTER_Y - CREASE_R
           right_bottom_y = CENTER_Y + CREASE_R
           c.draw "path 'M #{GOAL_X_RIGHT},#{right_top_y} A #{CREASE_R},#{CREASE_R} 0 0 0 #{GOAL_X_RIGHT},#{right_bottom_y}'"
 
@@ -153,7 +153,7 @@ module RodTheBot
         away_offset_x = GOAL_X_RIGHT - logo_max / 2
         away_offset_y = CENTER_Y - logo_max / 2
 
-        MiniMagick::Tool.new("magick") do |c|
+        MiniMagick::Tool.new(RodTheBot::ShotChartAnimator::IM_BINARY) do |c|
           c << base_path
 
           if home_logo_path
