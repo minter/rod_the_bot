@@ -1,0 +1,2 @@
+class RodTheBot::ShotChartAnimator
+end
