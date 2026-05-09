@@ -152,11 +152,11 @@ module RodTheBot
     end
 
     def annotate_goal_numbers!(shots)
-      n = 0
+      counts = Hash.new(0)
       shots.each do |s|
         if s[:type] == "goal"
-          n += 1
-          s[:goal_number] = n
+          counts[s[:team_side]] += 1
+          s[:goal_number] = counts[s[:team_side]]
         end
       end
     end

@@ -140,13 +140,18 @@ module RodTheBot
       end
 
       def composite_logos(base_path, out_path, home_logo_path, away_logo_path)
-        # Home goalie defends LEFT goal (x=66); Away goalie defends RIGHT goal (x=1134)
-        # Logo centered on (goal_x, center_y), max size 120x120
+        # Home goalie defends LEFT goal (x=66); Away goalie defends RIGHT goal (x=1134).
+        # Logo is resized to fit a logo_max x logo_max box, then padded with a
+        # transparent canvas to that exact size so the geometry math centers
+        # the logo on the goal point regardless of its native aspect ratio.
+        # Alpha is multiplied (not "set") so true transparency is preserved
+        # and the logo ghosts cleanly into the ice instead of producing a halo.
         logo_max = 120
-        home_offset_x = GOAL_X_LEFT - logo_max / 2    # 66 - 60 = 6
-        home_offset_y = CENTER_Y - logo_max / 2        # 255 - 60 = 195
-        away_offset_x = GOAL_X_RIGHT - logo_max / 2   # 1134 - 60 = 1074
-        away_offset_y = CENTER_Y - logo_max / 2        # 255 - 60 = 195
+        alpha_scale = 0.35  # 0.0 = fully transparent, 1.0 = opaque
+        home_offset_x = GOAL_X_LEFT - logo_max / 2
+        home_offset_y = CENTER_Y - logo_max / 2
+        away_offset_x = GOAL_X_RIGHT - logo_max / 2
+        away_offset_y = CENTER_Y - logo_max / 2
 
         MiniMagick::Tool.new("magick") do |c|
           c << base_path
@@ -155,9 +160,12 @@ module RodTheBot
             c.stack do |s|
               s << home_logo_path
               s.resize("#{logo_max}x#{logo_max}")
+              s.background("none")
+              s.gravity("center")
+              s.extent("#{logo_max}x#{logo_max}")
               s.alpha("set")
               s.channel("A")
-              s.evaluate("set", "50%")
+              s.evaluate("multiply", alpha_scale.to_s)
               s.channel.+  # +channel
             end
             c.gravity("NorthWest")
@@ -169,9 +177,12 @@ module RodTheBot
             c.stack do |s|
               s << away_logo_path
               s.resize("#{logo_max}x#{logo_max}")
+              s.background("none")
+              s.gravity("center")
+              s.extent("#{logo_max}x#{logo_max}")
               s.alpha("set")
               s.channel("A")
-              s.evaluate("set", "50%")
+              s.evaluate("multiply", alpha_scale.to_s)
               s.channel.+  # +channel
             end
             c.gravity("NorthWest")
