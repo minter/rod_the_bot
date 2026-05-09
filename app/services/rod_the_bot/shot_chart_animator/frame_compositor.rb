@@ -5,8 +5,10 @@ module RodTheBot
     module FrameCompositor
       extend self
 
-      SHOT_RADIUS = 7
-      GOAL_RADIUS = 11
+      SHOT_RADIUS = 5
+      GOAL_OUTER_R = 18
+      GOAL_INNER_R = 8
+      GOAL_FILL = "#FFD700"  # gold
       FONT_CANDIDATES = [
         "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf", # Debian/Docker
         "/System/Library/Fonts/Supplemental/Arial.ttf",                   # macOS
@@ -74,26 +76,56 @@ module RodTheBot
 
       def draw_shot(c, shot, scale:, opacity:, home_color:, away_color:)
         cx, cy = CoordNormalizer.to_canvas(shot[:x], shot[:y])
-        color = (shot[:team_side] == :home) ? home_color : away_color
-        radius = (shot[:type] == "goal" ? GOAL_RADIUS : SHOT_RADIUS) * scale
+        team_color = (shot[:team_side] == :home) ? home_color : away_color
 
-        c.fill("#{color}#{opacity_hex(opacity)}")
-        c.stroke(shot[:type] == "goal" ? "white" : "transparent")
-        c.strokewidth(shot[:type] == "goal" ? 2 : 0)
-        c.draw "circle #{cx.to_i},#{cy.to_i} #{(cx + radius).to_i},#{cy.to_i}"
+        if shot[:type] == "goal"
+          outer = GOAL_OUTER_R * scale
+          inner = GOAL_INNER_R * scale
+          points = star_points(cx, cy, 5, outer, inner)
+          c.fill(GOAL_FILL)
+          c.stroke(team_color)
+          c.strokewidth(3)
+          c.draw "polygon #{points}"
 
-        if shot[:type] == "goal" && shot[:goal_number]
-          c.font(FONT)
-          c.fill("white")
-          c.stroke("transparent")
-          c.pointsize(14)
-          c.draw "text #{cx.to_i - 4},#{cy.to_i + 5} '#{shot[:goal_number]}'"
+          if shot[:goal_number]
+            c.font(FONT) if FONT
+            c.fill(team_color)
+            c.stroke("transparent")
+            c.pointsize(14)
+            c.gravity("None")
+            # rough vertical centering tweak (+5)
+            c.draw "text #{cx.to_i - 4},#{cy.to_i + 5} '#{shot[:goal_number]}'"
+          end
+        else
+          radius = SHOT_RADIUS * scale
+          fill = "#{team_color}#{opacity_hex(opacity * 0.7)}"
+          stroke = "#{team_color}#{opacity_hex(opacity * 0.9)}"
+          c.fill(fill)
+          c.stroke(stroke)
+          c.strokewidth(1)
+          c.draw "circle #{cx.to_i},#{cy.to_i} #{(cx + radius).to_i},#{cy.to_i}"
         end
       end
 
       def opacity_hex(opacity)
         # ImageMagick honors a trailing alpha hex pair, e.g. "#FF000080" = 50%.
         format("%02X", (opacity * 255).round.clamp(0, 255))
+      end
+
+      # Returns IM "x,y x,y x,y" string for a 5-point star centered at (cx, cy).
+      # Mirrors watch-party-games' drawStar (start at -π/2, alternate outer/inner radius).
+      def star_points(cx, cy, points, outer_r, inner_r)
+        step = Math::PI / points
+        angle = -Math::PI / 2
+        coords = []
+        (points * 2).times do |i|
+          r = i.even? ? outer_r : inner_r
+          x = cx + r * Math.cos(angle)
+          y = cy + r * Math.sin(angle)
+          coords << "#{x.round(1)},#{y.round(1)}"
+          angle += step
+        end
+        coords.join(" ")
       end
     end
   end

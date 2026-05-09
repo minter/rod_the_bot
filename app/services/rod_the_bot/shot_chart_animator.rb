@@ -50,6 +50,8 @@ module RodTheBot
       away = feed["awayTeam"]
       home_color = TEAM_COLORS[home["abbrev"]] || DEFAULT_COLOR
       away_color = TEAM_COLORS[away["abbrev"]] || DEFAULT_COLOR
+      home_logo = LogoCache.fetch(team_abbrev: home["abbrev"], logo_url: home["logo"])
+      away_logo = LogoCache.fetch(team_abbrev: away["abbrev"], logo_url: away["logo"])
 
       prior, current = shots.partition { |s| s[:period] < @through_period }
       annotate_goal_numbers!(shots)
@@ -58,7 +60,7 @@ module RodTheBot
       FileUtils.mkdir_p(frame_dir)
 
       rink_path = frame_dir.join("rink.png").to_s
-      RinkRenderer.call(rink_path)
+      RinkRenderer.call(rink_path, home_logo_path: home_logo&.to_s, away_logo_path: away_logo&.to_s)
 
       sog_progression = compute_sog_progression(prior, current, home["id"], away["id"])
       concat_lines = []
