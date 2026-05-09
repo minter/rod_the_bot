@@ -7,7 +7,12 @@ module RodTheBot
 
       SHOT_RADIUS = 7
       GOAL_RADIUS = 11
-      FONT        = "/System/Library/Fonts/Supplemental/Arial.ttf"
+      FONT_CANDIDATES = [
+        "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf", # Debian/Docker
+        "/System/Library/Fonts/Supplemental/Arial.ttf",                   # macOS
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",                # other Linux fallback
+      ].freeze
+      FONT = FONT_CANDIDATES.find { |p| File.exist?(p) }
 
       # Composites one animation frame:
       #   - prior shots (from earlier periods) drawn at 70% opacity
@@ -18,6 +23,8 @@ module RodTheBot
                   new_shot_scale:, active_caption:,
                   away_abbrev:, home_abbrev:, away_color:, home_color:,
                   period_label:, away_sog:, home_sog:)
+        raise "No suitable font found. Candidates checked: #{FONT_CANDIDATES.join(', ')}" if FONT.nil?
+
         MiniMagick::Tool.new("magick") do |c|
           c << rink_path
 
