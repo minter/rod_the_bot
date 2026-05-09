@@ -116,10 +116,13 @@ module RodTheBot
       concat_lines << format_concat(outro_path, OUTRO_SECONDS)
 
       concat_file = frame_dir.join("concat.txt")
-      concat_file.write(concat_lines.join("\n"))
+      concat_file.write(concat_lines.join("\n") + "\n")
 
-      stitch(concat_file, target)
-      cleanup_frames(frame_dir, target)
+      begin
+        stitch(concat_file, target)
+      ensure
+        cleanup_frames(frame_dir, target)
+      end
 
       enforce_size_limit(target)
     rescue NhlApi::APIError => e

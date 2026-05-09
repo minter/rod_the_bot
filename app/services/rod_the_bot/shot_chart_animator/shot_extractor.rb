@@ -46,7 +46,7 @@ module RodTheBot
           }
         end
 
-        shots.sort_by { |s| [s[:period], s[:time_in_period].to_s] }
+        shots.sort_by { |s| [s[:period], s[:time_in_period].to_s.split(":").map(&:to_i)] }
       end
     end
   end
