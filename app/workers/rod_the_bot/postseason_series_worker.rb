@@ -28,7 +28,7 @@ module RodTheBot
     end
 
     def round_in_progress?(round)
-      (round["series"] || []).any? { |series| !series_decided?(series) }
+      round_series(round).any? { |series| !series_decided?(series) }
     end
 
     def series_decided?(series)
@@ -36,9 +36,18 @@ module RodTheBot
       series["topSeed"]["wins"] == needed || series["bottomSeed"]["wins"] == needed
     end
 
+    # The NHL carousel leaks the next round's slot into the current round once a team
+    # advances (e.g. the conference-finals "M" series appearing in round 2 with CAR
+    # already seeded). Each series carries its own seriesLabel, so keep only the ones
+    # that actually belong to this round.
+    def round_series(round)
+      label = round["roundLabel"]
+      (round["series"] || []).select { |series| series["seriesLabel"] == label }
+    end
+
     def format_series(current_series, seed_labels = {})
       post = "📋 Here are the playoff matchups for the #{current_series["roundLabel"].tr("-", " ").titlecase}:\n\n"
-      current_series["series"].each do |series|
+      round_series(current_series).each do |series|
         top_seed_won = series["topSeed"]["wins"] == series["neededToWin"]
         bottom_seed_won = series["bottomSeed"]["wins"] == series["neededToWin"]
 
