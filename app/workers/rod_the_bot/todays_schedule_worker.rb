@@ -11,7 +11,7 @@ module RodTheBot
 
       # Handle no games case
       if games.empty?
-        post_text = "🗓️  Today's NHL #{playoffs}schedule (times #{time_zone_abbr})\n\nNo games scheduled."
+        post_text = "🗓️  Today's NHL #{playoffs}schedule (times #{time_zone_abbr})\n\nNo games scheduled.\n"
         RodTheBot::Post.perform_async(post_text)
         return
       end
