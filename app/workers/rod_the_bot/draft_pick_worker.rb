@@ -4,7 +4,10 @@ module RodTheBot
   class DraftPickWorker
     include Sidekiq::Worker
 
-    # TODO: Split post into two parts, to avoid the Bluesky character limit
+    POST_TTL = 2.days.to_i
+    REQUEUE_INTERVAL = 5.minutes
+    POST_DELAY = 30.seconds
+    BLUESKY_CHARACTER_LIMIT = 300
 
     COUNTRY_DEMONYMS = {
       "CAN" => "Canadian",
@@ -43,7 +46,7 @@ module RodTheBot
       "POR" => "Portuguese",
       "NZL" => "New Zealander"
       # Add more as needed
-    }
+    }.freeze
 
     COUNTRY_NAMES = {
       "CAN" => "Canada",
@@ -57,127 +60,144 @@ module RodTheBot
       "DEU" => "Germany"
     }.freeze
 
-    def perform
-      # 1. Check if today is an active draft date
-      active_dates = ENV["DRAFT_ACTIVE_DATES"].to_s.split(",")
-      today = Date.today.strftime("%Y-%m-%d")
-      draft_day = active_dates.include?(today) || ENV["DRAFT_YEAR_OVERRIDE"].present?
-      unless draft_day
-        Sidekiq.logger.info "Not a draft day (#{today}), skipping."
-        return
-      end
+    def perform(year = nil, process_completed = false)
+      manual_run = year.present?
+      year ||= Date.today.year
 
-      # 2. Determine draft year
-      year = ENV["DRAFT_YEAR_OVERRIDE"].presence || Date.today.year
-
-      # 3. Fetch draft data
       data = NhlApi.fetch_draft_picks(year)
-      rankings = NhlApi.fetch_draft_rankings(year)
 
       unless data.is_a?(Hash)
         Sidekiq.logger.error "Failed to fetch or parse draft data for year #{year}"
         return
       end
 
-      prospects_by_name = {}
-      rankings.each do |category, prospect_list|
-        prospect_list.each do |prospect|
-          full_name = "#{prospect["firstName"]} #{prospect["lastName"]}"
-          prospects_by_name[full_name] = prospect.merge("category" => category)
-        end
+      draft_year = data["draftYear"] || year
+      unless manual_run || draft_day?(data, draft_year)
+        Sidekiq.logger.info "Not a draft day (#{Date.today.strftime("%Y-%m-%d")}), skipping."
+        return
       end
 
-      # 4. Check draft state
       state = data["state"]
       if state == "fut"
         Sidekiq.logger.info "Draft not started yet (state: fut)."
+        requeue_for_live_monitoring unless manual_run
         return
       elsif state == "over"
-        if ENV["DRAFT_YEAR_OVERRIDE"].present?
-          Sidekiq.logger.info "Draft is over (state: over), but DRAFT_YEAR_OVERRIDE is set. Processing picks for testing."
-          # Do not requeue at the end
+        if process_completed
+          Sidekiq.logger.info "Draft is over (state: over), but process_completed is true. Processing picks."
         else
           Sidekiq.logger.info "Draft is over (state: over), nothing to do."
           return
         end
       end
 
-      draft_year = data["draftYear"] || year
+      prospects_by_name = index_prospects(NhlApi.fetch_draft_rankings(draft_year))
       picks = data["picks"] || []
       team_abbrev = ENV["NHL_TEAM_ABBREVIATION"] || "CAR"
 
       picks.each do |pick|
-        # Only process picks for our team
-        display_abbrev = pick.dig("displayAbbrev", "default") || pick["displayAbbrev"]
-        next unless display_abbrev == team_abbrev
-        next unless pick["firstName"].present?
+        next unless pick_for_team?(pick, team_abbrev)
+        next unless selected_pick?(pick)
 
-        # Deduplication key
-        key = "draft_pick_#{year}_#{pick["round"]}_#{pick["pickInRound"]}"
+        key = draft_pick_key(draft_year, pick)
         next if REDIS.get(key)
 
-        # Build pick history string
-        pick_history = pick["teamPickHistory"]
-        pick_history_str = ""
-        if pick_history && pick_history != team_abbrev
-          teams = pick_history.split("-")
-          if teams.size == 2
-            pick_history_str = "(from #{teams.first})"
-          elsif teams.size > 2
-            original = teams.first
-            via = teams[1..-2].reverse
-            pick_history_str = "(from #{original}, via #{via.join(", ")})"
-          end
-        end
-
-        # Compose post
-        first_name = pick.dig("firstName", "default") || pick["firstName"]
-        last_name = pick.dig("lastName", "default") || pick["lastName"]
-        ranking_info = prospects_by_name["#{first_name} #{last_name}"]
+        first_name = localized_value(pick["firstName"])
+        last_name = localized_value(pick["lastName"])
+        ranking_info = prospects_by_name[normalized_name(first_name, last_name)]
+        pick_history_str = format_pick_history(pick["teamPickHistory"], team_abbrev)
 
         post = format_post(pick, ranking_info, pick_history_str, draft_year)
+        enqueue_post_thread(post, key)
 
-        # Post to Bluesky
-        RodTheBot::Post.perform_async(post)
-
-        # Store key in Redis for deduplication
-        REDIS.set(key, "1", ex: 2 * 24 * 60 * 60) # 2 days TTL
-
+        REDIS.set(key, "1", ex: POST_TTL)
         Sidekiq.logger.info "Posted: #{post}"
       end
 
-      # If today is a draft day, always requeue for live monitoring
-      # But do NOT requeue if DRAFT_YEAR_OVERRIDE is set (testing mode)
-      if draft_day && ENV["DRAFT_YEAR_OVERRIDE"].blank?
-        self.class.perform_in(5 * 60) # Re-queue in 5 minutes
-      end
+      requeue_for_live_monitoring unless manual_run
     end
 
     private
 
+    def draft_day?(data, draft_year)
+      today = Date.today.strftime("%Y-%m-%d")
+      active_dates = inferred_active_dates(data)
+
+      active_dates.include?(today) || (data["state"].present? && data["state"] != "fut" && draft_year.to_i == Date.today.year)
+    end
+
+    def inferred_active_dates(data)
+      broadcast_time = data["broadcastStartTimeUTC"]
+      return [] if broadcast_time.blank?
+
+      draft_start_date = Time.zone.parse(broadcast_time).to_date
+      [draft_start_date, draft_start_date + 1.day].map { |date| date.strftime("%Y-%m-%d") }
+    end
+
+    def requeue_for_live_monitoring
+      self.class.perform_in(REQUEUE_INTERVAL)
+    end
+
+    def index_prospects(rankings)
+      return {} unless rankings.respond_to?(:each)
+
+      rankings.each_with_object({}) do |(category, prospect_list), prospects|
+        Array(prospect_list).each do |prospect|
+          key = normalized_name(prospect["firstName"], prospect["lastName"])
+          next if key.blank?
+
+          prospects[key] = prospect.merge("category" => category)
+        end
+      end
+    end
+
+    def pick_for_team?(pick, team_abbrev)
+      display_abbrev = localized_value(pick["displayAbbrev"]) || pick["teamAbbrev"]
+      display_abbrev == team_abbrev || pick["teamId"].to_s == ENV["NHL_TEAM_ID"].to_s
+    end
+
+    def selected_pick?(pick)
+      localized_value(pick["firstName"]).present? && localized_value(pick["lastName"]).present?
+    end
+
+    def draft_pick_key(draft_year, pick)
+      pick_number = pick["overallPick"] || "#{pick["round"]}_#{pick["pickInRound"]}"
+      "draft_pick:#{draft_year}:#{pick_number}"
+    end
+
+    def format_pick_history(pick_history, team_abbrev)
+      teams = pick_history.to_s.split("-").reject(&:blank?)
+      return "" if teams.empty? || teams == [team_abbrev]
+
+      original = teams.first
+      via = teams[1...-1].to_a.reverse
+      return "(from #{original})" if via.empty?
+
+      "(from #{original}, via #{via.join(", ")})"
+    end
+
     def format_post(pick, ranking_info, pick_history_str, draft_year)
-      # Data from pick
-      pick_num = pick["pickInRound"]
+      pick_num = pick["overallPick"] || pick["pickInRound"]
       round = pick["round"]
-      team_name = pick.dig("teamName", "default") || pick["teamName"]
+      team_name = localized_value(pick["teamName"])
       position = pick["positionCode"]
-      first_name = pick.dig("firstName", "default") || pick["firstName"]
-      last_name = pick.dig("lastName", "default") || pick["lastName"]
+      first_name = localized_value(pick["firstName"])
+      last_name = localized_value(pick["lastName"])
       club = pick["amateurClubName"]
       league = pick["amateurLeague"]
       country_code = pick["countryCode"]
       demonym = COUNTRY_DEMONYMS[country_code] || country_code
 
-      # First line
       history_part = pick_history_str.empty? ? "" : " #{pick_history_str}"
-      first_line = "📝 With the #{pick_num.ordinalize} pick#{history_part} in round #{round} of the #{draft_year} NHL Draft, the #{team_name} have selected #{demonym} #{position} #{first_name} #{last_name} from #{club} (#{league})"
+      source = [club, league.present? ? "(#{league})" : nil].compact.join(" ")
+      source_part = source.present? ? " from #{source}" : ""
+      first_line = "📝 With pick No. #{pick_num}#{history_part} in Round #{round} of the #{draft_year} NHL Draft, the #{team_name} selected #{demonym} #{position} #{first_name} #{last_name}#{source_part}."
 
-      # Details
       details = []
       if ranking_info
         category_name = get_ranking_category_name(ranking_info["category"])
         rank = ranking_info["finalRank"]
-        details << "Ranking: #{rank.ordinalize} in #{category_name}"
+        details << "Ranking: #{rank.ordinalize} in #{category_name}" if rank && category_name
 
         height = ranking_info["heightInInches"]
         details << "Height: #{format_height(height)}" if height
@@ -205,8 +225,86 @@ module RodTheBot
       [first_line, details.join("\n")].join("\n\n")
     end
 
+    def enqueue_post_thread(post, dedupe_key)
+      chunks = split_post(post)
+      return if chunks.empty?
+
+      if chunks.one?
+        RodTheBot::Post.perform_async(chunks.first)
+        return
+      end
+
+      base_key = "#{dedupe_key}:post"
+      first_key = "#{base_key}:1"
+      RodTheBot::Post.perform_async(chunks.first, first_key)
+
+      chunks.drop(1).each_with_index do |chunk, index|
+        chunk_key = "#{base_key}:#{index + 2}"
+        parent_key = (index == 0) ? first_key : "#{base_key}:#{index + 1}"
+        RodTheBot::Post.perform_in((index + 1) * POST_DELAY, chunk, chunk_key, parent_key)
+      end
+    end
+
+    def split_post(post)
+      max_length = max_post_length
+      chunks = []
+      current = ""
+
+      post.split(/\n{2,}/).each do |paragraph|
+        paragraph_chunks(paragraph, max_length).each do |piece|
+          if current.blank?
+            current = piece
+          elsif "#{current}\n\n#{piece}".length <= max_length
+            current = "#{current}\n\n#{piece}"
+          else
+            chunks << current
+            current = piece
+          end
+        end
+      end
+
+      chunks << current if current.present?
+      chunks
+    end
+
+    def paragraph_chunks(paragraph, max_length)
+      return [paragraph] if paragraph.length <= max_length
+
+      chunks = []
+      paragraph.each_line(chomp: true) do |line|
+        chunks.concat(wrap_line(line, max_length))
+      end
+      chunks
+    end
+
+    def wrap_line(line, max_length)
+      chunks = []
+      current = ""
+
+      line.split(/\s+/).each do |word|
+        if current.blank?
+          current = word
+        elsif "#{current} #{word}".length <= max_length
+          current = "#{current} #{word}"
+        else
+          chunks << current
+          current = word
+        end
+      end
+
+      chunks << current if current.present?
+      chunks
+    end
+
+    def max_post_length
+      hashtags = ENV["TEAM_HASHTAGS"].to_s
+      hashtag_length = hashtags.empty? ? 0 : hashtags.length + 1
+      BLUESKY_CHARACTER_LIMIT - hashtag_length
+    end
+
     def format_height(total_inches)
-      return nil unless total_inches.is_a?(Numeric) && total_inches.positive?
+      total_inches = total_inches.to_i
+      return nil unless total_inches.positive?
 
       feet = total_inches / 12
       inches = total_inches % 12
@@ -229,11 +327,24 @@ module RodTheBot
 
     def get_ranking_category_name(category_symbol)
       {
-        north_american_skaters: "North American Skaters",
-        international_skaters: "International Skaters",
-        north_american_goalies: "North American Goalies",
-        international_goalies: "International Goalies"
-      }[category_symbol]
+        "north_american_skaters" => "North American Skaters",
+        "international_skaters" => "International Skaters",
+        "north_american_goalies" => "North American Goalies",
+        "international_goalies" => "International Goalies"
+      }[category_symbol.to_s]
+    end
+
+    def localized_value(value)
+      case value
+      when Hash
+        value["default"] || value.values.compact.first
+      else
+        value
+      end
+    end
+
+    def normalized_name(first_name, last_name)
+      ActiveSupport::Inflector.transliterate("#{first_name} #{last_name}".downcase).squish
     end
   end
 end

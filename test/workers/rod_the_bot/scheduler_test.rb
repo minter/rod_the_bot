@@ -12,6 +12,16 @@ class RodTheBot::SchedulerTest < ActiveSupport::TestCase
     NhlApi.stubs(:current_season).returns("20232024")
   end
 
+  def test_perform_offseason_enqueues_draft_worker
+    NhlApi.expects(:offseason?).returns(true)
+
+    @worker.perform
+
+    assert_equal 1, RodTheBot::DraftPickWorker.jobs.size
+    assert_equal 0, RodTheBot::YesterdaysScoresWorker.jobs.size
+    assert_equal 0, RodTheBot::TodaysScheduleWorker.jobs.size
+  end
+
   def test_perform_non_gameday
     VCR.use_cassette("nhl_schedule_20231201") do
       Timecop.freeze(Date.new(2023, 12, 1)) do
