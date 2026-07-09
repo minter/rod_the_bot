@@ -70,37 +70,23 @@ class RodTheBot::PostTest < ActiveSupport::TestCase
     end
   end
 
-  def test_open_atproto_session_handles_create_session_without_did_doc
+  def test_create_session_uses_bskyrb_session
     post = RodTheBot::Post.new
-    credentials = ATProto::Credentials.new("test.bsky.social", "app-password", "https://bsky.social")
-    session = ATProto::Session.new(credentials, false)
+    credentials = mock("credentials")
+    session = mock("session")
+    bsky = mock("bsky")
 
-    create_session_response = mock("create_session_response")
-    create_session_response.stubs(:code).returns(200)
-    create_session_response.stubs(:success?).returns(true)
-    create_session_response.stubs(:[]).with("accessJwt").returns("ACCESS_JWT")
-    create_session_response.stubs(:[]).with("refreshJwt").returns("REFRESH_JWT")
-    create_session_response.stubs(:[]).with("did").returns("did:plc:test")
-    create_session_response.stubs(:[]).with("didDoc").returns(nil)
+    ENV["BLUESKY_ENABLED"] = "true"
+    ENV["BLUESKY_USERNAME"] = "test.bsky.social"
+    ENV["BLUESKY_APP_PASSWORD"] = "app-password"
+    ENV["BLUESKY_URL"] = "https://pds.example"
 
-    did_doc = {
-      "service" => [
-        {"serviceEndpoint" => "https://morel.us-east.host.bsky.network"}
-      ]
-    }
-    resolve_did_response = mock("resolve_did_response")
-    resolve_did_response.stubs(:success?).returns(true)
-    resolve_did_response.stubs(:[]).with("didDoc").returns(did_doc)
+    Rails.env.stubs(:test?).returns(false)
+    ATProto::Credentials.expects(:new).with("test.bsky.social", "app-password", "https://pds.example").returns(credentials)
+    ATProto::Session.expects(:new).with(credentials).returns(session)
+    Bskyrb::Client.expects(:new).with(session).returns(bsky)
 
-    HTTParty.expects(:post).returns(create_session_response)
-    HTTParty.expects(:get).returns(resolve_did_response)
-
-    post.send(:open_atproto_session, session)
-
-    assert_equal "ACCESS_JWT", session.access_token
-    assert_equal "REFRESH_JWT", session.refresh_token
-    assert_equal "did:plc:test", session.did
-    assert_equal "did:web:morel.us-east.host.bsky.network", session.service_endpoint
+    assert_equal bsky, post.send(:create_session)
   end
 
   def test_validate_bluesky_credentials_reports_missing_env_vars

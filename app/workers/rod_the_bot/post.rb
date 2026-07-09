@@ -61,55 +61,8 @@ module RodTheBot
       validate_bluesky_credentials!
 
       credentials = ATProto::Credentials.new(bluesky_username, bluesky_app_password, bluesky_pds)
-      session = ATProto::Session.new(credentials, false)
-      open_atproto_session(session)
+      session = ATProto::Session.new(credentials)
       @bsky = Bskyrb::Client.new(session)
-    end
-
-    def open_atproto_session(session)
-      response = HTTParty.post(
-        URI(session.create_session_uri(session.pds)),
-        body: {identifier: session.credentials.username, password: session.credentials.pw}.to_json,
-        headers: session.default_headers
-      )
-
-      raise ATProto::UnauthorizedError if response&.code == 401
-      raise ATProto::HTTPError, "Bluesky createSession returned no response" unless response
-      unless response.success?
-        raise ATProto::HTTPError, "Bluesky createSession failed: #{response.code} #{response.message}"
-      end
-
-      access_token = response["accessJwt"]
-      refresh_token = response["refreshJwt"]
-      did = response["did"]
-      unless access_token && refresh_token && did
-        raise ATProto::HTTPError, "Bluesky createSession response missing required session fields"
-      end
-
-      session.instance_variable_set(:@access_token, access_token)
-      session.instance_variable_set(:@refresh_token, refresh_token)
-      session.instance_variable_set(:@did, did)
-      session.instance_variable_set(:@service_endpoint, service_endpoint_for(session, response))
-    end
-
-    def service_endpoint_for(session, create_session_response)
-      did_doc = create_session_response["didDoc"] || resolve_did_doc(session)
-      endpoint = did_doc&.dig("service", 0, "serviceEndpoint")
-      return "did:web:#{URI.parse(endpoint).host}" if endpoint
-
-      "did:web:#{URI.parse(session.pds).host}"
-    end
-
-    def resolve_did_doc(session)
-      response = HTTParty.get(
-        URI("#{session.pds}/xrpc/com.atproto.identity.resolveDid?did=#{URI.encode_www_form_component(session.did)}"),
-        headers: session.default_headers
-      )
-
-      return response["didDoc"] if response&.success? && response["didDoc"]
-
-      Rails.logger.warn "Post: Bluesky didDoc missing from createSession and resolveDid failed; using PDS host for service auth audience"
-      nil
     end
 
     def validate_bluesky_credentials!
