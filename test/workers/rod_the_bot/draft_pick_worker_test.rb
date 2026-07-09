@@ -16,11 +16,14 @@ class RodTheBot::DraftPickWorkerTest < ActiveSupport::TestCase
   end
 
   def test_posts_selected_team_pick_on_inferred_draft_day
+    dedupe_value = nil
+
     Timecop.freeze(Date.new(2026, 6, 26)) do
       NhlApi.expects(:fetch_draft_picks).with(2026).returns(draft_data)
       NhlApi.expects(:fetch_draft_rankings).with(2026).returns(rankings)
 
       @worker.perform
+      dedupe_value = REDIS.get("draft_pick:2026:31")
     end
 
     assert_equal 1, RodTheBot::Post.jobs.size
@@ -29,7 +32,7 @@ class RodTheBot::DraftPickWorkerTest < ActiveSupport::TestCase
     assert_includes post, "the Carolina Hurricanes selected Canadian C Gavin McKenna"
     assert_includes post, "Ranking: 1st in North American Skaters"
     assert_includes post, "Height: 5'11\""
-    assert_equal "1", REDIS.get("draft_pick:2026:31")
+    assert_equal "1", dedupe_value
     assert_equal 1, RodTheBot::DraftPickWorker.jobs.size
   end
 
