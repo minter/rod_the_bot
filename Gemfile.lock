@@ -1,6 +1,6 @@
 GIT
   remote: https://github.com/minter/bskyrb.git
-  revision: 9ac0975b8f0c5bbddb2f144c2c8dffdbf3d89e2d
+  revision: c063e93b859315cb7175bde0668dce7ad608dc88
   branch: main
   specs:
     bskyrb (0.5.3)
@@ -12,6 +12,7 @@ GIT
       mini_magick (>= 4.12.0)
       mini_mime (>= 1.1.2)
       nokogiri (>= 1.16.1)
+      public_suffix (>= 5.0)
       streamio-ffmpeg (>= 3.0.2)
       xrpc (>= 0.1.5)
 
