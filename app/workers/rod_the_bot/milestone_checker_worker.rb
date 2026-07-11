@@ -23,83 +23,19 @@ module RodTheBot
       return unless details["scoringPlayerId"].present?
       return unless player_on_tracked_team?(details["scoringPlayerId"])
 
-      player_id = details["scoringPlayerId"]
-      player_name = get_player_name(player_id)
+      scorer_id = details["scoringPlayerId"]
+      enqueue_events(get_player_name(scorer_id), evaluator.scorer(scorer_id))
 
-      # Check if this was a milestone goal
-      check_goal_milestone(player_id, player_name)
+      %w[assist1PlayerId assist2PlayerId].each do |key|
+        player_id = details[key]
+        next unless player_id.present? && player_on_tracked_team?(player_id)
 
-      # Check assists for this goal (but not for first career milestones)
-      if details["assist1PlayerId"].present? && player_on_tracked_team?(details["assist1PlayerId"])
-        assist_player_id = details["assist1PlayerId"]
-        assist_player_name = get_player_name(assist_player_id)
-        check_assist_milestone(assist_player_id, assist_player_name)
-      end
-
-      if details["assist2PlayerId"].present? && player_on_tracked_team?(details["assist2PlayerId"])
-        assist_player_id = details["assist2PlayerId"]
-        assist_player_name = get_player_name(assist_player_id)
-        check_assist_milestone(assist_player_id, assist_player_name)
+        enqueue_events(get_player_name(player_id), evaluator.assister(player_id))
       end
     end
 
     def get_player_name(player_id)
-      # Get player name with jersey number from the game feed
       format_player_from_roster(game_roster, player_id)
-    end
-
-    def check_goal_milestone(player_id, player_name)
-      # Calculate career totals using pre-game stats + in-game stats
-      goals = calculate_career_total(player_id, "goals")
-      points = calculate_career_total(player_id, "points")
-
-      # Check for milestone goals
-      if Milestones::Thresholds.include?("goal", goals)
-        post = if goals == 1
-          # First career goal - check if this is also first career point
-          if points == 1
-            format_first_career_post(player_name, "goal")
-          else
-            format_milestone_achievement_post(player_name, "goal", goals)
-          end
-        else
-          format_milestone_achievement_post(player_name, "goal", goals)
-        end
-        RodTheBot::Post.perform_async(post)
-      end
-    end
-
-    def check_point_milestone(player_id, player_name)
-      # Calculate career totals using pre-game stats + in-game stats
-      points = calculate_career_total(player_id, "points")
-      goals = calculate_career_total(player_id, "goals")
-
-      # Check for milestone points
-      if Milestones::Thresholds.include?("point", points)
-        if points == 1
-          # First career point - check if this is also first career goal
-          if goals == 1
-            # Skip - first goal post will handle this
-            return
-          else
-            post = format_first_career_post(player_name, "point")
-          end
-        else
-          post = format_milestone_achievement_post(player_name, "point", points)
-        end
-        RodTheBot::Post.perform_async(post)
-      end
-    end
-
-    def check_assist_milestone(player_id, player_name)
-      # Calculate career totals using pre-game stats + in-game stats
-      assists = calculate_career_total(player_id, "assists")
-
-      # Check for milestone assists (skip first career assist - handled under points)
-      if Milestones::Thresholds.include?("assist", assists)
-        post = format_milestone_achievement_post(player_name, "assist", assists)
-        RodTheBot::Post.perform_async(post)
-      end
     end
 
     def check_goalie_milestones
@@ -118,38 +54,7 @@ module RodTheBot
 
         next if goalie_name.empty? || goalie_id.nil?
 
-        check_goalie_win_milestone(goalie_id, goalie_name)
-        check_goalie_shutout_milestone(goalie_id, goalie_name)
-      end
-    end
-
-    def check_goalie_win_milestone(goalie_id, goalie_name)
-      # Calculate career totals using pre-game stats + in-game result
-      wins = calculate_career_total(goalie_id, "wins")
-
-      # Check for milestone wins
-      if Milestones::Thresholds.include?("win", wins)
-        post = if wins == 1
-          format_first_career_post(goalie_name, "win")
-        else
-          format_milestone_achievement_post(goalie_name, "win", wins)
-        end
-        RodTheBot::Post.perform_async(post)
-      end
-    end
-
-    def check_goalie_shutout_milestone(goalie_id, goalie_name)
-      # Calculate career totals using pre-game stats + in-game result
-      shutouts = calculate_career_total(goalie_id, "shutouts")
-
-      # Check for milestone shutouts
-      if Milestones::Thresholds.include?("shutout", shutouts)
-        post = if shutouts == 1
-          format_first_career_post(goalie_name, "shutout")
-        else
-          format_milestone_achievement_post(goalie_name, "shutout", shutouts)
-        end
-        RodTheBot::Post.perform_async(post)
+        enqueue_events(goalie_name, evaluator.goalie(goalie_id))
       end
     end
 
@@ -163,6 +68,18 @@ module RodTheBot
 
     def career_total
       @career_total ||= Milestones::CareerTotal.new(game_id: @game_id, feed: method(:game_feed))
+    end
+
+    def evaluator
+      @evaluator ||= Milestones::Evaluator.new(totals: career_total)
+    end
+
+    def formatter
+      @formatter ||= Milestones::Formatter.new
+    end
+
+    def enqueue_events(player_name, events)
+      events.each { |event| RodTheBot::Post.perform_async(formatter.format(player_name, event)) }
     end
 
     def tracked_team_id
@@ -181,48 +98,5 @@ module RodTheBot
       team_id.to_i == tracked_team_id
     end
 
-    def format_milestone_achievement_post(player_name, stat_type, value)
-      emoji = case stat_type
-      when "goal" then "🚨"
-      when "assist" then "🍎"
-      when "point" then "🎯"
-      when "win" then "🥅"
-      when "shutout" then "🛡️"
-      end
-
-      # Keep it concise for Bluesky (hashtags will be added by Post worker)
-      post = "#{emoji} MILESTONE! #{player_name} has reached #{value} career #{stat_type.pluralize(value)}! #{emoji}"
-
-      # Ensure we don't exceed Bluesky's character limit
-      if post.length > 300
-        post = "#{emoji} MILESTONE! #{player_name} reached #{value} career #{stat_type.pluralize(value)}! #{emoji}"
-      end
-
-      post
-    end
-
-    def format_first_career_post(player_name, stat_type)
-      emoji = case stat_type
-      when "goal" then "🚨"
-      when "point" then "🎯"
-      when "win" then "🥅"
-      when "shutout" then "🛡️"
-      end
-
-      # Special formatting for first career milestones (hashtags will be added by Post worker)
-      verb = case stat_type
-      when "win", "shutout" then "earned"
-      else "scored"
-      end
-
-      post = "#{emoji} MILESTONE! #{player_name} has #{verb} their first career NHL #{stat_type}! #{emoji}"
-
-      # Ensure we don't exceed Bluesky's character limit
-      if post.length > 300
-        post = "#{emoji} MILESTONE! #{player_name} #{verb} their first career NHL #{stat_type}! #{emoji}"
-      end
-
-      post
-    end
   end
 end
