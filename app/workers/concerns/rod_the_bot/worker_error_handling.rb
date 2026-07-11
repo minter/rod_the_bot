@@ -7,5 +7,11 @@ module RodTheBot
       Rails.logger.error "#{self.class.name}: #{details} error=#{error.class} message=#{error.message}"
       raise error
     end
+
+    def discard_job(reason, **context)
+      details = context.compact.map { |key, value| "#{key}=#{value}" }.join(" ")
+      Rails.logger.warn "#{self.class.name}: #{details} discarded=#{reason}"
+      nil
+    end
   end
 end

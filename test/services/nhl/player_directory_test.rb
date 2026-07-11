@@ -35,4 +35,15 @@ class Nhl::PlayerDirectoryTest < ActiveSupport::TestCase
 
     assert_equal "#22 Logan Stankoven", directory.name_with_number("42")
   end
+
+  test "ignores malformed roster entries" do
+    directory = Nhl::PlayerDirectory.from_game_feed(
+      "homeTeam" => {"id" => 12, "abbrev" => "CAR"},
+      "awayTeam" => {"id" => 1, "abbrev" => "NJD"},
+      "rosterSpots" => [nil, {}, {"playerId" => 20, "firstName" => {"default" => "Sebastian"}, "lastName" => {"default" => "Aho"}}]
+    )
+
+    assert_nil directory.fetch(nil)
+    assert_equal "Sebastian Aho", directory.full_name(20)
+  end
 end

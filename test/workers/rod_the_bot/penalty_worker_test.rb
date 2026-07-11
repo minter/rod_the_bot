@@ -37,6 +37,15 @@ class RodTheBot::PenaltyWorkerTest < ActiveSupport::TestCase
     end
   end
 
+  test "discards a penalty with missing details" do
+    play = {"eventId" => 10}
+    Nhl::GameClient.stubs(:play_by_play).returns({})
+    Nhl::GameClient.stubs(:play).returns({"typeDescKey" => "penalty"})
+
+    assert_nil @worker.perform(20, play)
+    assert_empty RodTheBot::Post.jobs
+  end
+
   private
 
   def get_expected_content(play, feed)

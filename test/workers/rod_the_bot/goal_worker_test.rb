@@ -7,6 +7,16 @@ class RodTheBot::GoalWorkerTest < ActiveSupport::TestCase
     ENV["NHL_TEAM_ID"] = "12"
   end
 
+  def test_discards_goal_with_missing_details
+    play = {"eventId" => 10}
+    feed = {"homeTeam" => {"id" => 12}, "awayTeam" => {"id" => 1}, "plays" => []}
+    Nhl::GameClient.stubs(:play_by_play).returns(feed)
+    Nhl::GameClient.stubs(:play).returns({"typeDescKey" => "goal"})
+
+    assert_nil @goal_worker.perform(20, play)
+    assert_empty RodTheBot::Post.jobs
+  end
+
   def test_away_goal
     @game_id = "2023020702"
     @play_id = "157"

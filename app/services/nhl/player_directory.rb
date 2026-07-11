@@ -23,7 +23,8 @@ module Nhl
       teams = [feed["homeTeam"], feed["awayTeam"]].compact.to_h do |team|
         [team["id"].to_i, team["abbrev"]]
       end
-      identities = feed.fetch("rosterSpots", []).map do |player|
+      identities = feed.fetch("rosterSpots", []).filter_map do |player|
+        next unless player.is_a?(Hash) && player["playerId"].present?
         PlayerIdentity.from_game_roster(
           player,
           team_abbreviation: teams[player["teamId"].to_i]

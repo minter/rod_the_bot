@@ -11,6 +11,8 @@ module RodTheBot
 
       penalty = Nhl::GameClient.play(game_id, play["eventId"])
       return unless penalty
+      return discard_job("missing penalty details", game_id: game_id, play_id: play["eventId"]) unless penalty["details"].is_a?(Hash)
+      return discard_job("missing period descriptor", game_id: game_id, play_id: play["eventId"]) unless penalty["periodDescriptor"].is_a?(Hash)
 
       if penalty.dig("details", "descKey") == "minor"
         if desc_retry_count < MAX_DESC_RETRIES

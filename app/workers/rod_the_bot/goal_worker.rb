@@ -17,6 +17,9 @@ module RodTheBot
         return
       end
 
+      return discard_job("missing goal details", game_id: game_id, play_id: @play_id) unless @play["details"].is_a?(Hash)
+      return discard_job("missing period descriptor", game_id: game_id, play_id: @play_id) unless @play["periodDescriptor"].is_a?(Hash)
+
       # Skip goals in the shootout
       return if @play["periodDescriptor"]["periodType"] == "SO"
 

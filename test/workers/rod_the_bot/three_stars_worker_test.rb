@@ -2,6 +2,7 @@ require "test_helper"
 
 class RodTheBot::ThreeStarsWorkerTest < ActiveSupport::TestCase
   def setup
+    Sidekiq::Worker.clear_all
     @worker = RodTheBot::ThreeStarsWorker.new
     identities = [
       [8480336, "Sean", "Walker", 26],
@@ -101,5 +102,12 @@ class RodTheBot::ThreeStarsWorkerTest < ActiveSupport::TestCase
       ⭐️ NSH #25 Joakim Kemell (1G, 1A, 2PTS)
     POST
     assert_equal expected_output, post
+  end
+
+  def test_discards_malformed_three_stars
+    Nhl::GameClient.stubs(:landing).returns("summary" => {"threeStars" => [{"playerId" => 1}]})
+
+    assert_nil @worker.perform(10)
+    assert_empty RodTheBot::Post.jobs
   end
 end

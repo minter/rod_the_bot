@@ -12,7 +12,9 @@ module RodTheBot
       @players = Nhl::PlayerDirectory.for_game(game_id)
 
       if feed["summary"].present? && feed["summary"]["threeStars"].present?
-        post = format_three_stars(feed["summary"]["threeStars"])
+        stars = feed["summary"]["threeStars"]
+        return discard_job("malformed three stars", game_id: game_id) unless stars.is_a?(Array) && stars.length >= 3 && stars.first(3).all? { |star| star.is_a?(Hash) && star["playerId"].present? }
+        post = format_three_stars(stars)
         post_three_stars(post)
       elsif retry_count < MAX_RETRIES
         RodTheBot::ThreeStarsWorker.perform_in(60, game_id, retry_count + 1)
