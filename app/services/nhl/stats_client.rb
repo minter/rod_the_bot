@@ -24,6 +24,21 @@ module Nhl
         {}
       end
 
+      def team_summary(season:, game_type:, sort:)
+        query = URI.encode_www_form(
+          sort: sort,
+          cayenneExp: "seasonId=#{season} and gameTypeId=#{game_type}"
+        )
+        get_json("/team/summary?#{query}").fetch("data", [])
+      end
+
+      def shift_charts(game_id)
+        cached("shift_charts_#{game_id}", 1.hour) do
+          query = URI.encode_www_form(cayenneExp: "gameId=#{game_id}")
+          get_json("/shiftcharts?#{query}").fetch("data", [])
+        end
+      end
+
       private
 
       def cached(key, expires_in, &block)

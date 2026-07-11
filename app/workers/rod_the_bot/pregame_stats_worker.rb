@@ -18,10 +18,7 @@ module RodTheBot
 
     def store_pregame_stats(player_id)
       # Fetch current career stats from the landing page API (more reliable than stats API)
-      response = HTTParty.get("https://api-web.nhle.com/v1/player/#{player_id}/landing")
-      return unless response.success?
-
-      player_data = response.parsed_response
+      player_data = Nhl::PlayerClient.landing(player_id)
       career_stats = player_data.dig("careerTotals", "regularSeason")
       return unless career_stats
 

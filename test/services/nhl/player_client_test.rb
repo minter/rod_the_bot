@@ -49,4 +49,14 @@ class Nhl::PlayerClientTest < ActiveSupport::TestCase
       assert %w[goals assists points].all? { |stat| totals.key?(stat) }
     end
   end
+
+  test "returns club stats from the current-season endpoint" do
+    Nhl::PlayerClient.expects(:get_json).with("/club-stats/CAR/now").returns(
+      "season" => 20252026,
+      "skaters" => [],
+      "goalies" => []
+    )
+
+    assert_equal 20252026, Nhl::PlayerClient.club_stats("CAR")["season"]
+  end
 end

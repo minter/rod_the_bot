@@ -59,17 +59,11 @@ module RodTheBot
     end
 
     def fetch_skater_milestones
-      Rails.cache.fetch("skater_milestones_#{Date.current}", expires_in: 24.hours) do
-        response = HTTParty.get("https://api.nhle.com/stats/rest/en/milestones/skaters")
-        response.success? ? response.parsed_response : {}
-      end
+      Nhl::StatsClient.skater_milestones
     end
 
     def fetch_goalie_milestones
-      Rails.cache.fetch("goalie_milestones_#{Date.current}", expires_in: 24.hours) do
-        response = HTTParty.get("https://api.nhle.com/stats/rest/en/milestones/goalies")
-        response.success? ? response.parsed_response : {}
-      end
+      Nhl::StatsClient.goalie_milestones
     end
 
     def get_current_value(milestone)

@@ -20,6 +20,10 @@ module Nhl
       def career_totals(player_id, season_type: :regularSeason)
         landing(player_id).dig("careerTotals", season_type.to_s) || {}
       end
+
+      def club_stats(team_abbreviation, season: "now")
+        get_json("/club-stats/#{team_abbreviation}/#{season}")
+      end
     end
   end
 end

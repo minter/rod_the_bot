@@ -37,12 +37,7 @@ module RodTheBot
     end
 
     def get_shift_charts
-      Rails.cache.fetch("shift_charts_#{@game_id}_#{@period_number}", expires_in: 1.hour) do
-        response = HTTParty.get("https://api.nhle.com/stats/rest/en/shiftcharts?cayenneExp=gameId=#{@game_id}")
-        return [] unless response.success?
-
-        response.parsed_response["data"] || []
-      end
+      Nhl::StatsClient.shift_charts(@game_id)
     end
 
     def calculate_corsi(shifts)
