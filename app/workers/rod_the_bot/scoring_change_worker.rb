@@ -40,22 +40,13 @@ module RodTheBot
       # Create a new unique key for this scoring change post
       scoring_key = "#{redis_key}:scoring:#{Time.now.to_i}"
       @feed = Nhl::GameClient.play_by_play(game_id)
-      @play = @feed["plays"].find { |play| play["eventId"].to_s == play_id.to_s }
       @home = @feed["homeTeam"]
       @away = @feed["awayTeam"]
+      result = ScoringChange::Detector.new(@feed).detect(play_id: play_id, original_play: original_play)
+      @play = result.play
 
-      # Check if goal was overturned (completely removed from PBP)
-      if @play.blank?
-        return handle_overturned_goal(game_id, play_id, original_play, redis_key)
-      end
-
-      return if @play["typeDescKey"] != "goal"
-
-      # If nothing has changed on this scoring play, exit
-      original_scorers = [original_play["details"]["scoringPlayerId"], original_play["details"]["assist1PlayerId"], original_play["details"]["assist2PlayerId"]]
-      new_scorers = [@play["details"]["scoringPlayerId"], @play["details"]["assist1PlayerId"], @play["details"]["assist2PlayerId"]]
-
-      return if new_scorers == original_scorers
+      return handle_overturned_goal(game_id, play_id, original_play, redis_key, result.challenge) if result.status == :overturned
+      return unless result.status == :corrected
 
       players = build_players(@feed)
 
@@ -139,7 +130,7 @@ module RodTheBot
 
     private
 
-    def handle_overturned_goal(game_id, play_id, original_play, redis_key)
+    def handle_overturned_goal(game_id, play_id, original_play, redis_key, challenge_event)
       # Determine parent_key: Use most recent reply if it exists, otherwise use goal post (root)
       # Threading: Goal (root) -> most recent reply -> next reply -> etc.
       last_reply_tracker_key = "#{redis_key}:last_reply_key"
@@ -153,12 +144,6 @@ module RodTheBot
       else
         Rails.logger.info "ScoringChangeWorker (overturned): No previous replies, replying to goal post (root) with key: #{parent_key}"
       end
-
-      # Find challenge event near the original goal time
-      challenge_event = find_challenge_near_goal(
-        original_play["timeInPeriod"],
-        original_play["periodDescriptor"]["number"]
-      )
 
       return unless challenge_event
 
@@ -192,25 +177,6 @@ module RodTheBot
       RodTheBot::Post.perform_async(post, overturn_key, parent_key, nil, nil, nil, redis_key)
 
       Rails.logger.info "ScoringChangeWorker: Posted goal overturn for game #{game_id}, play #{play_id} (#{challenge_reason}), replying to: #{parent_key}"
-    end
-
-    def find_challenge_near_goal(original_goal_time, period_number)
-      # Look for challenge events within 3 minutes of original goal
-      goal_minutes = time_to_minutes(original_goal_time)
-
-      @feed["plays"].find { |play|
-        play["typeDescKey"] == "stoppage" &&
-          play["details"] &&
-          play["details"]["reason"]&.include?("chlg") &&
-          play["periodDescriptor"]["number"] == period_number &&
-          (time_to_minutes(play["timeInPeriod"]) - goal_minutes).abs <= 3
-      }
-    end
-
-    def time_to_minutes(time_string)
-      # Convert "12:17" to 12.28 minutes
-      minutes, seconds = time_string.split(":").map(&:to_i)
-      minutes + (seconds / 60.0)
     end
 
     def parse_challenge_reason(reason_code)
