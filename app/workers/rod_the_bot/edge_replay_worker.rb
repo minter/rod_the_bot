@@ -47,7 +47,7 @@ module RodTheBot
       end
 
       # Download EDGE JSON
-      edge_json_path = download_edge_json(game_id, event_id, output_dir)
+      edge_json_path = source.edge_json(game_id, event_id, output_dir)
       unless edge_json_path
         Rails.logger.warn "EdgeReplayWorker: EDGE JSON not available for game #{game_id}, event #{event_id}"
         # Retry if redis_key provided (meaning we want to post it)
@@ -59,7 +59,7 @@ module RodTheBot
       end
 
       # Fetch game data to determine home/away teams and get logos
-      game_data = fetch_game_data(game_id)
+      game_data = source.game_data(game_id)
       unless game_data
         Rails.logger.warn "EdgeReplayWorker: Game data not available for game #{game_id}"
         # Retry if redis_key provided
@@ -93,41 +93,6 @@ module RodTheBot
     end
 
     private
-
-    def download_edge_json(game_id, event_id, output_dir)
-      season_slug = season_slug_from_game_id(game_id)
-      url = "https://wsr.nhle.com/sprites/#{season_slug}/#{game_id}/ev#{event_id}.json"
-
-      json_path = output_dir.join("#{game_id}_ev#{event_id}.json")
-
-      # Use NHL.com-like headers to avoid Cloudflare blocking
-      uri = URI.parse(url)
-      http = Net::HTTP.new(uri.host, uri.port)
-      http.use_ssl = true
-
-      request = Net::HTTP::Get.new(uri.request_uri)
-      request["User-Agent"] = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"
-      request["Accept"] = "application/json,*/*;q=0.8"
-      request["Origin"] = "https://www.nhl.com"
-      request["Referer"] = "https://www.nhl.com/gamecenter/#{game_id}/playbyplay"
-      request["Sec-Fetch-Site"] = "cross-site"
-      request["Sec-Fetch-Mode"] = "cors"
-      request["Sec-Fetch-Dest"] = "empty"
-
-      response = http.request(request)
-
-      unless response.is_a?(Net::HTTPSuccess)
-        Rails.logger.error "Failed to download EDGE JSON from #{url}: HTTP #{response.code}"
-        return nil
-      end
-
-      File.binwrite(json_path, response.body)
-      Rails.logger.info "EdgeReplayWorker: Downloaded EDGE JSON to #{json_path}"
-      json_path
-    rescue => e
-      Rails.logger.error "Error downloading EDGE JSON: #{e.message}"
-      nil
-    end
 
     def generate_replay(input_json_path, output_path, options = {})
       options = default_options.merge(options)
@@ -349,7 +314,7 @@ module RodTheBot
       ]
 
       # Add home team logo overlay at center ice if available
-      home_team_logo_path = download_team_logo(game_data.dig("homeTeam", "logo"), tmpdir) if game_data.dig("homeTeam", "logo")
+      home_team_logo_path = source.team_logo(game_data.dig("homeTeam", "logo"), tmpdir) if game_data.dig("homeTeam", "logo")
       if home_team_logo_path && File.exist?(home_team_logo_path)
         # Center ice position in EDGE coordinates: (1200, 510)
         center_x = map_x(1200, tf)
@@ -400,14 +365,6 @@ module RodTheBot
     end
 
     # Helper methods from script
-
-    def season_slug_from_game_id(game_id)
-      s = game_id.to_s.strip
-      raise "Invalid game_id" unless s.match?(/\A\d{10}\z/)
-
-      year = s[0, 4].to_i
-      "#{year}#{year + 1}"
-    end
 
     def puck_entity?(ent)
       pid = ent["playerId"]
@@ -464,51 +421,6 @@ module RodTheBot
       }
     end
 
-    def fetch_game_data(game_id)
-      game_data = Nhl::GameClient.landing(game_id)
-      return nil unless game_data && game_data["homeTeam"] && game_data["awayTeam"]
-
-      game_data
-    rescue => e
-      Rails.logger.error "Error fetching game data: #{e.message}"
-      nil
-    end
-
-    def download_team_logo(logo_url, tmpdir)
-      return nil unless logo_url
-
-      # Extract team abbreviation from URL (e.g., "PHI_light.svg" -> "PHI")
-      team_abbrev = logo_url.match(%r{/([A-Z]+)_})&.[](1)
-      return nil unless team_abbrev
-
-      logo_path = File.join(tmpdir, "#{team_abbrev}_logo.svg")
-
-      # Download logo if not already cached
-      unless File.exist?(logo_path)
-        uri = URI.parse(logo_url)
-        http = Net::HTTP.new(uri.host, uri.port)
-        http.use_ssl = true
-
-        request = Net::HTTP::Get.new(uri.request_uri)
-        request["User-Agent"] = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"
-
-        response = http.request(request)
-
-        if response.is_a?(Net::HTTPSuccess)
-          File.binwrite(logo_path, response.body)
-          Rails.logger.info "Downloaded team logo: #{logo_url}"
-        else
-          Rails.logger.error "Failed to download logo from #{logo_url}: HTTP #{response.code}"
-          return nil
-        end
-      end
-
-      logo_path
-    rescue => e
-      Rails.logger.error "Error downloading team logo: #{e.message}"
-      nil
-    end
-
     def post_edge_replay(game_id, event_id, video_path, redis_key)
       # Fetch play data to format post text
       pbp_feed = Nhl::GameClient.play_by_play(game_id)
@@ -519,7 +431,7 @@ module RodTheBot
       players = Nhl::GameInfo.roster(game_id)
 
       # Format post text
-      post_text = format_edge_replay_post(pbp_play, players, pbp_feed)
+      post_text = post_formatter.format(pbp_play, players, pbp_feed)
 
       # Create a unique key for this EDGE replay post
       edge_replay_key = "#{redis_key}:edge_replay:#{Time.now.to_i}"
@@ -543,44 +455,8 @@ module RodTheBot
       RodTheBot::Post.perform_async(post_text, edge_replay_key, parent_key, nil, [], video_path, redis_key)
     end
 
-    def format_edge_replay_post(play, players, feed)
-      # Format scorer with jersey number
-      scorer_id = play.dig("details", "scoringPlayerId")
-      scorer_name = if scorer_id
-        format_player_from_roster(players, scorer_id)
-      else
-        "Unknown Player"
-      end
-
-      team_abbrev = play.dig("details", "eventOwnerTeamId")
-      scoring_team = if feed["homeTeam"]["id"] == team_abbrev
-        feed["homeTeam"]["abbrev"]
-      else
-        feed["awayTeam"]["abbrev"]
-      end
-
-      time = play["timeInPeriod"]
-      period_name = format_period_name(play["periodDescriptor"]["number"])
-
-      # Format assists with jersey numbers
-      assist_names = []
-      if play.dig("details", "assist1PlayerId").present?
-        assist_names << format_player_from_roster(players, play.dig("details", "assist1PlayerId"))
-      end
-      if play.dig("details", "assist2PlayerId").present?
-        assist_names << format_player_from_roster(players, play.dig("details", "assist2PlayerId"))
-      end
-
-      assist_text = assist_names.empty? ? "" : " Assisted by #{assist_names.join(", ")}."
-
-      away_team = feed["awayTeam"]["abbrev"]
-      home_team = feed["homeTeam"]["abbrev"]
-      away_score = play.dig("details", "awayScore") || 0
-      home_score = play.dig("details", "homeScore") || 0
-      score = format("%s %d - %s %d", away_team, away_score, home_team, home_score)
-
-      "📊 EDGE replay: #{scorer_name} (#{scoring_team}) scores at #{time} of the #{period_name}." \
-      "#{assist_text} Score: #{score}"
+    def post_formatter
+      @post_formatter ||= EdgeReplay::PostFormatter.new
     end
 
     def run_cmd!(cmd, label)
@@ -591,3 +467,6 @@ module RodTheBot
     end
   end
 end
+    def source
+      @source ||= EdgeReplay::Source.new
+    end

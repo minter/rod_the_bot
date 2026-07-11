@@ -4,6 +4,8 @@ class RodTheBot::EdgeReplayWorkerTest < ActiveSupport::TestCase
   def setup
     Sidekiq::Worker.clear_all
     @worker = RodTheBot::EdgeReplayWorker.new
+    @source = mock("edge replay source")
+    @worker.stubs(:source).returns(@source)
     ENV["NHL_TEAM_ID"] = "12"
     ENV["NHL_TEAM_ABBREVIATION"] = "CAR"
 
@@ -35,7 +37,7 @@ class RodTheBot::EdgeReplayWorkerTest < ActiveSupport::TestCase
     redis_key = "test_key"
 
     # Stub download_edge_json to return nil (not available)
-    @worker.stubs(:download_edge_json).returns(nil)
+    @source.stubs(:edge_json).returns(nil)
 
     result = @worker.perform(game_id, event_id, redis_key, 0)
 
@@ -50,7 +52,7 @@ class RodTheBot::EdgeReplayWorkerTest < ActiveSupport::TestCase
     redis_key = "test_key"
 
     # Stub download_edge_json to return nil
-    @worker.stubs(:download_edge_json).returns(nil)
+    @source.stubs(:edge_json).returns(nil)
 
     result = @worker.perform(game_id, event_id, redis_key, 5) # Max retries
 
@@ -65,8 +67,8 @@ class RodTheBot::EdgeReplayWorkerTest < ActiveSupport::TestCase
     redis_key = "test_key"
 
     # Stub methods to simulate missing game data
-    @worker.stubs(:download_edge_json).returns("/tmp/fake.json")
-    @worker.stubs(:fetch_game_data).returns(nil)
+    @source.stubs(:edge_json).returns("/tmp/fake.json")
+    @source.stubs(:game_data).returns(nil)
 
     result = @worker.perform(game_id, event_id, redis_key, 0)
 
@@ -87,7 +89,8 @@ class RodTheBot::EdgeReplayWorkerTest < ActiveSupport::TestCase
     response.stubs(:body).returns("[]")
     Net::HTTP.any_instance.stubs(:request).returns(response)
 
-    path = @worker.send(:download_edge_json, 2025020660, 544, @output_dir)
+    source = RodTheBot::EdgeReplay::Source.new
+    path = source.edge_json(2025020660, 544, @output_dir)
     @created_files << path
 
     assert_equal @output_dir.join("2025020660_ev544.json"), path
