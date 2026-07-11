@@ -64,7 +64,7 @@ class RodTheBot::PenaltyWorkerTest < ActiveSupport::TestCase
     when "PS"
       /#{emoji} #{penalized_team["commonName"]["default"]} Penalty.*#{player_name} - #{penalty_desc}.*penalty shot awarded at #{play["timeInPeriod"]} of the #{period_name}/m
     else
-      /#{emoji} #{penalized_team["commonName"]["default"]} Penalty.*#{player_name} - #{penalty_desc}.*#{play["details"]["duration"]} minute #{RodTheBot::PenaltyWorker::SEVERITY[play["details"]["typeCode"]]} penalty at #{play["timeInPeriod"]} of the #{period_name}/m
+      /#{emoji} #{penalized_team["commonName"]["default"]} Penalty.*#{player_name} - #{penalty_desc}.*#{play["details"]["duration"]} minute #{RodTheBot::Penalty::PostBuilder::SEVERITY[play["details"]["typeCode"]]} penalty at #{play["timeInPeriod"]} of the #{period_name}/m
     end
   end
 end

@@ -12,59 +12,18 @@ module RodTheBot
       return if Nhl::SeasonCalendar.preseason?
       return if skater_stats.empty? || goalie_stats.empty?
 
-      goalie_post = <<~POST
-        🥅 #{@season_type} goaltending stats for the #{your_team}
+      presentation = SeasonStats::Formatter.new(season_type: @season_type, team_name: your_team)
+      leaders = ->(stat) { top_skaters(skater_stats, stat) }
 
-        #{goalie_stats.sort_by { |k, v| v[:wins] }.reverse.map { |player| "#{player[1][:name]}: #{player[1][:wins]}-#{player[1][:losses]}-#{player[1][:overtime_losses]}, #{player[1][:save_percentage]} SV%, #{player[1][:goals_against_average]} GAA" }.join("\n")}
-      POST
-
-      skater_points_leader_post = <<~POST
-        📈 #{@season_type} points leaders for the #{your_team}
-
-        #{top_skaters(skater_stats, :points).map { |player| "#{player[1][:name]}: #{player[1][:points]} #{"point".pluralize(player[1][:points])}, (#{player[1][:goals]} G, #{player[1][:assists]} A)" }.join("\n")}
-      POST
-
-      time_on_ice_leader_post = <<~POST
-        ⏱️ #{@season_type} time on ice leaders for the #{your_team}
-
-        #{top_skaters(skater_stats, :time_on_ice).map { |player| "#{player[1][:name]}: #{Time.at(player[1][:time_on_ice]).strftime("%M:%S")}" }.join("\n")}
-      POST
-
-      goal_leader_post = <<~POST
-        🚨 #{@season_type} goal scoring leaders for the #{your_team}
-
-        #{top_skaters(skater_stats, :goals).map { |player| "#{player[1][:name]}: #{player[1][:goals]} #{"goal".pluralize(player[1][:goals])}" }.join("\n")}
-      POST
-
-      assist_leader_post = <<~POST
-        🏒 #{@season_type} assist leaders for the #{your_team}
-
-        #{top_skaters(skater_stats, :assists).map { |player| "#{player[1][:name]}: #{player[1][:assists]} #{"assist".pluralize(player[1][:assists])}" }.join("\n")}
-      POST
-
-      pim_leader_post = <<~POST
-        🚔 #{@season_type} penalty minute leaders for the #{your_team}
-
-        #{top_skaters(skater_stats, :pim).map { |player| "#{player[1][:name]}: #{player[1][:pim]} #{"min".pluralize(player[1][:pim])}" }.join("\n")}
-      POST
-
-      team_season_stats_post_1 = <<~POST
-        📊 #{@season_type} stats and NHL ranks for the #{your_team} (1/2)
-
-        Average Goals Scored: #{season_stats_with_rank[:average_goals_scored][:value]} (Rank: #{season_stats_with_rank[:average_goals_scored][:rank]})
-        Average Goals Allowed: #{season_stats_with_rank[:average_goals_allowed][:value]} (Rank: #{season_stats_with_rank[:average_goals_allowed][:rank]})
-        Power Play Percentage: #{season_stats_with_rank[:power_play_percentage][:value]} (Rank: #{season_stats_with_rank[:power_play_percentage][:rank]})
-        Penalty Kill Percentage: #{season_stats_with_rank[:penalty_kill_percentage][:value]} (Rank: #{season_stats_with_rank[:penalty_kill_percentage][:rank]})
-      POST
-
-      team_season_stats_post_2 = <<~POST
-        📊 #{@season_type} stats and NHL ranks for the #{your_team} (2/2)
-
-        Shots Per Game: #{season_stats_with_rank[:shots_per_game][:value]} (Rank: #{season_stats_with_rank[:shots_per_game][:rank]})
-        Shots Allowed Per Game: #{season_stats_with_rank[:shots_allowed_per_game][:value]} (Rank: #{season_stats_with_rank[:shots_allowed_per_game][:rank]})
-        Faceoff Percentage: #{season_stats_with_rank[:faceoff_percentage][:value]} (Rank: #{season_stats_with_rank[:faceoff_percentage][:rank]})
-        Points Percentage: #{season_stats_with_rank[:points_percentage][:value]} (Rank: #{season_stats_with_rank[:points_percentage][:rank]})
-      POST
+      goalie_post = presentation.goalie(goalie_stats)
+      skater_points_leader_post = presentation.skaters(leaders.call(:points), :points, icon: "📈", title: "points leaders") { |p| "#{p[:name]}: #{p[:points]} #{"point".pluralize(p[:points])}, (#{p[:goals]} G, #{p[:assists]} A)" }
+      time_on_ice_leader_post = presentation.skaters(leaders.call(:time_on_ice), :time_on_ice, icon: "⏱️", title: "time on ice leaders") { |p| "#{p[:name]}: #{Time.at(p[:time_on_ice]).strftime("%M:%S")}" }
+      goal_leader_post = presentation.skaters(leaders.call(:goals), :goals, icon: "🚨", title: "goal scoring leaders") { |p| "#{p[:name]}: #{p[:goals]} #{"goal".pluralize(p[:goals])}" }
+      assist_leader_post = presentation.skaters(leaders.call(:assists), :assists, icon: "🏒", title: "assist leaders") { |p| "#{p[:name]}: #{p[:assists]} #{"assist".pluralize(p[:assists])}" }
+      pim_leader_post = presentation.skaters(leaders.call(:pim), :pim, icon: "🚔", title: "penalty minute leaders") { |p| "#{p[:name]}: #{p[:pim]} #{"min".pluralize(p[:pim])}" }
+      rankings = season_stats_with_rank
+      team_season_stats_post_1 = presentation.team_rankings(rankings, part: 1)
+      team_season_stats_post_2 = presentation.team_rankings(rankings, part: 2)
 
       # Generate unique keys for each post that include the current date
       current_date = Time.now.strftime("%Y%m%d")
