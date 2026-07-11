@@ -46,7 +46,7 @@ class RodTheBot::EdgeSpecialTeamsWorkerTest < ActiveSupport::TestCase
   end
 
   test "perform returns early if no zone data" do
-    NhlApi.stubs(:fetch_team_zone_time_details).returns(nil)
+    Nhl::EdgeClient.stubs(:fetch_team_zone_time_details).returns(nil)
 
     @worker.perform(2025020660)
 

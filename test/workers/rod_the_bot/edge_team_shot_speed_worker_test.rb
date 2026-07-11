@@ -50,7 +50,7 @@ class RodTheBot::EdgeTeamShotSpeedWorkerTest < ActiveSupport::TestCase
   end
 
   test "perform returns early if no shot speed data" do
-    NhlApi.stubs(:fetch_team_shot_speed_detail).returns(nil)
+    Nhl::EdgeClient.stubs(:fetch_team_shot_speed_detail).returns(nil)
 
     @worker.perform(2025020660)
 

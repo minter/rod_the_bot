@@ -10,8 +10,8 @@ module RodTheBot
       return unless opponent_team_id
 
       # Fetch data for both teams
-      your_zone_data = NhlApi.fetch_team_zone_time_details(your_team_id)
-      opp_zone_data = NhlApi.fetch_team_zone_time_details(opponent_team_id)
+      your_zone_data = Nhl::EdgeClient.fetch_team_zone_time_details(your_team_id)
+      opp_zone_data = Nhl::EdgeClient.fetch_team_zone_time_details(opponent_team_id)
 
       return unless your_zone_data && opp_zone_data
 

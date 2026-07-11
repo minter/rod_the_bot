@@ -20,7 +20,7 @@ module RodTheBot
       selected_player = eligible_players.sample
 
       # Fetch EDGE data
-      edge_data = NhlApi.fetch_skater_zone_time(selected_player[:id])
+      edge_data = Nhl::EdgeClient.fetch_skater_zone_time(selected_player[:id])
       return unless edge_data && edge_data["zoneTimeDetails"]
 
       # Get player headshot

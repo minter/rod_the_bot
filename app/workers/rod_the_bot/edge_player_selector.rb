@@ -98,7 +98,7 @@ module RodTheBot
       when :zone_control_elite
         return false if stats[:points] < 3
 
-        edge_data = NhlApi.fetch_skater_zone_time(player_id)
+        edge_data = Nhl::EdgeClient.fetch_skater_zone_time(player_id)
         return false unless edge_data && edge_data["zoneTimeDetails"]
 
         all_situations = edge_data["zoneTimeDetails"].find { |d| d["strengthCode"] == "all" }
@@ -113,7 +113,7 @@ module RodTheBot
       when :hot_zones
         return false if stats[:goals] < 3
 
-        shot_location_data = NhlApi.fetch_skater_shot_location_detail(player_id)
+        shot_location_data = Nhl::EdgeClient.fetch_skater_shot_location_detail(player_id)
         return false unless shot_location_data && shot_location_data["shotLocationDetails"]
 
         elite_zones = shot_location_data["shotLocationDetails"].select do |zone|
@@ -125,7 +125,7 @@ module RodTheBot
       when :high_workload
         return false if stats[:points] < 5
 
-        distance_data = NhlApi.fetch_skater_skating_distance_detail(player_id)
+        distance_data = Nhl::EdgeClient.fetch_skater_skating_distance_detail(player_id)
         return false unless distance_data && distance_data["skatingDistanceLast10"]
 
         # Get average distance from recent games

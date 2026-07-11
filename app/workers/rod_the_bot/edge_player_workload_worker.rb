@@ -21,7 +21,7 @@ module RodTheBot
       selected_player = eligible_players.sample
 
       # Fetch skating distance data
-      distance_data = NhlApi.fetch_skater_skating_distance_detail(selected_player[:id])
+      distance_data = Nhl::EdgeClient.fetch_skater_skating_distance_detail(selected_player[:id])
       return unless distance_data && distance_data["skatingDistanceLast10"]
 
       # Get player headshot

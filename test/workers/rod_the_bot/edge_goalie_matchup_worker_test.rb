@@ -117,7 +117,7 @@ class RodTheBot::EdgeGoalieMatchupWorkerTest < ActiveSupport::TestCase
       "stats" => equal_stats
     }
 
-    NhlApi.stubs(:fetch_goalie_detail).returns(goalie_data)
+    Nhl::EdgeClient.stubs(:fetch_goalie_detail).returns(goalie_data)
     @worker.stubs(:fetch_player_headshots).returns([])
 
     @worker.perform(game_id, 8479496, 8476883)

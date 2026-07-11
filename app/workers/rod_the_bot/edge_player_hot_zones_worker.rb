@@ -20,7 +20,7 @@ module RodTheBot
       selected_player = eligible_players.sample
 
       # Fetch shot location data
-      shot_data = NhlApi.fetch_skater_shot_location_detail(selected_player[:id])
+      shot_data = Nhl::EdgeClient.fetch_skater_shot_location_detail(selected_player[:id])
       return unless shot_data && shot_data["shotLocationDetails"]
 
       # Get player headshot

@@ -6,7 +6,7 @@ module RodTheBot
       return if NhlApi.preseason?
 
       team_id = ENV["NHL_TEAM_ID"].to_i
-      zone_data = NhlApi.fetch_team_zone_time_details(team_id)
+      zone_data = Nhl::EdgeClient.fetch_team_zone_time_details(team_id)
       return unless zone_data && zone_data["zoneTimeDetails"]&.any?
 
       our_team_abbrev, opponent_team_abbrev, opponent_zone_data = fetch_opponent_data(game_id, team_id)
@@ -25,7 +25,7 @@ module RodTheBot
       matchup = GameMatchup.for(game_id, team_id: team_id)
       return [nil, nil, nil] unless matchup
 
-      [matchup.our_abbrev, matchup.opponent_abbrev, NhlApi.fetch_team_zone_time_details(matchup.opponent_team_id)]
+      [matchup.our_abbrev, matchup.opponent_abbrev, Nhl::EdgeClient.fetch_team_zone_time_details(matchup.opponent_team_id)]
     end
 
     def format_special_teams_post(data, opponent_data, our_team_abbrev, opponent_team_abbrev)
