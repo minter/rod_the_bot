@@ -7,7 +7,7 @@ module RodTheBot
       schedule = NhlApi.fetch_league_schedule(date: date)
       games = format_schedule(schedule, date)
       time_zone_abbr = Time.zone.tzinfo.abbreviation
-      playoffs = NhlApi.postseason? ? "playoff " : ""
+      playoffs = Nhl::SeasonCalendar.postseason? ? "playoff " : ""
 
       # Handle no games case
       if games.empty?

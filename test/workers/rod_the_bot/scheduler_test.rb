@@ -9,11 +9,11 @@ class RodTheBot::SchedulerTest < ActiveSupport::TestCase
     ENV["NHL_TEAM_ID"] = "12"
 
     # Stub the current_season method
-    NhlApi.stubs(:current_season).returns("20232024")
+    Nhl::SeasonCalendar.stubs(:current_season).returns("20232024")
   end
 
   def test_perform_offseason_enqueues_draft_worker
-    NhlApi.expects(:offseason?).returns(true)
+    Nhl::SeasonCalendar.expects(:offseason?).returns(true)
 
     @worker.perform
 
@@ -25,9 +25,9 @@ class RodTheBot::SchedulerTest < ActiveSupport::TestCase
   def test_perform_non_gameday
     VCR.use_cassette("nhl_schedule_20231201") do
       Timecop.freeze(Date.new(2023, 12, 1)) do
-        NhlApi.stubs(:offseason?).returns(false)
-        NhlApi.stubs(:preseason?).returns(false)  # Mock preseason check
-        NhlApi.expects(:postseason?).returns(false).at_least_once
+        Nhl::SeasonCalendar.stubs(:offseason?).returns(false)
+        Nhl::SeasonCalendar.stubs(:preseason?).returns(false)  # Mock preseason check
+        Nhl::SeasonCalendar.expects(:postseason?).returns(false).at_least_once
         @worker.perform
 
         assert_equal 0, RodTheBot::Post.jobs.size
@@ -40,9 +40,9 @@ class RodTheBot::SchedulerTest < ActiveSupport::TestCase
   def test_perform_gameday
     VCR.use_cassette("nhl_schedule_20231202") do
       Timecop.freeze(Date.new(2023, 12, 2)) do
-        NhlApi.stubs(:offseason?).returns(false)
-        NhlApi.expects(:postseason?).returns(false).at_least_once
-        NhlApi.expects(:preseason?).returns(false).at_least_once
+        Nhl::SeasonCalendar.stubs(:offseason?).returns(false)
+        Nhl::SeasonCalendar.expects(:postseason?).returns(false).at_least_once
+        Nhl::SeasonCalendar.expects(:preseason?).returns(false).at_least_once
         @worker.perform
 
         expected_output = <<~POST
@@ -74,9 +74,9 @@ class RodTheBot::SchedulerTest < ActiveSupport::TestCase
   def test_perform_preseason_gameday
     VCR.use_cassette("nhl_schedule_20240927") do
       Timecop.freeze(Date.new(2024, 9, 27)) do
-        NhlApi.stubs(:offseason?).returns(false)
-        NhlApi.expects(:postseason?).returns(false).at_least_once
-        NhlApi.expects(:preseason?).returns(true).at_least_once
+        Nhl::SeasonCalendar.stubs(:offseason?).returns(false)
+        Nhl::SeasonCalendar.expects(:postseason?).returns(false).at_least_once
+        Nhl::SeasonCalendar.expects(:preseason?).returns(true).at_least_once
         @worker.perform
 
         expected_output = <<~POST
@@ -161,9 +161,9 @@ class RodTheBot::SchedulerTest < ActiveSupport::TestCase
       }
     }
 
-    NhlApi.stubs(:offseason?).returns(false)
-    NhlApi.stubs(:preseason?).returns(false)
-    NhlApi.stubs(:postseason?).returns(true)
+    Nhl::SeasonCalendar.stubs(:offseason?).returns(false)
+    Nhl::SeasonCalendar.stubs(:preseason?).returns(false)
+    Nhl::SeasonCalendar.stubs(:postseason?).returns(true)
     NhlApi.stubs(:todays_game).returns(game)
     NhlApi.stubs(:team_standings).with("CAR").returns({team_name: "Carolina Hurricanes"})
     NhlApi.stubs(:team_standings).with("OTT").returns({team_name: "Ottawa Senators"})
@@ -215,9 +215,9 @@ class RodTheBot::SchedulerTest < ActiveSupport::TestCase
       }
     }
 
-    NhlApi.stubs(:offseason?).returns(false)
-    NhlApi.stubs(:preseason?).returns(false)
-    NhlApi.stubs(:postseason?).returns(true)
+    Nhl::SeasonCalendar.stubs(:offseason?).returns(false)
+    Nhl::SeasonCalendar.stubs(:preseason?).returns(false)
+    Nhl::SeasonCalendar.stubs(:postseason?).returns(true)
     NhlApi.stubs(:todays_game).returns(game)
     NhlApi.stubs(:team_standings).with("CAR").returns({team_name: "Carolina Hurricanes"})
     NhlApi.stubs(:team_standings).with("OTT").returns({team_name: "Ottawa Senators"})
@@ -256,9 +256,9 @@ class RodTheBot::SchedulerTest < ActiveSupport::TestCase
       }
     }
 
-    NhlApi.stubs(:offseason?).returns(false)
-    NhlApi.stubs(:preseason?).returns(false)
-    NhlApi.stubs(:postseason?).returns(true)
+    Nhl::SeasonCalendar.stubs(:offseason?).returns(false)
+    Nhl::SeasonCalendar.stubs(:preseason?).returns(false)
+    Nhl::SeasonCalendar.stubs(:postseason?).returns(true)
     NhlApi.stubs(:todays_game).returns(game)
     NhlApi.stubs(:team_standings).with("CAR").returns({team_name: "Carolina Hurricanes"})
     NhlApi.stubs(:team_standings).with("OTT").returns({team_name: "Ottawa Senators"})
@@ -292,9 +292,9 @@ class RodTheBot::SchedulerTest < ActiveSupport::TestCase
       # seriesStatus intentionally absent
     }
 
-    NhlApi.stubs(:offseason?).returns(false)
-    NhlApi.stubs(:preseason?).returns(false)
-    NhlApi.stubs(:postseason?).returns(true)
+    Nhl::SeasonCalendar.stubs(:offseason?).returns(false)
+    Nhl::SeasonCalendar.stubs(:preseason?).returns(false)
+    Nhl::SeasonCalendar.stubs(:postseason?).returns(true)
     NhlApi.stubs(:todays_game).returns(game)
     NhlApi.stubs(:team_standings).with("CAR").returns({
       team_name: "Carolina Hurricanes", wins: 40, losses: 20, ot: 5,
@@ -336,9 +336,9 @@ class RodTheBot::SchedulerTest < ActiveSupport::TestCase
       }
     }
 
-    NhlApi.stubs(:offseason?).returns(false)
-    NhlApi.stubs(:preseason?).returns(false)
-    NhlApi.stubs(:postseason?).returns(true)
+    Nhl::SeasonCalendar.stubs(:offseason?).returns(false)
+    Nhl::SeasonCalendar.stubs(:preseason?).returns(false)
+    Nhl::SeasonCalendar.stubs(:postseason?).returns(true)
     NhlApi.stubs(:todays_game).returns(game)
     NhlApi.stubs(:team_standings).with("CAR").returns({team_name: "Carolina Hurricanes"})
     NhlApi.stubs(:team_standings).with("OTT").returns({team_name: "Ottawa Senators"})
@@ -375,9 +375,9 @@ class RodTheBot::SchedulerTest < ActiveSupport::TestCase
       }
     }
 
-    NhlApi.stubs(:offseason?).returns(false)
-    NhlApi.stubs(:preseason?).returns(false)
-    NhlApi.stubs(:postseason?).returns(true)
+    Nhl::SeasonCalendar.stubs(:offseason?).returns(false)
+    Nhl::SeasonCalendar.stubs(:preseason?).returns(false)
+    Nhl::SeasonCalendar.stubs(:postseason?).returns(true)
     NhlApi.stubs(:todays_game).returns(game)
     NhlApi.stubs(:team_standings).with("CAR").returns({team_name: "Carolina Hurricanes"})
     NhlApi.stubs(:team_standings).with("OTT").returns({team_name: "Ottawa Senators"})

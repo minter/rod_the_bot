@@ -9,7 +9,7 @@ class RodTheBot::DivisionStandingsWorkerTest < ActiveSupport::TestCase
 
   def test_perform
     VCR.use_cassette("nhl_standings_now", allow_playback_repeats: true) do
-      NhlApi.stubs(:preseason?).returns(false)
+      Nhl::SeasonCalendar.stubs(:preseason?).returns(false)
       @worker.perform
       assert_equal 1, RodTheBot::Post.jobs.size
 

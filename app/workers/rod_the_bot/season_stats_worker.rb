@@ -9,7 +9,7 @@ module RodTheBot
       @season_type = nil
       @season_type_id = nil
       skater_stats, goalie_stats = collect_roster_stats
-      return if NhlApi.preseason?
+      return if Nhl::SeasonCalendar.preseason?
       return if skater_stats.empty? || goalie_stats.empty?
 
       goalie_post = <<~POST
@@ -99,7 +99,7 @@ module RodTheBot
         "Playoff"
       end
 
-      @season_type = "#{@season[0..3]}-#{@season[4..7]} #{@season_type}" if @season != NhlApi.current_season
+      @season_type = "#{@season[0..3]}-#{@season[4..7]} #{@season_type}" if @season != Nhl::SeasonCalendar.current_season
 
       roster["skaters"].each do |player|
         skater_stats[player["playerId"]] = {

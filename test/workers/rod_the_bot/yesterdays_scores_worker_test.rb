@@ -10,7 +10,7 @@ class RodTheBot::YesterdaysScoresWorkerTest < ActiveSupport::TestCase
   def test_perform
     Timecop.freeze(Date.new(2023, 11, 29)) do
       VCR.use_cassette("nhl_scores_scoreboard_20231128") do
-        NhlApi.expects(:postseason?).returns(false).at_least_once
+        Nhl::SeasonCalendar.expects(:postseason?).returns(false).at_least_once
         @worker.perform
         assert_equal 1, RodTheBot::Post.jobs.size
         expected_output = <<~POST
@@ -48,7 +48,7 @@ class RodTheBot::YesterdaysScoresWorkerTest < ActiveSupport::TestCase
   end
 
   def test_perform_with_postponed_game
-    NhlApi.stubs(:postseason?).returns(false)
+    Nhl::SeasonCalendar.stubs(:postseason?).returns(false)
 
     Timecop.freeze(Date.new(2024, 10, 13)) do
       VCR.use_cassette("nhl_scores_scoreboard_20241012") do

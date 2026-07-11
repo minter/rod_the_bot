@@ -15,8 +15,8 @@ class RodTheBot::UpcomingMilestonesWorkerTest < ActiveSupport::TestCase
 
   test "perform skips during preseason" do
     skip "VCR cassette issue - needs schedule API call recorded"
-    NhlApi.stubs(:preseason?).returns(true)
-    NhlApi.stubs(:offseason?).returns(false)
+    Nhl::SeasonCalendar.stubs(:preseason?).returns(true)
+    Nhl::SeasonCalendar.stubs(:offseason?).returns(false)
 
     @worker.perform
 
@@ -26,8 +26,8 @@ class RodTheBot::UpcomingMilestonesWorkerTest < ActiveSupport::TestCase
   test "perform skips during offseason" do
     skip "VCR cassette issue - needs schedule API call recorded"
     VCR.use_cassette("nhl_roster_CAR", allow_playback_repeats: true) do
-      NhlApi.stubs(:preseason?).returns(false)
-      NhlApi.stubs(:offseason?).returns(true)
+      Nhl::SeasonCalendar.stubs(:preseason?).returns(false)
+      Nhl::SeasonCalendar.stubs(:offseason?).returns(true)
 
       @worker.perform
 
@@ -37,9 +37,9 @@ class RodTheBot::UpcomingMilestonesWorkerTest < ActiveSupport::TestCase
 
   test "perform with regular season milestones" do
     VCR.use_cassette("nhl_roster_CAR", allow_playback_repeats: true) do
-      NhlApi.stubs(:preseason?).returns(false)
-      NhlApi.stubs(:offseason?).returns(false)
-      NhlApi.stubs(:postseason?).returns(false)
+      Nhl::SeasonCalendar.stubs(:preseason?).returns(false)
+      Nhl::SeasonCalendar.stubs(:offseason?).returns(false)
+      Nhl::SeasonCalendar.stubs(:postseason?).returns(false)
       NhlApi.stubs(:todays_game).returns({"gameScheduleState" => "OK"})
 
       # Get actual roster to use real player IDs
@@ -125,9 +125,9 @@ class RodTheBot::UpcomingMilestonesWorkerTest < ActiveSupport::TestCase
 
   test "perform with playoff milestones" do
     VCR.use_cassette("nhl_roster_CAR", allow_playback_repeats: true) do
-      NhlApi.stubs(:preseason?).returns(false)
-      NhlApi.stubs(:offseason?).returns(false)
-      NhlApi.stubs(:postseason?).returns(true)
+      Nhl::SeasonCalendar.stubs(:preseason?).returns(false)
+      Nhl::SeasonCalendar.stubs(:offseason?).returns(false)
+      Nhl::SeasonCalendar.stubs(:postseason?).returns(true)
       NhlApi.stubs(:todays_game).returns({"gameScheduleState" => "OK"})
 
       # Mock playoff milestone data
@@ -191,9 +191,9 @@ class RodTheBot::UpcomingMilestonesWorkerTest < ActiveSupport::TestCase
 
   test "perform with no upcoming milestones" do
     VCR.use_cassette("nhl_roster_CAR", allow_playback_repeats: true) do
-      NhlApi.stubs(:preseason?).returns(false)
-      NhlApi.stubs(:offseason?).returns(false)
-      NhlApi.stubs(:postseason?).returns(false)
+      Nhl::SeasonCalendar.stubs(:preseason?).returns(false)
+      Nhl::SeasonCalendar.stubs(:offseason?).returns(false)
+      Nhl::SeasonCalendar.stubs(:postseason?).returns(false)
       NhlApi.stubs(:todays_game).returns({"gameScheduleState" => "OK"})
 
       # Mock empty milestone data
@@ -212,9 +212,9 @@ class RodTheBot::UpcomingMilestonesWorkerTest < ActiveSupport::TestCase
 
   test "post_milestones_in_threads creates multiple posts when needed" do
     VCR.use_cassette("nhl_roster_CAR", allow_playback_repeats: true) do
-      NhlApi.stubs(:preseason?).returns(false)
-      NhlApi.stubs(:offseason?).returns(false)
-      NhlApi.stubs(:postseason?).returns(false)
+      Nhl::SeasonCalendar.stubs(:preseason?).returns(false)
+      Nhl::SeasonCalendar.stubs(:offseason?).returns(false)
+      Nhl::SeasonCalendar.stubs(:postseason?).returns(false)
       NhlApi.stubs(:todays_game).returns({"gameScheduleState" => "OK"})
 
       # Get actual roster to use real player IDs

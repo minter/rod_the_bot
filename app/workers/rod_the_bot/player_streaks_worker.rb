@@ -6,9 +6,9 @@ module RodTheBot
 
     def perform
       # Skip preseason - stats don't count
-      return if NhlApi.preseason?
+      return if Nhl::SeasonCalendar.preseason?
 
-      season_type = NhlApi.postseason? ? "Playoffs" : "Regular Season"
+      season_type = Nhl::SeasonCalendar.postseason? ? "Playoffs" : "Regular Season"
 
       # Get currently rostered players
       current_roster = get_current_roster_player_ids
@@ -90,8 +90,8 @@ module RodTheBot
     def filter_games_by_season_type(games)
       # api-web endpoint already scopes to season/type; just ensure we take recent entries
       # If these fields exist (when using stats REST), keep compatibility
-      current_season = NhlApi.current_season
-      target_game_type = NhlApi.postseason? ? 3 : 2 # 2 = regular season, 3 = playoffs
+      current_season = Nhl::SeasonCalendar.current_season
+      target_game_type = Nhl::SeasonCalendar.postseason? ? 3 : 2 # 2 = regular season, 3 = playoffs
 
       filtered = if games.first&.key?("seasonId") || games.first&.key?("gameTypeId")
         games.select do |game|

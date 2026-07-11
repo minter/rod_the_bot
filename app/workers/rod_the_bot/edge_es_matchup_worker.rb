@@ -3,7 +3,7 @@ module RodTheBot
     include Sidekiq::Worker
 
     def perform(game_id)
-      return if NhlApi.preseason?
+      return if Nhl::SeasonCalendar.preseason?
 
       your_team_id = ENV["NHL_TEAM_ID"].to_i
       opponent_team_id = NhlApi.opponent_team_id(game_id)

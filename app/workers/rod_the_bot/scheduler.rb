@@ -7,7 +7,7 @@ module RodTheBot
     include ActiveSupport::Inflector
 
     def perform
-      if NhlApi.offseason?
+      if Nhl::SeasonCalendar.offseason?
         RodTheBot::DraftPickWorker.perform_async
         return
       end
@@ -15,7 +15,7 @@ module RodTheBot
       RodTheBot::YesterdaysScoresWorker.perform_in(5.minutes)
       RodTheBot::TodaysScheduleWorker.perform_in(10.minutes)
 
-      if NhlApi.postseason?
+      if Nhl::SeasonCalendar.postseason?
         # Postseason
         RodTheBot::PostseasonSeriesWorker.perform_in(16.minutes)
       else
@@ -50,7 +50,7 @@ module RodTheBot
       end
 
       if away["id"].to_i == ENV["NHL_TEAM_ID"].to_i || home["id"].to_i == ENV["NHL_TEAM_ID"].to_i
-        gameday_post = if NhlApi.preseason?
+        gameday_post = if Nhl::SeasonCalendar.preseason?
           <<~POST
             🗣️ It's a #{your_standings[:team_name]} Preseason Gameday!
 
@@ -64,7 +64,7 @@ module RodTheBot
             📍 #{venue["default"]}
             📺 #{tv}
           POST
-        elsif NhlApi.postseason? && @game["seriesStatus"]
+        elsif Nhl::SeasonCalendar.postseason? && @game["seriesStatus"]
           seed_labels = NhlApi.playoff_seed_labels
           away_seed = seed_labels[away["abbrev"]] ? "(#{seed_labels[away["abbrev"]]}) " : ""
           home_seed = seed_labels[home["abbrev"]] ? "(#{seed_labels[home["abbrev"]]}) " : ""
@@ -169,7 +169,7 @@ module RodTheBot
 
     # Helper method to check if GameStreamWorker will be scheduled today
     def self.game_stream_scheduled_today?
-      return false if NhlApi.offseason?
+      return false if Nhl::SeasonCalendar.offseason?
 
       game = NhlApi.todays_game
       return false if game.nil? || game["gameScheduleState"] != "OK"

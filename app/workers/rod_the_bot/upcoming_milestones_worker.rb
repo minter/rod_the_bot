@@ -5,11 +5,11 @@ module RodTheBot
 
     def perform
       # Skip preseason - stats don't count
-      return if NhlApi.preseason?
+      return if Nhl::SeasonCalendar.preseason?
 
       team_id = ENV["NHL_TEAM_ID"].to_i
-      game_type = NhlApi.postseason? ? 3 : 2
-      season_type = NhlApi.postseason? ? "Playoffs" : "Regular Season"
+      game_type = Nhl::SeasonCalendar.postseason? ? 3 : 2
+      season_type = Nhl::SeasonCalendar.postseason? ? "Playoffs" : "Regular Season"
 
       # Get currently rostered players
       current_roster = get_current_roster_player_ids

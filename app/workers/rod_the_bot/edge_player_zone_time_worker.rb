@@ -5,7 +5,7 @@ module RodTheBot
     include PlayerImageHelper
 
     def perform(_game_id = nil)
-      return if NhlApi.preseason?
+      return if Nhl::SeasonCalendar.preseason?
 
       # Get eligible players (hot + elite zone control)
       eligible_players = select_eligible_players(

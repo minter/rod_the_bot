@@ -6,7 +6,7 @@ module RodTheBot
     # Post EDGE stats for the starting goalie of our team
     # Called after game start when we know who's in net
     def perform(game_id, goalie_player_id)
-      return if NhlApi.preseason?
+      return if Nhl::SeasonCalendar.preseason?
       return unless goalie_player_id
 
       # Fetch EDGE goalie data

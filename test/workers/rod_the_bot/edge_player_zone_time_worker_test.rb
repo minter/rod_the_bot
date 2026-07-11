@@ -8,7 +8,7 @@ class RodTheBot::EdgePlayerZoneTimeWorkerTest < ActiveSupport::TestCase
     ENV["NHL_TEAM_ABBREVIATION"] = "CAR"
 
     # Stub preseason check
-    NhlApi.stubs(:preseason?).returns(false)
+    Nhl::SeasonCalendar.stubs(:preseason?).returns(false)
   end
 
   test "perform creates post for eligible player with elite zone control" do
@@ -50,7 +50,7 @@ class RodTheBot::EdgePlayerZoneTimeWorkerTest < ActiveSupport::TestCase
 
   test "perform returns early if preseason" do
     NhlApi.unstub(:preseason?)
-    NhlApi.stubs(:preseason?).returns(true)
+    Nhl::SeasonCalendar.stubs(:preseason?).returns(true)
 
     @worker.perform(2025020660)
 

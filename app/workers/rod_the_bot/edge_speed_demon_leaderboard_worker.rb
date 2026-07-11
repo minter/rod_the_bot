@@ -4,7 +4,7 @@ module RodTheBot
     include PlayerImageHelper
 
     def perform(_game_id = nil)
-      return if NhlApi.preseason?
+      return if Nhl::SeasonCalendar.preseason?
 
       # Get team ID from environment
       team_id = ENV["NHL_TEAM_ID"].to_i

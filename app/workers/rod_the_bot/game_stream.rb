@@ -67,7 +67,7 @@ module RodTheBot
       end
 
       # Schedule milestone check with delay to allow NHL API stats to update (only during regular season and playoffs)
-      schedule_milestone_check(play) unless NhlApi.preseason?
+      schedule_milestone_check(play) unless Nhl::SeasonCalendar.preseason?
     end
 
     def schedule_milestone_check(play)

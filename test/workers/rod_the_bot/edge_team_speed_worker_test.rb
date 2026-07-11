@@ -8,7 +8,7 @@ class RodTheBot::EdgeTeamSpeedWorkerTest < ActiveSupport::TestCase
     ENV["NHL_TEAM_ABBREVIATION"] = "CAR"
 
     # Stub preseason check
-    NhlApi.stubs(:preseason?).returns(false)
+    Nhl::SeasonCalendar.stubs(:preseason?).returns(false)
   end
 
   test "perform creates post with team speed data" do
@@ -44,7 +44,7 @@ class RodTheBot::EdgeTeamSpeedWorkerTest < ActiveSupport::TestCase
 
   test "perform returns early if preseason" do
     NhlApi.unstub(:preseason?)
-    NhlApi.stubs(:preseason?).returns(true)
+    Nhl::SeasonCalendar.stubs(:preseason?).returns(true)
 
     @worker.perform(2025020660)
 

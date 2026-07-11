@@ -5,7 +5,7 @@ module RodTheBot
     include PlayerImageHelper
 
     def perform(_game_id = nil)
-      return if NhlApi.preseason?
+      return if Nhl::SeasonCalendar.preseason?
 
       # Get eligible players (hot streak + high workload)
       # Note: criteria changed to check last 3 games for "truly hot"

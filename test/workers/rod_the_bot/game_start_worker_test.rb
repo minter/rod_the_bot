@@ -6,7 +6,7 @@ class RodTheBot::GameStartWorkerTest < ActiveSupport::TestCase
     @game_id = "2024020478"
 
     # Mock preseason check to avoid VCR issues
-    NhlApi.stubs(:preseason?).returns(false)
+    Nhl::SeasonCalendar.stubs(:preseason?).returns(false)
   end
 
   test "find_starting_goalie" do

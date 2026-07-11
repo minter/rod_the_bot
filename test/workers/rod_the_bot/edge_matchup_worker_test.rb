@@ -9,7 +9,7 @@ class RodTheBot::EdgeMatchupWorkerTest < ActiveSupport::TestCase
     ENV["TEAM_HASHTAGS"] = "#LetsGoCanes #CauseChaos"
 
     # Stub preseason check
-    NhlApi.stubs(:preseason?).returns(false)
+    Nhl::SeasonCalendar.stubs(:preseason?).returns(false)
   end
 
   test "perform creates post with zone control matchup data" do
@@ -45,7 +45,7 @@ class RodTheBot::EdgeMatchupWorkerTest < ActiveSupport::TestCase
 
   test "perform returns early if preseason" do
     NhlApi.unstub(:preseason?)
-    NhlApi.stubs(:preseason?).returns(true)
+    Nhl::SeasonCalendar.stubs(:preseason?).returns(true)
 
     @worker.perform(2025020660)
 

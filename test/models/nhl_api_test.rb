@@ -148,29 +148,6 @@ class NhlApiTest < ActiveSupport::TestCase
     end
   end
 
-  test "current_season" do
-    VCR.use_cassette("nhl_season") do
-      season = NhlApi.current_season
-      assert_kind_of String, season
-      assert_match(/\d{8}/, season)
-    end
-  end
-
-  test "postseason?" do
-    VCR.use_cassette("nhl_schedule_now") do
-      is_postseason = NhlApi.postseason?
-      assert_includes [true, false], is_postseason
-    end
-  end
-
-  test "preseason?" do
-    VCR.use_cassette("nhl_schedule_now") do
-      # Test preseason detection based on current date vs league schedule
-      is_preseason = NhlApi.preseason?
-      assert_includes [true, false], is_preseason
-    end
-  end
-
   test "teams" do
     VCR.use_cassette("nhl_teams") do
       teams = NhlApi.teams

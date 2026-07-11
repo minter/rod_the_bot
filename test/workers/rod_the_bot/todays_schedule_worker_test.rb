@@ -7,8 +7,8 @@ class RodTheBot::TodaysScheduleWorkerTest < ActiveSupport::TestCase
     ENV["TIME_ZONE"] = "America/New_York"
     Time.zone = TZInfo::Timezone.get(ENV["TIME_ZONE"])
 
-    # Stub NhlApi.postseason? to prevent HTTP requests during tests
-    NhlApi.stubs(:postseason?).returns(false)
+    # Stub Nhl::SeasonCalendar.postseason? to prevent HTTP requests during tests
+    Nhl::SeasonCalendar.stubs(:postseason?).returns(false)
   end
 
   test "perform with games scheduled" do

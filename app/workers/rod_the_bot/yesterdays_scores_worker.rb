@@ -36,7 +36,7 @@ module RodTheBot
       trophy_prefix = ""
       trophy_suffix = ""
 
-      if NhlApi.postseason?
+      if Nhl::SeasonCalendar.postseason?
         matchup = find_series_matchup(visitor_team["abbrev"], home_team["abbrev"])
         if matchup
           top_seed, bottom_seed = matchup.values_at("topSeed", "bottomSeed")
@@ -57,7 +57,7 @@ module RodTheBot
       score_text = "#{trophy_prefix}#{visitor_team["abbrev"]} #{visitor_team["score"]} : #{home_team["score"]} #{home_team["abbrev"]}#{trophy_suffix}"
 
       score_text << format_overtime(game["periodDescriptor"])
-      score_text << format_series_status(visitor_team["abbrev"], home_team["abbrev"]) if NhlApi.postseason?
+      score_text << format_series_status(visitor_team["abbrev"], home_team["abbrev"]) if Nhl::SeasonCalendar.postseason?
 
       score_text
     end

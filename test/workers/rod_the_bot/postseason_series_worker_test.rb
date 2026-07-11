@@ -124,7 +124,7 @@ class RodTheBot::PostseasonSeriesWorkerTest < ActiveSupport::TestCase
   # leaked the conference-finals "M" slot (TBD vs CAR) into round 2's series list.
   # This cassette pins that exact shape so the regression can't sneak back in.
   def test_perform_with_live_round_two_carousel
-    NhlApi.stubs(:current_season).returns("20252026")
+    Nhl::SeasonCalendar.stubs(:current_season).returns("20252026")
     VCR.use_cassette("nhl_postseason_carousel_20252026_round2") do
       @worker.perform
     end

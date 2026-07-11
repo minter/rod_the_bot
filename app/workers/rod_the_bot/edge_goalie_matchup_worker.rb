@@ -6,7 +6,7 @@ module RodTheBot
     # Compare both starting goalies head-to-head
     # Called after game start when we know who's in net
     def perform(game_id, our_goalie_id, opponent_goalie_id)
-      return if NhlApi.preseason?
+      return if Nhl::SeasonCalendar.preseason?
       return unless our_goalie_id && opponent_goalie_id
 
       # Fetch EDGE data for both goalies

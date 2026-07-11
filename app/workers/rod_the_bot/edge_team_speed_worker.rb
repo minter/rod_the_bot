@@ -4,7 +4,7 @@ module RodTheBot
     include PlayerImageHelper
 
     def perform(game_id = nil)
-      return if NhlApi.preseason?
+      return if Nhl::SeasonCalendar.preseason?
 
       team_id = ENV["NHL_TEAM_ID"].to_i
       speed_data = Nhl::EdgeClient.fetch_team_skating_speed_detail(team_id)
