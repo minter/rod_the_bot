@@ -1,9 +1,6 @@
 module RodTheBot
   class GoalWorker
     include Sidekiq::Worker
-    include ActiveSupport::Inflector
-    include RodTheBot::PeriodFormatter
-    include RodTheBot::PlayerFormatter
 
     def perform(game_id, play)
       @game_id = game_id
@@ -66,8 +63,6 @@ module RodTheBot
       retry_key = "#{game_id}:goal:retry:#{@play_id}"
       REDIS.del(retry_key) if REDIS.exists?(retry_key)
 
-      period_name = format_period_name(@play["periodDescriptor"]["number"])
-
       # Safely get scoring player data
       scoring_player_id = @play["details"]["scoringPlayerId"]
       scoring_player = players[scoring_player_id] || players[scoring_player_id.to_s] || players[scoring_player_id.to_i]
@@ -77,18 +72,8 @@ module RodTheBot
         return
       end
 
-      modifiers = modifiers(@play["situationCode"].to_s, scoring_player[:team_id], home["id"], away["id"])
-      scoring_team = (scoring_player[:team_id] == ENV["NHL_TEAM_ID"].to_i) ? @your_team : @their_team
-
-      post = build_post(
-        scoring_team: scoring_team,
-        modifiers: modifiers,
-        players: players,
-        play: @play,
-        period_name: period_name,
-        away: away,
-        home: home
-      )
+      presentation = post_builder.build(play: @play, feed: @feed, players: players)
+      scoring_team = presentation.scoring_team
 
       redis_key = "game:#{game_id}:goal:#{@play_id}"
 
@@ -97,11 +82,11 @@ module RodTheBot
       completion_key = "#{game_id}:goal:completed:#{@play_id}"
 
       Rails.logger.info "GoalWorker: Posting goal for game #{game_id}, play #{@play_id}, scoring_team: #{scoring_team["commonName"]["default"]} (your_team: #{scoring_team == @your_team})"
-      RodTheBot::Post.perform_async(post, redis_key, nil, nil, goal_images(players, @play))
+      RodTheBot::Post.perform_async(presentation.post, redis_key, nil, nil, Goal::Images.for(@play))
       RodTheBot::ScoringChangeWorker.perform_in(600, game_id, play["eventId"], original_play, redis_key)
       RodTheBot::GoalHighlightWorker.perform_in(10, game_id, play["eventId"], redis_key) if scoring_team == @your_team
       # Generate and post EDGE replay visualization (delay 1 minute to allow EDGE data to be available)
-      RodTheBot::EdgeReplayWorker.perform_in(1.minute, game_id, @play_id, redis_key) unless penalty_shot?(@play["situationCode"].to_s)
+      RodTheBot::EdgeReplayWorker.perform_in(1.minute, game_id, @play_id, redis_key) unless presentation.penalty_shot
 
       # Mark as completed only after successfully scheduling all workers
       REDIS.set(completion_key, "true", ex: 172800)
@@ -111,105 +96,8 @@ module RodTheBot
       Rails.logger.error "GoalWorker: Unexpected error for game #{@game_id}, play #{play["eventId"]}: #{e.class} - #{e.message}\n#{e.backtrace&.first(5)&.join("\n")}"
     end
 
-    def build_post(scoring_team:, modifiers:, players:, play:, period_name:, away:, home:)
-      [
-        goal_header(scoring_team, modifiers),
-        "",
-        goal_details(players, play),
-        time_and_score(play, period_name, away, home),
-        ""  # Add an extra empty line at the end
-      ].join("\n")
-    end
-
-    def goal_header(scoring_team, modifiers)
-      if scoring_team == @your_team
-        "🎉 #{scoring_team["commonName"]["default"]}#{modifiers} GOOOOOOOAL!"
-      else
-        "👎 #{scoring_team["commonName"]["default"]}#{modifiers} Goal"
-      end
-    end
-
-    def goal_details(players, play)
-      details = []
-
-      # Format scoring player with jersey number
-      scoring_player_name = format_player_from_roster(players, play["details"]["scoringPlayerId"])
-      details << "🚨 #{scoring_player_name} (#{play["details"]["scoringPlayerTotal"]})"
-
-      details << if play["details"]["assist1PlayerId"].present?
-        assist1_name = format_player_from_roster(players, play["details"]["assist1PlayerId"])
-        "🍎 #{assist1_name} (#{play["details"]["assist1PlayerTotal"]})"
-      else
-        "🍎 Unassisted"
-      end
-
-      if play["details"]["assist2PlayerId"].present?
-        assist2_name = format_player_from_roster(players, play["details"]["assist2PlayerId"])
-        details << "🍎🍎 #{assist2_name} (#{play["details"]["assist2PlayerTotal"]})"
-      end
-
-      details.join("\n")
-    end
-
-    def goal_images(players, play)
-      images = []
-
-      # Safely fetch headshot for scoring player
-      if play["details"]["scoringPlayerId"].present?
-        player_feed = Nhl::PlayerClient.landing(play["details"]["scoringPlayerId"])
-        images << player_feed&.dig("headshot")
-      end
-
-      # Safely fetch headshot for assist1 player
-      if play["details"]["assist1PlayerId"].present?
-        player_feed = Nhl::PlayerClient.landing(play["details"]["assist1PlayerId"])
-        images << player_feed&.dig("headshot")
-      end
-
-      # Safely fetch headshot for assist2 player
-      if play["details"]["assist2PlayerId"].present?
-        player_feed = Nhl::PlayerClient.landing(play["details"]["assist2PlayerId"])
-        images << player_feed&.dig("headshot")
-      end
-
-      images.compact # Remove any nil values
-    end
-
-    def time_and_score(play, period_name, away, home)
-      [
-        "⏱️  #{play["timeInPeriod"]} #{period_name}",
-        "",
-        "#{away["abbrev"]} #{play["details"]["awayScore"]} - #{home["abbrev"]} #{play["details"]["homeScore"]}"
-      ].join("\n")
-    end
-
-    def modifiers(situation_code, scoring_team_id, home_id, away_id)
-      away_goalies, away_skaters, home_skaters, home_goalies = situation_code.chars.map(&:to_i)
-      away_players = away_goalies + away_skaters
-      home_players = home_goalies + home_skaters
-
-      scoring_team_players, opposing_team_players, opposing_team_goalies =
-        if scoring_team_id == home_id
-          [home_players, away_players, away_goalies]
-        else
-          [away_players, home_players, home_goalies]
-        end
-
-      modifiers = []
-      if penalty_shot?(situation_code)
-        modifiers << "Penalty Shot"
-      else
-        modifiers << "Shorthanded" if scoring_team_players < opposing_team_players
-        modifiers << "Power Play" if scoring_team_players > opposing_team_players
-        modifiers << "Empty Net" if opposing_team_goalies == 0
-      end
-
-      modifiers.empty? ? "" : " " + modifiers.join(", ")
-    end
-
-    def penalty_shot?(situation_code)
-      away_goalies, away_skaters, home_skaters, home_goalies = situation_code.chars.map(&:to_i)
-      (away_goalies + away_skaters) == 1 && (home_goalies + home_skaters) == 1
+    def post_builder
+      @post_builder ||= Goal::PostBuilder.new
     end
   end
 end
