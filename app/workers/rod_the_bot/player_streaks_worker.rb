@@ -30,152 +30,23 @@ module RodTheBot
     end
 
     def analyze_player_streaks(current_roster)
-      streaks = []
-      min_streak_length = (ENV["STREAK_MIN_LENGTH"] || "3").to_i
-
-      # Check all players on the roster
-      current_roster.each do |player_id|
-        player_type = get_player_type(player_id)
-
-        if player_type == "goalie"
-          # Check goalie win streaks
-          recent_games = get_goalie_recent_games(player_id)
-          next if recent_games.empty?
-
-          win_streak = calculate_goalie_win_streak(recent_games)
-
-          if win_streak[:length] >= min_streak_length
-            streaks << format_streak_data(player_id, "Wins", win_streak)
-          end
-        else
-          # Check skater streaks
-          recent_games = get_player_recent_games(player_id)
-          next if recent_games.empty?
-
-          # Analyze different streak types
-          point_streak = calculate_streak(recent_games, "points")
-          goal_streak = calculate_streak(recent_games, "goals")
-          assist_streak = calculate_streak(recent_games, "assists")
-
-          # Only include significant streaks (3+ games)
-          if point_streak[:length] >= min_streak_length
-            streaks << format_streak_data(player_id, "Points", point_streak)
-          end
-          if goal_streak[:length] >= min_streak_length
-            streaks << format_streak_data(player_id, "Goals", goal_streak)
-          end
-          if assist_streak[:length] >= min_streak_length
-            streaks << format_streak_data(player_id, "Assists", assist_streak)
-          end
-        end
+      goalie_ids = roster.filter_map { |id, player| id.to_s if player[:position] == "G" }
+      analyzer.analyze(player_ids: current_roster, goalie_ids: goalie_ids).map do |streak|
+        streak.merge(player_name: get_player_name_from_id(streak[:player_id])).except(:player_id)
       end
-
-      streaks
     end
 
     def roster
       @roster ||= Nhl::Roster.for(ENV["NHL_TEAM_ABBREVIATION"])
     end
 
-    def get_player_recent_games(player_id)
-      all_games = Nhl::PlayerClient.game_log(player_id, limit: 20) # Get more games to filter
-      filter_games_by_season_type(all_games)
-    end
-
-    def get_goalie_recent_games(player_id)
-      all_games = Nhl::PlayerClient.game_log(player_id, limit: 20) # Get more games to filter
-      filter_games_by_season_type(all_games)
-    end
-
-    def filter_games_by_season_type(games)
-      # api-web endpoint already scopes to season/type; just ensure we take recent entries
-      # If these fields exist (when using stats REST), keep compatibility
-      current_season = Nhl::SeasonCalendar.current_season
-      target_game_type = Nhl::SeasonCalendar.postseason? ? 3 : 2 # 2 = regular season, 3 = playoffs
-
-      filtered = if games.first&.key?("seasonId") || games.first&.key?("gameTypeId")
-        games.select do |game|
-          game["seasonId"].to_s == current_season &&
-            game["gameTypeId"].to_i == target_game_type
-        end
-      else
-        games
-      end
-
-      filtered.first(10)
-    end
-
-    def get_player_type(player_id)
-      player = roster[player_id.to_i]
-      return "goalie" if player && player[:position] == "G"
-      "skater"
-    end
-
-    def calculate_streak(games, stat_type)
-      streak_length = 0
-      streak_games = []
-
-      # Iterate from most recent to older games to capture the active streak
-      games.each do |game|
-        if game[stat_type].to_i > 0
-          streak_length += 1
-          streak_games << game
-        else
-          break
-        end
-      end
-
-      {
-        length: streak_length,
-        games: streak_games.reverse,
-        total_stats: streak_games.sum { |g| g[stat_type].to_i }
-      }
-    end
-
-    def calculate_goalie_win_streak(games)
-      streak_length = 0
-      streak_games = []
-
-      # Iterate from most recent to older games to capture the active win streak
-      games.each do |game|
-        # First, check if the goalie actually played (was the goaltender of record)
-        # A goalie played if they have a decision (W/L/OTL) or if any of wins/losses/otLosses > 0
-        decision = game["decision"].to_s.upcase
-        wins = game["wins"].to_i
-        losses = game["losses"].to_i
-        ot_losses = (game["otLosses"] || game["otl"] || 0).to_i
-
-        goalie_played = %w[W L OTL].include?(decision) ||
-          wins > 0 || losses > 0 || ot_losses > 0
-
-        # Skip games where the goalie didn't play (don't break the streak)
-        next unless goalie_played
-
-        # If they played and won, continue the streak
-        if wins > 0 || decision == "W"
-          streak_length += 1
-          streak_games << game
-        else
-          # If they played and lost/OTL, break the streak
-          break
-        end
-      end
-
-      {
-        length: streak_length,
-        games: streak_games.reverse,
-        total_stats: streak_games.sum { |g| g["wins"].to_i }
-      }
-    end
-
-    def format_streak_data(player_id, streak_type, streak_data)
-      player_name = get_player_name_from_id(player_id)
-      {
-        player_name: player_name,
-        streak_type: streak_type,
-        length: streak_data[:length],
-        total_stats: streak_data[:total_stats]
-      }
+    def analyzer
+      @analyzer ||= PlayerStreaks::Analyzer.new(
+        game_log: ->(player_id, limit) { Nhl::PlayerClient.game_log(player_id, limit: limit) },
+        season: Nhl::SeasonCalendar.current_season,
+        game_type: Nhl::SeasonCalendar.postseason? ? 3 : 2,
+        minimum_length: ENV.fetch("STREAK_MIN_LENGTH", "3")
+      )
     end
 
     def get_player_name_from_id(player_id)
@@ -201,25 +72,15 @@ module RodTheBot
       base_key = "player_streaks:#{current_date}"
 
       # Split streaks into chunks that fit within character limit
-      streak_chunks = split_streaks_into_chunks(streaks, season_type)
+      streak_chunks = formatter.chunks(streaks, season_type: season_type)
 
       return if streak_chunks.empty?
 
       PostThread.enqueue(streak_chunks, key: base_key)
     end
 
-    def split_streaks_into_chunks(streaks, season_type)
-      # Header for first chunk
-      header = if season_type == "Playoffs"
-        "🔥 Active Streaks (#{season_type}):\n\n"
-      else
-        "🔥 Active Streaks:\n\n"
-      end
-      PostThread.split_lines(streaks.map { |streak| format_streak_line(streak) }, header: header)
-    end
-
-    def format_streak_line(streak)
-      "#{streak[:player_name]}: #{streak[:length]}-game #{streak[:streak_type].downcase} streak (#{streak[:total_stats]} total)\n"
+    def formatter
+      @formatter ||= PlayerStreaks::Formatter.new
     end
   end
 end
