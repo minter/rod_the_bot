@@ -516,7 +516,7 @@ module RodTheBot
       return unless pbp_play && pbp_play["typeDescKey"] == "goal"
 
       # Get roster data
-      players = NhlApi.game_rosters(game_id)
+      players = Nhl::GameInfo.roster(game_id)
 
       # Format post text
       post_text = format_edge_replay_post(pbp_play, players, pbp_feed)

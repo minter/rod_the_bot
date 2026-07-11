@@ -29,8 +29,8 @@ module RodTheBot
       REDIS.set("game:#{game_id}:current_goalie:#{home_team_id}", home_goalie["playerId"].to_s, ex: 28800) # 8 hours
       REDIS.set("game:#{game_id}:current_goalie:#{away_team_id}", away_goalie["playerId"].to_s, ex: 28800)
 
-      officials = NhlApi.officials(game_id)
-      scratches = NhlApi.scratches(game_id)
+      officials = Nhl::GameInfo.officials(game_id)
+      scratches = Nhl::GameInfo.scratches(game_id)
 
       main_post = format_main_post(@feed, home_goalie, home_goalie_record, away_goalie, away_goalie_record)
       reply_post = format_reply_post(officials, scratches)
@@ -119,7 +119,7 @@ module RodTheBot
 
     def format_main_post(feed, home_goalie, home_goalie_record, away_goalie, away_goalie_record)
       # Get game roster data for consistent formatting
-      players = NhlApi.game_rosters(feed["id"])
+      players = Nhl::GameInfo.roster(feed["id"])
 
       # Format goalie names with jersey numbers using consistent format
       home_goalie_name = format_player_from_roster(players, home_goalie["playerId"])

@@ -40,7 +40,7 @@ class RodTheBot::GameStartWorkerTest < ActiveSupport::TestCase
       away_goalie_record = "(5-3-0, 2.62 GAA, 0.907 SV%)"
 
       # Mock the game_rosters call to avoid VCR issues
-      NhlApi.expects(:game_rosters).with(feed["id"]).returns({
+      Nhl::GameInfo.expects(:roster).with(feed["id"]).returns({
         "8479973" => {name: "Linus Ullmark", number: "35", team_id: 9},
         "8477924" => {name: "Tristan Jarry", number: "35", team_id: 5}
       })
@@ -94,11 +94,11 @@ class RodTheBot::GameStartWorkerTest < ActiveSupport::TestCase
       })
 
       # Mock the game_rosters call to avoid additional fetch_pbp_feed call
-      NhlApi.expects(:game_rosters).with(@game_id).returns({
+      Nhl::GameInfo.expects(:roster).with(@game_id).returns({
         "123" => {name: "Home Goalie", number: "30", team_id: 1},
         "456" => {name: "Away Goalie", number: "31", team_id: 2}
       })
-      NhlApi.expects(:officials).returns({referees: ["Ref1", "Ref2"], linesmen: ["Lines1", "Lines2"]})
+      Nhl::GameInfo.expects(:officials).returns({referees: ["Ref1", "Ref2"], linesmen: ["Lines1", "Lines2"]})
       # Worker calls fetch_player_landing_feed 4 times:
       # 2 for goalie records + 2 for goalie images
       Nhl::PlayerClient.expects(:landing).times(4).returns({
@@ -109,7 +109,7 @@ class RodTheBot::GameStartWorkerTest < ActiveSupport::TestCase
         },
         "headshot" => "https://example.com/headshot.jpg"
       })
-      NhlApi.expects(:scratches).returns("HOME: Player1, Player2\nAWAY: Player3, Player4")
+      Nhl::GameInfo.expects(:scratches).returns("HOME: Player1, Player2\nAWAY: Player3, Player4")
 
       # Mock Redis calls for goalie caching (with specific parameters)
       REDIS.expects(:set).with("game:#{@game_id}:current_goalie:1", "123", ex: 28800).once  # Home goalie
@@ -213,9 +213,9 @@ class RodTheBot::GameStartWorkerTest < ActiveSupport::TestCase
       "awayTeam" => {"id" => 2, "abbrev" => "AWAY", "commonName" => {"default" => "Away Team"}}
     })
 
-    NhlApi.expects(:game_rosters).with(@game_id).returns({})
-    NhlApi.expects(:officials).returns({referees: ["Ref1"], linesmen: ["Lines1"]})
-    NhlApi.expects(:scratches).returns(nil)
+    Nhl::GameInfo.expects(:roster).with(@game_id).returns({})
+    Nhl::GameInfo.expects(:officials).returns({referees: ["Ref1"], linesmen: ["Lines1"]})
+    Nhl::GameInfo.expects(:scratches).returns(nil)
 
     REDIS.expects(:set).with("game:#{@game_id}:current_goalie:1", "", ex: 28800).once
     REDIS.expects(:set).with("game:#{@game_id}:current_goalie:2", "", ex: 28800).once

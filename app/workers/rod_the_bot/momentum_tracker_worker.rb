@@ -58,7 +58,7 @@ module RodTheBot
 
     def get_player_team(player_id)
       # Get player team from roster data
-      roster = NhlApi.game_rosters(@game_id)
+      roster = Nhl::GameInfo.roster(@game_id)
       player = roster[player_id]
       player ? player[:team_id] : nil
     end

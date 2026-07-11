@@ -49,7 +49,7 @@ class RodTheBot::EdgePlayerHotZonesWorkerTest < ActiveSupport::TestCase
   end
 
   test "perform returns early if preseason" do
-    NhlApi.unstub(:preseason?)
+    Nhl::SeasonCalendar.unstub(:preseason?)
     Nhl::SeasonCalendar.stubs(:preseason?).returns(true)
 
     @worker.perform(2025020660)

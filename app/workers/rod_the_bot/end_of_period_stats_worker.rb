@@ -29,7 +29,7 @@ module RodTheBot
       period_toi_post = format_post(time_on_ice_leaders, "⏱️ Time on ice leaders", period_state)
       shots_on_goal_post = format_post(shots_on_goal_leaders, "🏒 Shots on goal leaders", period_state)
 
-      game_splits_stats = NhlApi.splits(@game_id)
+      game_splits_stats = Nhl::GameInfo.splits(@game_id)
       game_split_stats_post = format_game_split_stats_post(game_splits_stats, period_state)
 
       # Generate unique keys for each period's set of posts

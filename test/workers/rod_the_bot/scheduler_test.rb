@@ -395,7 +395,7 @@ class RodTheBot::SchedulerTest < ActiveSupport::TestCase
 
   def teardown
     Sidekiq::Worker.clear_all
-    NhlApi.unstub(:current_season)
+    Nhl::SeasonCalendar.unstub(:current_season)
   end
 
   private

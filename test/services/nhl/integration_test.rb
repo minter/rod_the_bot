@@ -1,6 +1,6 @@
 require "test_helper"
 
-class NhlApiTest < ActiveSupport::TestCase
+class Nhl::IntegrationTest < ActiveSupport::TestCase
   setup do
     @game_id = "2023020339"
     @player_id = "8479973"
@@ -126,7 +126,7 @@ class NhlApiTest < ActiveSupport::TestCase
 
   test "officials" do
     VCR.use_cassette("nhl_game_#{@game_id}_right_rail") do
-      officials = NhlApi.officials(@game_id)
+      officials = Nhl::GameInfo.officials(@game_id)
       assert_kind_of Hash, officials
       assert_includes officials.keys, :referees
       assert_includes officials.keys, :linesmen
@@ -135,7 +135,7 @@ class NhlApiTest < ActiveSupport::TestCase
 
   test "splits" do
     VCR.use_cassette("nhl_game_#{@game_id}_right_rail") do
-      splits = NhlApi.splits(@game_id)
+      splits = Nhl::GameInfo.splits(@game_id)
       assert_kind_of Hash, splits
       assert splits.values.all? { |split| split.key?(:away) && split.key?(:home) }
     end
@@ -143,7 +143,7 @@ class NhlApiTest < ActiveSupport::TestCase
 
   test "game_rosters" do
     VCR.use_cassette("nhl_game_#{@game_id}_gamecenter_pbp") do
-      rosters = NhlApi.game_rosters(@game_id)
+      rosters = Nhl::GameInfo.roster(@game_id)
       assert_kind_of Hash, rosters
       assert rosters.values.all? { |player| player.key?(:name) }
     end

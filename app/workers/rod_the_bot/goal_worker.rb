@@ -32,7 +32,7 @@ module RodTheBot
         @their_team = home
       end
 
-      players = NhlApi.game_rosters(game_id)
+      players = Nhl::GameInfo.roster(game_id)
 
       original_play = @play.deep_dup
 

@@ -227,7 +227,7 @@ module RodTheBot
     end
 
     def game_roster
-      @game_roster ||= NhlApi.game_rosters(@game_id)
+      @game_roster ||= Nhl::GameInfo.roster(@game_id)
     end
 
     def player_on_tracked_team?(player_id)

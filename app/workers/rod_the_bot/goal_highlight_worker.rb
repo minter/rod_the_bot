@@ -73,7 +73,7 @@ module RodTheBot
 
     def format_post(landing_play)
       # Get roster data to find jersey numbers
-      players = NhlApi.game_rosters(@pbp_feed["id"])
+      players = Nhl::GameInfo.roster(@pbp_feed["id"])
 
       # Format scorer with jersey number
       scorer_id = @pbp_play["details"]["scoringPlayerId"]

@@ -24,7 +24,7 @@ class RodTheBot::GoalHighlightWorkerTest < ActiveSupport::TestCase
   test "performs goal highlight post when highlight is available" do
     VCR.use_cassette("nhl_api_#{@game_id}_goal_highlight") do
       # Mock game_rosters to avoid additional API calls (handle both string and integer IDs)
-      NhlApi.expects(:game_rosters).returns({
+      Nhl::GameInfo.expects(:roster).returns({
         "8477500" => {name: "Jordan Martinook", number: "48", team_id: 12}
       })
 
@@ -86,7 +86,7 @@ class RodTheBot::GoalHighlightWorkerTest < ActiveSupport::TestCase
   test "formats post correctly" do
     VCR.use_cassette("nhl_api_#{@game_id}_format_post") do
       # Mock game_rosters to avoid additional API calls (handle both string and integer IDs)
-      NhlApi.expects(:game_rosters).returns({
+      Nhl::GameInfo.expects(:roster).returns({
         "8477500" => {name: "Jordan Martinook", number: "48", team_id: 12}
       })
 

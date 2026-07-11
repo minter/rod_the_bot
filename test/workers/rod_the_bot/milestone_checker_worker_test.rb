@@ -56,7 +56,7 @@ class RodTheBot::MilestoneCheckerWorkerTest < ActiveSupport::TestCase
       Nhl::GameClient.stubs(:play_by_play).returns(feed)
 
       # Mock roster data
-      NhlApi.stubs(:game_rosters).returns({
+      Nhl::GameInfo.stubs(:roster).returns({
         8482093 => {number: 24, name: "Seth Jarvis", team_id: 12},
         8476906 => {number: 65, name: "William Carrier", team_id: 12}
       })
@@ -107,7 +107,7 @@ class RodTheBot::MilestoneCheckerWorkerTest < ActiveSupport::TestCase
       Nhl::GameClient.stubs(:play_by_play).returns(feed)
 
       # Mock roster data
-      NhlApi.stubs(:game_rosters).returns({
+      Nhl::GameInfo.stubs(:roster).returns({
         8482093 => {number: 24, name: "Seth Jarvis", team_id: 12}
       })
 
@@ -158,7 +158,7 @@ class RodTheBot::MilestoneCheckerWorkerTest < ActiveSupport::TestCase
       Nhl::GameClient.stubs(:play_by_play).returns(feed)
 
       # Mock roster data
-      NhlApi.stubs(:game_rosters).returns({
+      Nhl::GameInfo.stubs(:roster).returns({
         8476906 => {number: 65, name: "William Carrier", team_id: 12},
         8482093 => {number: 24, name: "Seth Jarvis", team_id: 12}
       })
@@ -207,7 +207,7 @@ class RodTheBot::MilestoneCheckerWorkerTest < ActiveSupport::TestCase
       }
 
       Nhl::GameClient.stubs(:play_by_play).returns(feed)
-      NhlApi.stubs(:game_rosters).returns({})
+      Nhl::GameInfo.stubs(:roster).returns({})
 
       @worker.perform(@game_id, play)
 
