@@ -1,30 +1,28 @@
-require 'find'
+require "find"
+require "pathname"
 
-# Directory where your test files are located
-test_dir = '../test'
+root = Pathname.new(__dir__).join("..").expand_path
+test_dir = root.join("test")
+cassette_dir = root.join("fixtures/vcr_cassettes")
 
-# Directory where your VCR cassettes are stored
-cassette_dir = '../fixtures/vcr_cassettes'
-
-# Find all test files
-test_files = Find.find(test_dir).select { |path| path =~ /\_test\.rb$/ }
-
-# Find all VCR cassettes
-cassettes = Dir.glob("#{cassette_dir}/**/*.yml")
+test_files = Find.find(test_dir).select { |path| path.end_with?("_test.rb") }
+cassettes = Dir.glob(cassette_dir.join("**/*.yml"))
 
 # Extract cassette names from test files
-used_cassettes = []
+used_cassette_patterns = []
 test_files.each do |file|
   File.readlines(file).each do |line|
-    if line =~ /VCR\.use_cassette\(['"](.+?)['"]/
-      used_cassettes << $1
+    if line =~ /VCR\.use_cassette\(\s*(["'])(.*)\1(?:\s*,|\s*\))/
+      pattern = Regexp.escape(Regexp.last_match(2)).gsub(/\\#\\\{.*?\\\}/, ".+")
+      used_cassette_patterns << /\A#{pattern}\.yml\z/
     end
   end
 end
 
 # Find unused cassettes
 unused_cassettes = cassettes.reject do |cassette|
-  used_cassettes.any? { |used| cassette.include?(used) }
+  relative_path = Pathname.new(cassette).relative_path_from(cassette_dir).to_s
+  used_cassette_patterns.any? { |pattern| pattern.match?(relative_path) }
 end
 
 # Print unused cassettes
@@ -33,8 +31,6 @@ if unused_cassettes.empty?
 else
   puts "Unused VCR cassettes:"
   unused_cassettes.each do |cassette|
-    puts cassette
-    # Uncomment the next line to delete unused cassettes
-    # File.delete(cassette)
+    puts Pathname.new(cassette).relative_path_from(root)
   end
 end
