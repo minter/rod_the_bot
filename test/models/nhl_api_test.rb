@@ -151,7 +151,7 @@ class NhlApiTest < ActiveSupport::TestCase
 
   test "teams" do
     VCR.use_cassette("nhl_teams") do
-      teams = NhlApi.teams
+      teams = Nhl::StatsClient.teams
       assert_kind_of Hash, teams
       assert_operator teams.size, :>, 0
 

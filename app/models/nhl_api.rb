@@ -4,20 +4,6 @@ class NhlApi
   base_uri "https://api-web.nhle.com/v1"
 
   class << self
-    def teams
-      Rails.cache.fetch("teams", expires_in: 30.days) do
-        teams = {}
-        response = HTTParty.get("https://api.nhle.com/stats/rest/en/team")
-        raise Nhl::RequestError, "API request failed: #{response.code}" unless response.success?
-
-        response.parsed_response["data"].each do |team|
-          team_data = symbolize_keys(team)
-          teams[team_data[:id]] = team_data
-        end
-        teams
-      end
-    end
-
     def officials(game_id)
       right_rail = Nhl::GameClient.right_rail(game_id)
       officials_data = right_rail&.dig("gameInfo")
@@ -118,27 +104,6 @@ class NhlApi
         response = HTTParty.get("https://forge-dapi.d3.nhle.com/v2/content/en-us/players?tags.slug=playerid-#{player_id}")
         raise Nhl::RequestError, "API request failed: #{response.code}" unless response.success?
         response.parsed_response
-      end
-    end
-
-    def fetch_skater_milestones
-      Rails.cache.fetch("skater_milestones_#{Date.current}", expires_in: 24.hours) do
-        response = HTTParty.get("https://api.nhle.com/stats/rest/en/milestones/skaters")
-        response.success? ? response.parsed_response : {}
-      end
-    end
-
-    def fetch_goalie_milestones
-      Rails.cache.fetch("goalie_milestones_#{Date.current}", expires_in: 24.hours) do
-        response = HTTParty.get("https://api.nhle.com/stats/rest/en/milestones/goalies")
-        response.success? ? response.parsed_response : {}
-      end
-    end
-
-    def get_player_career_stats(player_id)
-      Rails.cache.fetch("player_career_stats_#{player_id}", expires_in: 1.hour) do
-        response = HTTParty.get("https://api.nhle.com/stats/rest/en/skater/stats?cayenneExp=playerId=#{player_id}")
-        response.success? ? response.parsed_response : {}
       end
     end
 
