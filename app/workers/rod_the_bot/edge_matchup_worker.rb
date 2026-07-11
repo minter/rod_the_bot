@@ -16,7 +16,7 @@ module RodTheBot
       return unless your_zone_data && opp_zone_data
 
       # Get team abbreviations from game feed
-      feed = NhlApi.fetch_landing_feed(game_id)
+      feed = Nhl::GameClient.landing(game_id)
       return unless feed
 
       home_id = feed.dig("homeTeam", "id").to_i

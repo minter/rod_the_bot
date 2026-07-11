@@ -11,7 +11,7 @@ class RodTheBot::GameStartWorkerTest < ActiveSupport::TestCase
 
   test "find_starting_goalie" do
     VCR.use_cassette("nhl_game_#{@game_id}_gamecenter_pbp_game_start") do
-      feed = NhlApi.fetch_pbp_feed(@game_id)
+      feed = Nhl::GameClient.play_by_play(@game_id)
       @game_start_worker.instance_variable_set(:@feed, feed)
       goalie = @game_start_worker.send(:find_starting_goalie, "homeTeam")
 
@@ -23,7 +23,7 @@ class RodTheBot::GameStartWorkerTest < ActiveSupport::TestCase
   test "find_goalie_record" do
     VCR.use_cassette("nhl_player_8479973_landing") do
       player_id = "8479973"
-      feed = NhlApi.fetch_pbp_feed(@game_id)
+      feed = Nhl::GameClient.play_by_play(@game_id)
       @game_start_worker.instance_variable_set(:@feed, feed)
       record = @game_start_worker.send(:find_goalie_record, player_id)
 
@@ -33,7 +33,7 @@ class RodTheBot::GameStartWorkerTest < ActiveSupport::TestCase
 
   test "format_main_post" do
     VCR.use_cassette("nhl_game_#{@game_id}_gamecenter_pbp_game_start") do
-      feed = NhlApi.fetch_pbp_feed(@game_id)
+      feed = Nhl::GameClient.play_by_play(@game_id)
       home_goalie = {"playerId" => "8479973", "sweaterNumber" => "35", "name" => {"default" => "L. Ullmark"}}
       away_goalie = {"playerId" => "8477924", "sweaterNumber" => "35", "name" => {"default" => "T. Jarry"}}
       home_goalie_record = "(5-3-0, 3.22 GAA, 0.877 SV%)"
@@ -68,7 +68,7 @@ class RodTheBot::GameStartWorkerTest < ActiveSupport::TestCase
 
   test "perform" do
     VCR.use_cassette("nhl_game_#{@game_id}_game_start_worker_perform") do
-      NhlApi.expects(:fetch_pbp_feed).returns({
+      Nhl::GameClient.expects(:play_by_play).returns({
         "id" => @game_id,
         "summary" => {
           "iceSurface" => {
@@ -101,7 +101,7 @@ class RodTheBot::GameStartWorkerTest < ActiveSupport::TestCase
       NhlApi.expects(:officials).returns({referees: ["Ref1", "Ref2"], linesmen: ["Lines1", "Lines2"]})
       # Worker calls fetch_player_landing_feed 4 times:
       # 2 for goalie records + 2 for goalie images
-      NhlApi.expects(:fetch_player_landing_feed).times(4).returns({
+      Nhl::GameClient.expects(:player_landing_feed).times(4).returns({
         "featuredStats" => {
           "regularSeason" => {
             "subSeason" => {"wins" => 10, "losses" => 5, "otLosses" => 2, "goalsAgainstAvg" => 2.5, "savePctg" => 0.915}
@@ -125,11 +125,11 @@ class RodTheBot::GameStartWorkerTest < ActiveSupport::TestCase
   test "find_goalie_record handles missing featuredStats" do
     VCR.use_cassette("nhl_player_8479973_landing") do
       player_id = "8479973"
-      feed = NhlApi.fetch_pbp_feed(@game_id)
+      feed = Nhl::GameClient.play_by_play(@game_id)
       @game_start_worker.instance_variable_set(:@feed, feed)
 
       # Mock player data with missing featuredStats
-      NhlApi.expects(:fetch_player_landing_feed).with(player_id).returns({})
+      Nhl::GameClient.expects(:player_landing_feed).with(player_id).returns({})
 
       record = @game_start_worker.send(:find_goalie_record, player_id)
       assert_equal "(Stats unavailable)", record
@@ -138,7 +138,7 @@ class RodTheBot::GameStartWorkerTest < ActiveSupport::TestCase
 
   test "find_goalie_record handles nil player_id" do
     VCR.use_cassette("nhl_game_#{@game_id}_gamecenter_pbp_nil_player") do
-      feed = NhlApi.fetch_pbp_feed(@game_id)
+      feed = Nhl::GameClient.play_by_play(@game_id)
       @game_start_worker.instance_variable_set(:@feed, feed)
 
       record = @game_start_worker.send(:find_goalie_record, nil)
@@ -148,7 +148,7 @@ class RodTheBot::GameStartWorkerTest < ActiveSupport::TestCase
 
   test "find_starting_goalie handles missing goalies" do
     VCR.use_cassette("nhl_game_#{@game_id}_gamecenter_pbp_game_start") do
-      feed = NhlApi.fetch_pbp_feed(@game_id)
+      feed = Nhl::GameClient.play_by_play(@game_id)
       # Remove goalies from the feed
       feed["summary"]["iceSurface"]["homeTeam"].delete("goalies")
       @game_start_worker.instance_variable_set(:@feed, feed)
@@ -163,7 +163,7 @@ class RodTheBot::GameStartWorkerTest < ActiveSupport::TestCase
   end
 
   test "re-queues when home goalie is missing and retries remain" do
-    NhlApi.expects(:fetch_pbp_feed).returns({
+    Nhl::GameClient.expects(:play_by_play).returns({
       "summary" => {
         "iceSurface" => {
           "homeTeam" => {"goalies" => []},
@@ -181,7 +181,7 @@ class RodTheBot::GameStartWorkerTest < ActiveSupport::TestCase
   end
 
   test "re-queues when away goalie is missing and retries remain" do
-    NhlApi.expects(:fetch_pbp_feed).returns({
+    Nhl::GameClient.expects(:play_by_play).returns({
       "summary" => {
         "iceSurface" => {
           "homeTeam" => {"goalies" => [{"playerId" => "123", "name" => {"default" => "Home Goalie"}}]},
@@ -199,7 +199,7 @@ class RodTheBot::GameStartWorkerTest < ActiveSupport::TestCase
   end
 
   test "proceeds with unknown goalies when retries exhausted" do
-    NhlApi.expects(:fetch_pbp_feed).returns({
+    Nhl::GameClient.expects(:play_by_play).returns({
       "id" => @game_id,
       "summary" => {
         "iceSurface" => {

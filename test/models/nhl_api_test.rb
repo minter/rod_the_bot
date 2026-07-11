@@ -9,7 +9,7 @@ class NhlApiTest < ActiveSupport::TestCase
 
   test "fetch_pbp_feed" do
     VCR.use_cassette("nhl_game_#{@game_id}_gamecenter_pbp") do
-      feed = NhlApi.fetch_pbp_feed(@game_id)
+      feed = Nhl::GameClient.play_by_play(@game_id)
       assert_kind_of Hash, feed
       assert_includes feed.keys, "plays"
     end
@@ -17,7 +17,7 @@ class NhlApiTest < ActiveSupport::TestCase
 
   test "fetch_play" do
     VCR.use_cassette("nhl_game_#{@game_id}_gamecenter_pbp") do
-      feed = NhlApi.fetch_pbp_feed(@game_id)
+      feed = Nhl::GameClient.play_by_play(@game_id)
       assert_kind_of Hash, feed, "Feed should be a Hash"
       assert feed.key?("plays"), "Feed should have a 'plays' key"
       assert_kind_of Array, feed["plays"], "'plays' should be an Array"
@@ -26,7 +26,7 @@ class NhlApiTest < ActiveSupport::TestCase
 
       play = feed["plays"].first
       play_id = play["eventId"].to_s
-      fetched_play = NhlApi.fetch_play(@game_id, play_id)
+      fetched_play = Nhl::GameClient.play(@game_id, play_id)
 
       assert_equal play_id, fetched_play["eventId"].to_s
     end
@@ -34,7 +34,7 @@ class NhlApiTest < ActiveSupport::TestCase
 
   test "fetch_boxscore_feed" do
     VCR.use_cassette("nhl_game_#{@game_id}_boxscore") do
-      feed = NhlApi.fetch_boxscore_feed(@game_id)
+      feed = Nhl::GameClient.boxscore(@game_id)
       assert_kind_of Hash, feed
       assert_includes feed.keys, "id"  # Changed from "boxscore" to "id"
     end
@@ -42,7 +42,7 @@ class NhlApiTest < ActiveSupport::TestCase
 
   test "fetch_landing_feed" do
     VCR.use_cassette("nhl_game_#{@game_id}_landing") do
-      feed = NhlApi.fetch_landing_feed(@game_id)
+      feed = Nhl::GameClient.landing(@game_id)
       assert_kind_of Hash, feed
       assert_includes feed.keys, "gameType"
     end
@@ -50,7 +50,7 @@ class NhlApiTest < ActiveSupport::TestCase
 
   test "fetch_player_landing_feed" do
     VCR.use_cassette("nhl_player_#{@player_id}_landing") do
-      feed = NhlApi.fetch_player_landing_feed(@player_id)
+      feed = Nhl::GameClient.player_landing_feed(@player_id)
       assert_kind_of Hash, feed
       assert_includes feed.keys, "featuredStats"
     end
@@ -58,7 +58,7 @@ class NhlApiTest < ActiveSupport::TestCase
 
   test "fetch_right_rail_feed" do
     VCR.use_cassette("nhl_game_#{@game_id}_right_rail") do
-      feed = NhlApi.fetch_right_rail_feed(@game_id)
+      feed = Nhl::GameClient.right_rail(@game_id)
       assert_kind_of Hash, feed
       assert_includes feed.keys, "gameInfo"
     end

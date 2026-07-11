@@ -6,7 +6,7 @@ module RodTheBot
     def perform(game_id, period_number = nil)
       @game_id = game_id
       @period_number = period_number
-      @feed = NhlApi.fetch_landing_feed(game_id)
+      @feed = Nhl::GameClient.landing(game_id)
       return unless @feed
 
       analytics_data = calculate_advanced_metrics

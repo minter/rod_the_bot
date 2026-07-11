@@ -8,7 +8,7 @@ module RodTheBot
     GOALIE_RETRY_INTERVAL = 30.seconds
 
     def perform(game_id, retry_count = 0)
-      @feed = NhlApi.fetch_pbp_feed(game_id)
+      @feed = Nhl::GameClient.play_by_play(game_id)
       home_goalie = find_starting_goalie("homeTeam")
       away_goalie = find_starting_goalie("awayTeam")
 
@@ -88,7 +88,7 @@ module RodTheBot
       return "(Preseason - Stats unavailable)" if Nhl::SeasonCalendar.preseason?
 
       season = (@feed["gameType"] == 3) ? "playoffs" : "regularSeason"
-      player = NhlApi.fetch_player_landing_feed(player_id)
+      player = Nhl::GameClient.player_landing_feed(player_id)
 
       # Add error handling for missing or malformed data
       unless player && player["featuredStats"]

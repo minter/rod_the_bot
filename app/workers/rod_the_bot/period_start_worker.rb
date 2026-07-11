@@ -7,7 +7,7 @@ module RodTheBot
     attr_reader :feed
 
     def perform(game_id, play)
-      @feed = NhlApi.fetch_pbp_feed(game_id)
+      @feed = Nhl::GameClient.play_by_play(game_id)
       home = feed.fetch("homeTeam", {})
       away = feed.fetch("awayTeam", {})
 
@@ -25,7 +25,7 @@ module RodTheBot
         post = format_post(period_descriptor, home, away)
         RodTheBot::Post.perform_async(post)
       end
-    rescue NhlApi::APIError => e
+    rescue Nhl::RequestError => e
       Rails.logger.error "PeriodStartWorker: API error for game #{game_id}: #{e.message}"
     rescue => e
       Rails.logger.error "PeriodStartWorker: Unexpected error for game #{game_id}: #{e.class} - #{e.message}\n#{e.backtrace&.first(5)&.join("\n")}"

@@ -5,7 +5,7 @@ module RodTheBot
     def self.for(game_id, team_id: ENV.fetch("NHL_TEAM_ID").to_i)
       return unless game_id
 
-      feed = NhlApi.fetch_landing_feed(game_id)
+      feed = Nhl::GameClient.landing(game_id)
       return unless feed
 
       home = feed["homeTeam"]

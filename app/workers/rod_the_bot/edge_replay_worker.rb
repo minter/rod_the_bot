@@ -465,7 +465,7 @@ module RodTheBot
     end
 
     def fetch_game_data(game_id)
-      game_data = NhlApi.fetch_landing_feed(game_id)
+      game_data = Nhl::GameClient.landing(game_id)
       return nil unless game_data && game_data["homeTeam"] && game_data["awayTeam"]
 
       game_data
@@ -511,8 +511,8 @@ module RodTheBot
 
     def post_edge_replay(game_id, event_id, video_path, redis_key)
       # Fetch play data to format post text
-      pbp_feed = NhlApi.fetch_pbp_feed(game_id)
-      pbp_play = NhlApi.fetch_play(game_id, event_id)
+      pbp_feed = Nhl::GameClient.play_by_play(game_id)
+      pbp_play = Nhl::GameClient.play(game_id, event_id)
       return unless pbp_play && pbp_play["typeDescKey"] == "goal"
 
       # Get roster data

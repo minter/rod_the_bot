@@ -49,7 +49,7 @@ module RodTheBot
       top_zones = elite_zones.first(3)
 
       # Get player info
-      player_landing = NhlApi.fetch_player_landing_feed(player[:id])
+      player_landing = Nhl::GameClient.player_landing_feed(player[:id])
       sweater_number = player_landing.dig("sweaterNumber")
 
       post = <<~POST

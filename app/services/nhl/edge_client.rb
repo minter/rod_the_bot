@@ -1,6 +1,5 @@
 module Nhl
-  class EdgeClient
-    include HTTParty
+  class EdgeClient < Client
 
     base_uri "https://api-web.nhle.com/v1"
 
@@ -24,16 +23,6 @@ module Nhl
         end
       end
 
-      private
-
-      def get_json(path)
-        response = get(path)
-        raise NhlApi::APIError, "API request failed: #{response.code}" unless response.success?
-
-        response.parsed_response
-      rescue Net::OpenTimeout, Net::ReadTimeout, SocketError, Errno::ECONNREFUSED, Errno::ECONNRESET => e
-        raise NhlApi::APIError, "Network error fetching #{path}: #{e.class} - #{e.message}"
-      end
     end
   end
 end

@@ -5,7 +5,7 @@ module RodTheBot
     attr_reader :feed
 
     def perform(game_id)
-      @feed = NhlApi.fetch_boxscore_feed(game_id)
+      @feed = Nhl::GameClient.boxscore(game_id)
       home = feed.fetch("homeTeam", {})
       visitor = feed.fetch("awayTeam", {})
       home_team_is_yours = home.fetch("id", "").to_i == ENV["NHL_TEAM_ID"].to_i
@@ -19,7 +19,7 @@ module RodTheBot
 
       RodTheBot::Post.perform_async(post)
       RodTheBot::EndOfPeriodStatsWorker.perform_async(game_id, "")
-    rescue NhlApi::APIError => e
+    rescue Nhl::RequestError => e
       Rails.logger.error "FinalScoreWorker: API error for game #{game_id}: #{e.message}"
     rescue => e
       Rails.logger.error "FinalScoreWorker: Unexpected error for game #{game_id}: #{e.class} - #{e.message}\n#{e.backtrace&.first(5)&.join("\n")}"

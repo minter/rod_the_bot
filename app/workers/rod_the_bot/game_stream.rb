@@ -7,7 +7,7 @@ module RodTheBot
 
     def perform(game_id)
       @game_id = game_id
-      @feed = NhlApi.fetch_pbp_feed(game_id)
+      @feed = Nhl::GameClient.play_by_play(game_id)
       plays = @feed&.dig("plays") || []
 
       # Check if game is final using gameState (works even when plays are empty)
@@ -25,7 +25,7 @@ module RodTheBot
       else
         RodTheBot::GameStream.perform_in(30, game_id)
       end
-    rescue NhlApi::APIError => e
+    rescue Nhl::RequestError => e
       Rails.logger.error "GameStream: API error for game #{game_id}: #{e.message}. Retrying in 30 seconds."
       RodTheBot::GameStream.perform_in(30, game_id)
     rescue => e

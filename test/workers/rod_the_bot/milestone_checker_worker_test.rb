@@ -53,7 +53,7 @@ class RodTheBot::MilestoneCheckerWorkerTest < ActiveSupport::TestCase
         ]
       }
 
-      NhlApi.stubs(:fetch_pbp_feed).returns(feed)
+      Nhl::GameClient.stubs(:play_by_play).returns(feed)
 
       # Mock roster data
       NhlApi.stubs(:game_rosters).returns({
@@ -104,7 +104,7 @@ class RodTheBot::MilestoneCheckerWorkerTest < ActiveSupport::TestCase
         ]
       }
 
-      NhlApi.stubs(:fetch_pbp_feed).returns(feed)
+      Nhl::GameClient.stubs(:play_by_play).returns(feed)
 
       # Mock roster data
       NhlApi.stubs(:game_rosters).returns({
@@ -155,7 +155,7 @@ class RodTheBot::MilestoneCheckerWorkerTest < ActiveSupport::TestCase
         ]
       }
 
-      NhlApi.stubs(:fetch_pbp_feed).returns(feed)
+      Nhl::GameClient.stubs(:play_by_play).returns(feed)
 
       # Mock roster data
       NhlApi.stubs(:game_rosters).returns({
@@ -206,7 +206,7 @@ class RodTheBot::MilestoneCheckerWorkerTest < ActiveSupport::TestCase
         ]
       }
 
-      NhlApi.stubs(:fetch_pbp_feed).returns(feed)
+      Nhl::GameClient.stubs(:play_by_play).returns(feed)
       NhlApi.stubs(:game_rosters).returns({})
 
       @worker.perform(@game_id, play)

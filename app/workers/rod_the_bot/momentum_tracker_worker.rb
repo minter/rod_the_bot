@@ -5,7 +5,7 @@ module RodTheBot
 
     def perform(game_id)
       @game_id = game_id
-      @feed = NhlApi.fetch_pbp_feed(game_id)
+      @feed = Nhl::GameClient.play_by_play(game_id)
       return unless @feed
 
       momentum_data = analyze_game_momentum

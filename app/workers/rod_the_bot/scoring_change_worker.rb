@@ -39,7 +39,7 @@ module RodTheBot
 
       # Create a new unique key for this scoring change post
       scoring_key = "#{redis_key}:scoring:#{Time.now.to_i}"
-      @feed = NhlApi.fetch_pbp_feed(game_id)
+      @feed = Nhl::GameClient.play_by_play(game_id)
       @play = @feed["plays"].find { |play| play["eventId"].to_s == play_id.to_s }
       @home = @feed["homeTeam"]
       @away = @feed["awayTeam"]
@@ -68,7 +68,7 @@ module RodTheBot
 
       # Post as reply - Post worker will update last_reply_key after successful post
       RodTheBot::Post.perform_async(post, scoring_key, parent_key, nil, goal_images(players, @play), nil, redis_key)
-    rescue NhlApi::APIError => e
+    rescue Nhl::RequestError => e
       Rails.logger.error "ScoringChangeWorker: API error for game #{game_id}, play #{play_id}: #{e.message}"
     rescue => e
       Rails.logger.error "ScoringChangeWorker: Unexpected error for game #{game_id}, play #{play_id}: #{e.class} - #{e.message}\n#{e.backtrace&.first(5)&.join("\n")}"
@@ -91,19 +91,19 @@ module RodTheBot
 
       # Safely fetch headshot for scoring player
       if play["details"]["scoringPlayerId"].present?
-        player_feed = NhlApi.fetch_player_landing_feed(play["details"]["scoringPlayerId"])
+        player_feed = Nhl::GameClient.player_landing_feed(play["details"]["scoringPlayerId"])
         images << player_feed&.dig("headshot")
       end
 
       # Safely fetch headshot for assist1 player
       if play["details"]["assist1PlayerId"].present?
-        player_feed = NhlApi.fetch_player_landing_feed(play["details"]["assist1PlayerId"])
+        player_feed = Nhl::GameClient.player_landing_feed(play["details"]["assist1PlayerId"])
         images << player_feed&.dig("headshot")
       end
 
       # Safely fetch headshot for assist2 player
       if play["details"]["assist2PlayerId"].present?
-        player_feed = NhlApi.fetch_player_landing_feed(play["details"]["assist2PlayerId"])
+        player_feed = Nhl::GameClient.player_landing_feed(play["details"]["assist2PlayerId"])
         images << player_feed&.dig("headshot")
       end
 

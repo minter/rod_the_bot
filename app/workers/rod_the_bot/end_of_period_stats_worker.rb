@@ -8,7 +8,7 @@ module RodTheBot
 
     def perform(game_id, period_number)
       @game_id = game_id
-      @feed = NhlApi.fetch_landing_feed(game_id)
+      @feed = Nhl::GameClient.landing(game_id)
       # return if @feed["gameState"] == "OFF"
 
       @home = feed.fetch("homeTeam", {})
@@ -78,7 +78,7 @@ module RodTheBot
     end
 
     def create_players(stat_category)
-      player_feed = NhlApi.fetch_boxscore_feed(@game_id)
+      player_feed = Nhl::GameClient.boxscore(@game_id)
       team = player_feed.fetch("playerByGameStats", {}).fetch(@your_team_status, {}).fetch("forwards", []) +
         player_feed.fetch("playerByGameStats", {}).fetch(@your_team_status, {}).fetch("defense", [])
       players = {}

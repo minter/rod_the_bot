@@ -5,8 +5,8 @@ module RodTheBot
     MAX_RETRIES = 6 # 1 hour max (6 retries * 10 minutes)
 
     def perform(game_id, retry_count = 0)
-      boxscore = NhlApi.fetch_boxscore_feed(game_id)
-      rr = NhlApi.fetch_right_rail_feed(game_id)
+      boxscore = Nhl::GameClient.boxscore(game_id)
+      rr = Nhl::GameClient.right_rail(game_id)
       gamedate = boxscore["gameDate"]
       game = get_game(gamedate, game_id)
 
@@ -26,7 +26,7 @@ module RodTheBot
         home_code = boxscore["homeTeam"]["abbrev"].downcase
         RodTheBot::Post.perform_async(post, nil, nil, "https://www.nhl.com/video/#{away_code}-at-#{home_code}-recap-#{recap_id}")
       end
-    rescue NhlApi::APIError => e
+    rescue Nhl::RequestError => e
       Rails.logger.error "ThreeMinuteRecapWorker: API error for game #{game_id}: #{e.message}"
     rescue => e
       Rails.logger.error "ThreeMinuteRecapWorker: Unexpected error for game #{game_id}: #{e.class} - #{e.message}\n#{e.backtrace&.first(5)&.join("\n")}"

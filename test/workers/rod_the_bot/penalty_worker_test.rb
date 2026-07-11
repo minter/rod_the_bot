@@ -18,7 +18,7 @@ class RodTheBot::PenaltyWorkerTest < ActiveSupport::TestCase
 
     game_ids.each do |game_id|
       VCR.use_cassette("nhl_game_#{game_id}_gamecenter_pbp", allow_playback_repeats: true) do
-        feed = NhlApi.fetch_pbp_feed(game_id)
+        feed = Nhl::GameClient.play_by_play(game_id)
         penalty_plays = feed["plays"].select { |play| play["typeDescKey"] == "penalty" }
 
         penalty_plays.each do |play|

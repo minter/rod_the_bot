@@ -19,7 +19,7 @@ class RodTheBot::GoalieChangeWorkerTest < ActiveSupport::TestCase
 
     VCR.use_cassette("nhl_game_#{game_id}_gamecenter_pbp", allow_playback_repeats: true) do
       # Get the actual game feed to extract real data
-      feed = NhlApi.fetch_pbp_feed(game_id)
+      feed = Nhl::GameClient.play_by_play(game_id)
 
       # Set up initial state - Bobrovsky (8475683) was starting goalie for Florida (team 13)
       REDIS.set("game:#{game_id}:current_goalie:13", "8475683", ex: 28800)
@@ -56,7 +56,7 @@ class RodTheBot::GoalieChangeWorkerTest < ActiveSupport::TestCase
     game_id = "2025010061"
 
     VCR.use_cassette("nhl_game_#{game_id}_gamecenter_pbp", allow_playback_repeats: true) do
-      feed = NhlApi.fetch_pbp_feed(game_id)
+      feed = Nhl::GameClient.play_by_play(game_id)
 
       # Set up cache with Cooper Black already active
       REDIS.set("game:#{game_id}:current_goalie:13", "8484900", ex: 28800)
@@ -84,7 +84,7 @@ class RodTheBot::GoalieChangeWorkerTest < ActiveSupport::TestCase
     game_id = "2025010061"
 
     VCR.use_cassette("nhl_game_#{game_id}_gamecenter_pbp", allow_playback_repeats: true) do
-      feed = NhlApi.fetch_pbp_feed(game_id)
+      feed = Nhl::GameClient.play_by_play(game_id)
 
       # Find a hit or other event without goalie info
       non_shot_play = feed["plays"].find { |play|

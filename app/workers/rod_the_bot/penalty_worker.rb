@@ -65,10 +65,10 @@ module RodTheBot
     MAX_DESC_RETRIES = 12 # 2 minutes max (12 retries * 10 seconds)
 
     def perform(game_id, play, desc_retry_count = 0)
-      @feed = NhlApi.fetch_pbp_feed(game_id)
+      @feed = Nhl::GameClient.play_by_play(game_id)
       return if play.blank?
 
-      @play = NhlApi.fetch_play(game_id, play["eventId"])
+      @play = Nhl::GameClient.play(game_id, play["eventId"])
       return if @play.nil?
 
       # Check if descKey is still "minor" and re-queue if so
@@ -149,13 +149,13 @@ module RodTheBot
       end
 
       # Always use the main player (committed player) for headshot
-      penalized_player_landing_feed = NhlApi.fetch_player_landing_feed(main_player_id)
+      penalized_player_landing_feed = Nhl::GameClient.player_landing_feed(main_player_id)
 
       # Safely fetch headshot - may be nil in preseason
       headshot = penalized_player_landing_feed&.dig("headshot")
       images = headshot ? [headshot] : []
       RodTheBot::Post.perform_async(post, nil, nil, nil, images)
-    rescue NhlApi::APIError => e
+    rescue Nhl::RequestError => e
       Rails.logger.error "PenaltyWorker: API error for game #{game_id}: #{e.message}"
     rescue => e
       Rails.logger.error "PenaltyWorker: Unexpected error for game #{game_id}: #{e.class} - #{e.message}\n#{e.backtrace&.first(5)&.join("\n")}"

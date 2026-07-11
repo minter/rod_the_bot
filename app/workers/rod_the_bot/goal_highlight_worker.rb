@@ -17,9 +17,9 @@ module RodTheBot
         return
       end
 
-      @pbp_feed = NhlApi.fetch_pbp_feed(game_id)
-      @landing_feed = NhlApi.fetch_landing_feed(game_id)
-      @pbp_play = NhlApi.fetch_play(game_id, play_id)
+      @pbp_feed = Nhl::GameClient.play_by_play(game_id)
+      @landing_feed = Nhl::GameClient.landing(game_id)
+      @pbp_play = Nhl::GameClient.play(game_id, play_id)
 
       return if @pbp_play.blank? || @pbp_play["typeDescKey"] != "goal"
 

@@ -213,7 +213,7 @@ module RodTheBot
     end
 
     def game_feed
-      @game_feed ||= NhlApi.fetch_pbp_feed(@game_id)
+      @game_feed ||= Nhl::GameClient.play_by_play(@game_id)
     end
 
     def get_player_career_stats_from_api(player_id)

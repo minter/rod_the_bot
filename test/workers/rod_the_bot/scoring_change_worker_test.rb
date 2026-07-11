@@ -19,7 +19,7 @@ class RodTheBot::ScoringChangeWorkerTest < ActiveSupport::TestCase
 
   def test_perform_with_scoring_change
     VCR.use_cassette("nhl_game_#{@game_id}_scoring_change", record: :new_episodes) do
-      feed = NhlApi.fetch_pbp_feed(@game_id)
+      feed = Nhl::GameClient.play_by_play(@game_id)
       actual_goal_play = feed["plays"].find { |play| play["typeDescKey"] == "goal" }
 
       return skip("No goal play found in the feed") unless actual_goal_play
@@ -40,7 +40,7 @@ class RodTheBot::ScoringChangeWorkerTest < ActiveSupport::TestCase
   def test_perform_without_scoring_change
     VCR.use_cassette("nhl_game_#{@game_id}_no_scoring_change", record: :new_episodes) do
       # Use the actual play data from the API
-      feed = NhlApi.fetch_pbp_feed(@game_id)
+      feed = Nhl::GameClient.play_by_play(@game_id)
       # Find any actual goal play in the feed
       actual_play = feed["plays"].find { |play| play["typeDescKey"] == "goal" }
 
@@ -57,7 +57,7 @@ class RodTheBot::ScoringChangeWorkerTest < ActiveSupport::TestCase
 
   def test_perform_with_non_goal_play
     VCR.use_cassette("nhl_game_#{@game_id}_non_goal_play", record: :new_episodes) do
-      feed = NhlApi.fetch_pbp_feed(@game_id)
+      feed = Nhl::GameClient.play_by_play(@game_id)
       non_goal_play = feed["plays"].find { |play| play["typeDescKey"] != "goal" }
 
       RodTheBot::Post.expects(:perform_async).never
@@ -68,7 +68,7 @@ class RodTheBot::ScoringChangeWorkerTest < ActiveSupport::TestCase
 
   def test_build_players
     VCR.use_cassette("nhl_game_#{@game_id}_build_players", record: :new_episodes) do
-      feed = NhlApi.fetch_pbp_feed(@game_id)
+      feed = Nhl::GameClient.play_by_play(@game_id)
       players = @worker.build_players(feed)
 
       assert_kind_of Hash, players
@@ -80,7 +80,7 @@ class RodTheBot::ScoringChangeWorkerTest < ActiveSupport::TestCase
 
   def test_format_post
     VCR.use_cassette("nhl_game_#{@game_id}_format_post", record: :new_episodes) do
-      feed = NhlApi.fetch_pbp_feed(@game_id)
+      feed = Nhl::GameClient.play_by_play(@game_id)
       play = feed["plays"].find { |p| p["typeDescKey"] == "goal" }
       @worker.instance_variable_set(:@feed, feed)
       @worker.instance_variable_set(:@play, play)

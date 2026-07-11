@@ -46,7 +46,7 @@ module RodTheBot
       target = output_path
       return target if target.exist?
 
-      feed = NhlApi.fetch_pbp_feed(@game_id)
+      feed = Nhl::GameClient.play_by_play(@game_id)
       shots = ShotExtractor.call(feed: feed, through_period: @through_period)
       return nil if shots.empty?
 
@@ -131,7 +131,7 @@ module RodTheBot
       end
 
       enforce_size_limit(target)
-    rescue NhlApi::APIError => e
+    rescue Nhl::RequestError => e
       Rails.logger.error "ShotChartAnimator: API error for game #{@game_id}: #{e.message}"
       nil
     end

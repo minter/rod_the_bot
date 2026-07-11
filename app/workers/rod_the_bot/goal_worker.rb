@@ -7,9 +7,9 @@ module RodTheBot
 
     def perform(game_id, play)
       @game_id = game_id
-      @feed = NhlApi.fetch_pbp_feed(game_id)
+      @feed = Nhl::GameClient.play_by_play(game_id)
       @play_id = play["eventId"]
-      @play = NhlApi.fetch_play(game_id, @play_id)
+      @play = Nhl::GameClient.play(game_id, @play_id)
 
       return if @play.blank?
 
@@ -105,7 +105,7 @@ module RodTheBot
 
       # Mark as completed only after successfully scheduling all workers
       REDIS.set(completion_key, "true", ex: 172800)
-    rescue NhlApi::APIError => e
+    rescue Nhl::RequestError => e
       Rails.logger.error "GoalWorker: API error for game #{@game_id}, play #{play["eventId"]}: #{e.message}"
     rescue => e
       Rails.logger.error "GoalWorker: Unexpected error for game #{@game_id}, play #{play["eventId"]}: #{e.class} - #{e.message}\n#{e.backtrace&.first(5)&.join("\n")}"
@@ -156,19 +156,19 @@ module RodTheBot
 
       # Safely fetch headshot for scoring player
       if play["details"]["scoringPlayerId"].present?
-        player_feed = NhlApi.fetch_player_landing_feed(play["details"]["scoringPlayerId"])
+        player_feed = Nhl::GameClient.player_landing_feed(play["details"]["scoringPlayerId"])
         images << player_feed&.dig("headshot")
       end
 
       # Safely fetch headshot for assist1 player
       if play["details"]["assist1PlayerId"].present?
-        player_feed = NhlApi.fetch_player_landing_feed(play["details"]["assist1PlayerId"])
+        player_feed = Nhl::GameClient.player_landing_feed(play["details"]["assist1PlayerId"])
         images << player_feed&.dig("headshot")
       end
 
       # Safely fetch headshot for assist2 player
       if play["details"]["assist2PlayerId"].present?
-        player_feed = NhlApi.fetch_player_landing_feed(play["details"]["assist2PlayerId"])
+        player_feed = Nhl::GameClient.player_landing_feed(play["details"]["assist2PlayerId"])
         images << player_feed&.dig("headshot")
       end
 

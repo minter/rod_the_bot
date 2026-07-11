@@ -4,35 +4,6 @@ class NhlApi
   base_uri "https://api-web.nhle.com/v1"
 
   class << self
-    def fetch_pbp_feed(game_id)
-      get("/gamecenter/#{game_id}/play-by-play")
-    end
-
-    def fetch_play(game_id, play_id)
-      feed = fetch_pbp_feed(game_id)
-      return nil unless feed && feed["plays"].is_a?(Array)
-
-      feed["plays"].find { |play| play["eventId"].to_s == play_id.to_s }
-    end
-
-    def fetch_boxscore_feed(game_id)
-      get("/gamecenter/#{game_id}/boxscore")
-    end
-
-    def fetch_landing_feed(game_id)
-      get("/gamecenter/#{game_id}/landing")
-    end
-
-    def fetch_player_landing_feed(player_id)
-      Rails.cache.fetch("player_landing_feed_#{player_id}", expires_in: 8.hours) do
-        get("/player/#{player_id}/landing")
-      end
-    end
-
-    def fetch_right_rail_feed(game_id)
-      get("/gamecenter/#{game_id}/right-rail")
-    end
-
     def fetch_team_schedule(date: Time.now.strftime("%Y-%m-%d"))
       Time.zone = TZInfo::Timezone.get(ENV["TIME_ZONE"])
       Rails.cache.fetch("team_schedule_#{date}", expires_in: 12.hours) do
@@ -79,7 +50,7 @@ class NhlApi
 
     def fetch_postseason_carousel
       get("/playoff-series/carousel/#{Nhl::SeasonCalendar.current_season}/")
-    rescue NhlApi::APIError
+    rescue Nhl::RequestError
       nil
     end
 
@@ -115,7 +86,7 @@ class NhlApi
       Rails.cache.fetch("teams", expires_in: 30.days) do
         teams = {}
         response = HTTParty.get("https://api.nhle.com/stats/rest/en/team")
-        raise APIError, "API request failed: #{response.code}" unless response.success?
+        raise Nhl::RequestError, "API request failed: #{response.code}" unless response.success?
 
         response.parsed_response["data"].each do |team|
           team_data = symbolize_keys(team)
@@ -143,7 +114,7 @@ class NhlApi
     end
 
     def officials(game_id)
-      right_rail = fetch_right_rail_feed(game_id)
+      right_rail = Nhl::GameClient.right_rail(game_id)
       officials_data = right_rail&.dig("gameInfo")
       return {referees: [], linesmen: []} unless officials_data
 
@@ -154,8 +125,8 @@ class NhlApi
     end
 
     def scratches(game_id)
-      boxscore = fetch_boxscore_feed(game_id)
-      game_data = fetch_right_rail_feed(game_id)
+      boxscore = Nhl::GameClient.boxscore(game_id)
+      game_data = Nhl::GameClient.right_rail(game_id)
       game_info = game_data&.dig("gameInfo")
       return nil unless game_info
 
@@ -186,7 +157,7 @@ class NhlApi
     end
 
     def splits(game_id)
-      splits = fetch_right_rail_feed(game_id)["teamGameStats"]
+      splits = Nhl::GameClient.right_rail(game_id)["teamGameStats"]
       splits.each_with_object({}) do |split, result|
         category = split["category"].to_sym
         result[category] = {
@@ -197,7 +168,7 @@ class NhlApi
     end
 
     def game_rosters(game_id)
-      feed = fetch_pbp_feed(game_id)
+      feed = Nhl::GameClient.play_by_play(game_id)
       players = {}
       feed["rosterSpots"].each do |player|
         players[player["playerId"]] = {
@@ -210,7 +181,7 @@ class NhlApi
     end
 
     def opponent_team_id(game_id)
-      feed = fetch_landing_feed(game_id)
+      feed = Nhl::GameClient.landing(game_id)
       return nil unless feed
 
       your_team_id = ENV["NHL_TEAM_ID"].to_i
@@ -240,7 +211,7 @@ class NhlApi
     def fetch_player_content(player_id)
       Rails.cache.fetch("player_content_#{player_id}", expires_in: 8.hours) do
         response = HTTParty.get("https://forge-dapi.d3.nhle.com/v2/content/en-us/players?tags.slug=playerid-#{player_id}")
-        raise APIError, "API request failed: #{response.code}" unless response.success?
+        raise Nhl::RequestError, "API request failed: #{response.code}" unless response.success?
         response.parsed_response
       end
     end
@@ -293,11 +264,11 @@ class NhlApi
 
     def get(path, options = {})
       response = super
-      raise APIError, "API request failed: #{response.code}" unless response.success?
+      raise Nhl::RequestError, "API request failed: #{response.code}" unless response.success?
 
       response.parsed_response
     rescue Net::OpenTimeout, Net::ReadTimeout, SocketError, Errno::ECONNREFUSED, Errno::ECONNRESET => e
-      raise APIError, "Network error fetching #{path}: #{e.class} - #{e.message}"
+      raise Nhl::RequestError, "Network error fetching #{path}: #{e.class} - #{e.message}"
     end
 
     def format_value(value, category)
@@ -328,5 +299,4 @@ class NhlApi
     end
   end
 
-  class APIError < StandardError; end
 end

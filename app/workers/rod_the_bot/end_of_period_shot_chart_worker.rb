@@ -7,7 +7,7 @@ module RodTheBot
     PERIOD_NAMES = {1 => "1st", 2 => "2nd", 3 => "3rd", 4 => "OT"}.freeze
 
     def perform(game_id, period_number)
-      feed = NhlApi.fetch_pbp_feed(game_id)
+      feed = Nhl::GameClient.play_by_play(game_id)
       home = feed["homeTeam"] || {}
       away = feed["awayTeam"] || {}
 
@@ -27,7 +27,7 @@ module RodTheBot
         path.to_s,
         nil
       )
-    rescue NhlApi::APIError => e
+    rescue Nhl::RequestError => e
       Rails.logger.error "EndOfPeriodShotChartWorker: API error for game #{game_id}: #{e.message}"
     rescue => e
       Rails.logger.error "EndOfPeriodShotChartWorker: Unexpected error for game #{game_id}: #{e.class} - #{e.message}\n#{e.backtrace&.first(5)&.join("\n")}"

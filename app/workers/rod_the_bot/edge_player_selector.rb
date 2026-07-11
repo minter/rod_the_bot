@@ -63,7 +63,7 @@ module RodTheBot
       player_stats = Hash.new { |h, k| h[k] = {games: 0, points: 0, goals: 0, name: nil} }
 
       game_ids.each do |game_id|
-        boxscore = NhlApi.fetch_boxscore_feed(game_id)
+        boxscore = Nhl::GameClient.boxscore(game_id)
         players = get_players_from_boxscore(boxscore, team_id)
 
         players.each do |player|

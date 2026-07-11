@@ -11,7 +11,7 @@ class RodTheBot::GoalWorkerTest < ActiveSupport::TestCase
     @game_id = "2023020702"
     @play_id = "157"
     VCR.use_cassette("nhl_game_#{@game_id}_goal_play_#{@play_id}", allow_playback_repeats: true) do
-      feed = NhlApi.fetch_pbp_feed(@game_id)
+      feed = Nhl::GameClient.play_by_play(@game_id)
       play = feed["plays"].find { |play| play["eventId"].to_i == @play_id.to_i }
 
       @goal_worker.perform(@game_id, play)
@@ -36,7 +36,7 @@ class RodTheBot::GoalWorkerTest < ActiveSupport::TestCase
     @game_id = "2023020702"
     @play_id = "159"
     VCR.use_cassette("nhl_game_#{@game_id}_goal_play_#{@play_id}", allow_playback_repeats: true) do
-      feed = NhlApi.fetch_pbp_feed(@game_id)
+      feed = Nhl::GameClient.play_by_play(@game_id)
       play = feed["plays"].find { |play| play["eventId"].to_i == @play_id.to_i }
 
       @goal_worker.perform(@game_id, play)
@@ -61,7 +61,7 @@ class RodTheBot::GoalWorkerTest < ActiveSupport::TestCase
     @game_id = "2023020702"
     @play_id = "390"
     VCR.use_cassette("nhl_game_#{@game_id}_goal_play_#{@play_id}", allow_playback_repeats: true) do
-      feed = NhlApi.fetch_pbp_feed(@game_id)
+      feed = Nhl::GameClient.play_by_play(@game_id)
       play = feed["plays"].find { |play| play["eventId"].to_i == @play_id.to_i }
 
       @goal_worker.perform(@game_id, play)
@@ -86,7 +86,7 @@ class RodTheBot::GoalWorkerTest < ActiveSupport::TestCase
     @game_id = "2023020360"
     @play_id = "739"
     VCR.use_cassette("nhl_game_#{@game_id}_goal_play_#{@play_id}", allow_playback_repeats: true) do
-      feed = NhlApi.fetch_pbp_feed(@game_id)
+      feed = Nhl::GameClient.play_by_play(@game_id)
       play = feed["plays"].find { |play| play["eventId"].to_i == @play_id.to_i }
 
       @goal_worker.perform(@game_id, play)
@@ -110,7 +110,7 @@ class RodTheBot::GoalWorkerTest < ActiveSupport::TestCase
     @game_id = "2025021094"
     @play_id = "153"
     VCR.use_cassette("nhl_game_#{@game_id}_goal_play_#{@play_id}", allow_playback_repeats: true) do
-      feed = NhlApi.fetch_pbp_feed(@game_id)
+      feed = Nhl::GameClient.play_by_play(@game_id)
       play = feed["plays"].find { |play| play["eventId"].to_i == @play_id.to_i }
 
       @goal_worker.perform(@game_id, play)
@@ -134,7 +134,7 @@ class RodTheBot::GoalWorkerTest < ActiveSupport::TestCase
     @game_id = "2023020702"
     @play_id = "859"
     VCR.use_cassette("nhl_game_#{@game_id}_goal_play_#{@play_id}", allow_playback_repeats: true) do
-      feed = NhlApi.fetch_pbp_feed(@game_id)
+      feed = Nhl::GameClient.play_by_play(@game_id)
       play = feed["plays"].find { |play| play["eventId"].to_i == @play_id.to_i }
 
       @goal_worker.perform(@game_id, play)
@@ -159,7 +159,7 @@ class RodTheBot::GoalWorkerTest < ActiveSupport::TestCase
     @game_id = "2023020542"
     @play_id = "92"
     VCR.use_cassette("nhl_game_#{@game_id}_goal_play_#{@play_id}", allow_playback_repeats: true) do
-      feed = NhlApi.fetch_pbp_feed(@game_id)
+      feed = Nhl::GameClient.play_by_play(@game_id)
       play = feed["plays"].find { |play| play["eventId"].to_i == @play_id.to_i }
 
       @goal_worker.perform(@game_id, play)

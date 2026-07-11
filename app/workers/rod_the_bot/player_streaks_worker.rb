@@ -186,7 +186,7 @@ module RodTheBot
       end
 
       # Fallback to API call
-      player_data = NhlApi.fetch_player_landing_feed(player_id)
+      player_data = Nhl::GameClient.player_landing_feed(player_id)
       format_player_name(player_data)
     end
 

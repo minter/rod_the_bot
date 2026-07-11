@@ -7,7 +7,7 @@ module RodTheBot
     def perform(game_id, play)
       return unless play["details"] && play["details"]["goalieInNetId"]
 
-      @feed = NhlApi.fetch_pbp_feed(game_id)
+      @feed = Nhl::GameClient.play_by_play(game_id)
       @play = play
 
       goalie_id = play["details"]["goalieInNetId"].to_s  # Ensure string for comparison
@@ -106,7 +106,7 @@ module RodTheBot
     end
 
     def get_goalie_headshot(goalie_id)
-      goalie_feed = NhlApi.fetch_player_landing_feed(goalie_id)
+      goalie_feed = Nhl::GameClient.player_landing_feed(goalie_id)
       goalie_feed&.dig("headshot")
     rescue => e
       Rails.logger.warn "GoalieChangeWorker: Could not fetch headshot for player #{goalie_id}: #{e.message}"

@@ -9,8 +9,8 @@ class RodTheBot::GoalHighlightWorkerTest < ActiveSupport::TestCase
     # Update to match the new format in the worker
     @highlight_key_pattern = /^#{Regexp.escape(@base_redis_key)}:highlight:\d+$/
     VCR.use_cassette("nhl_api_#{@game_id}") do
-      @pbp_feed = NhlApi.fetch_pbp_feed(@game_id)
-      @landing_feed = NhlApi.fetch_landing_feed(@game_id)
+      @pbp_feed = Nhl::GameClient.play_by_play(@game_id)
+      @landing_feed = Nhl::GameClient.landing(@game_id)
     end
     @goal_play = @pbp_feed["plays"].find { |play| play["typeDescKey"] == "goal" }
     @play_id = @goal_play["eventId"]
@@ -40,9 +40,9 @@ class RodTheBot::GoalHighlightWorkerTest < ActiveSupport::TestCase
   test "reschedules worker when highlight is not available" do
     VCR.use_cassette("nhl_api_#{@game_id}_no_highlight") do
       # Fetch the original data
-      pbp_feed = NhlApi.fetch_pbp_feed(@game_id)
-      landing_feed = NhlApi.fetch_landing_feed(@game_id)
-      play_data = NhlApi.fetch_play(@game_id, @play_id)
+      pbp_feed = Nhl::GameClient.play_by_play(@game_id)
+      landing_feed = Nhl::GameClient.landing(@game_id)
+      play_data = Nhl::GameClient.play(@game_id, @play_id)
 
       # Find the corresponding landing play and remove the highlight URL
       landing_feed["summary"]["scoring"].each do |period|
@@ -52,9 +52,9 @@ class RodTheBot::GoalHighlightWorkerTest < ActiveSupport::TestCase
       end
 
       # Mock the API calls to return our modified data
-      NhlApi.expects(:fetch_pbp_feed).returns(pbp_feed)
-      NhlApi.expects(:fetch_landing_feed).returns(landing_feed)
-      NhlApi.expects(:fetch_play).with(@game_id, @play_id).returns(play_data)
+      Nhl::GameClient.expects(:play_by_play).returns(pbp_feed)
+      Nhl::GameClient.expects(:landing).returns(landing_feed)
+      Nhl::GameClient.expects(:play).with(@game_id, @play_id).returns(play_data)
 
       # Run the worker
       worker = RodTheBot::GoalHighlightWorker.new

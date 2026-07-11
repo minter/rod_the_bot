@@ -1,6 +1,5 @@
 module Nhl
-  class SeasonCalendar
-    include HTTParty
+  class SeasonCalendar < Client
 
     base_uri "https://api-web.nhle.com/v1"
 
@@ -34,14 +33,6 @@ module Nhl
         Time.use_zone(ENV.fetch("TIME_ZONE")) { Time.zone.today }
       end
 
-      def get_json(path)
-        response = get(path)
-        raise NhlApi::APIError, "API request failed: #{response.code}" unless response.success?
-
-        response.parsed_response
-      rescue Net::OpenTimeout, Net::ReadTimeout, SocketError, Errno::ECONNREFUSED, Errno::ECONNRESET => e
-        raise NhlApi::APIError, "Network error fetching #{path}: #{e.class} - #{e.message}"
-      end
     end
   end
 end

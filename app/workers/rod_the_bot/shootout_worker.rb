@@ -5,7 +5,7 @@ module RodTheBot
     MAX_RETRIES = 30 # ~10 minutes at 20s intervals
 
     def perform(game_id, retry_count = 0)
-      feed = NhlApi.fetch_landing_feed(game_id)
+      feed = Nhl::GameClient.landing(game_id)
       shootout = feed.dig("summary", "shootout")
 
       return requeue(game_id, retry_count) if shootout.blank? || shootout["events"].blank?
@@ -30,7 +30,7 @@ module RodTheBot
       end
 
       requeue(game_id, retry_count) unless game_over
-    rescue NhlApi::APIError => e
+    rescue Nhl::RequestError => e
       Rails.logger.error "ShootoutWorker: API error for game #{game_id}: #{e.message}. Retrying."
       requeue(game_id, retry_count)
     rescue => e

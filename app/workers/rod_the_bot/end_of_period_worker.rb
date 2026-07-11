@@ -7,7 +7,7 @@ module RodTheBot
     attr_reader :feed, :game_final
 
     def perform(game_id, play)
-      @feed = NhlApi.fetch_pbp_feed(game_id)
+      @feed = Nhl::GameClient.play_by_play(game_id)
       @game_final = feed["plays"].any? { |play| play["typeDescKey"] == "game-end" }
       return if game_final
       return if play["periodDescriptor"]["periodType"] == "SO"
@@ -21,7 +21,7 @@ module RodTheBot
       RodTheBot::Post.perform_async(end_of_period_post)
       RodTheBot::EndOfPeriodStatsWorker.perform_in(60, game_id, period_descriptor.fetch("number", 1))
       RodTheBot::EndOfPeriodShotChartWorker.perform_in(75, game_id, period_descriptor.fetch("number", 1))
-    rescue NhlApi::APIError => e
+    rescue Nhl::RequestError => e
       Rails.logger.error "EndOfPeriodWorker: API error for game #{game_id}: #{e.message}"
     rescue => e
       Rails.logger.error "EndOfPeriodWorker: Unexpected error for game #{game_id}: #{e.class} - #{e.message}\n#{e.backtrace&.first(5)&.join("\n")}"

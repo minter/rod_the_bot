@@ -73,7 +73,7 @@ class RodTheBot::ShootoutWorkerTest < ActiveSupport::TestCase
 
   test "perform re-queues when game is not over" do
     feed = mock_live_feed(events: default_shootout_events.first(2))
-    NhlApi.stubs(:fetch_landing_feed).returns(feed)
+    Nhl::GameClient.stubs(:landing).returns(feed)
 
     @worker.perform(@game_id)
 
@@ -86,7 +86,7 @@ class RodTheBot::ShootoutWorkerTest < ActiveSupport::TestCase
 
   test "perform re-queues when shootout data is not yet available" do
     feed = mock_live_feed(events: nil, no_shootout: true)
-    NhlApi.stubs(:fetch_landing_feed).returns(feed)
+    Nhl::GameClient.stubs(:landing).returns(feed)
 
     @worker.perform(@game_id, 0)
 
@@ -97,7 +97,7 @@ class RodTheBot::ShootoutWorkerTest < ActiveSupport::TestCase
 
   test "perform does not re-queue after max retries" do
     feed = mock_live_feed(events: nil, no_shootout: true)
-    NhlApi.stubs(:fetch_landing_feed).returns(feed)
+    Nhl::GameClient.stubs(:landing).returns(feed)
 
     @worker.perform(@game_id, RodTheBot::ShootoutWorker::MAX_RETRIES)
 
@@ -107,7 +107,7 @@ class RodTheBot::ShootoutWorkerTest < ActiveSupport::TestCase
 
   test "perform does not post incomplete rounds during live game" do
     feed = mock_live_feed(events: default_shootout_events.first(1))
-    NhlApi.stubs(:fetch_landing_feed).returns(feed)
+    Nhl::GameClient.stubs(:landing).returns(feed)
 
     @worker.perform(@game_id)
 
@@ -116,7 +116,7 @@ class RodTheBot::ShootoutWorkerTest < ActiveSupport::TestCase
   end
 
   test "perform handles API error gracefully" do
-    NhlApi.stubs(:fetch_landing_feed).raises(NhlApi::APIError.new("timeout"))
+    Nhl::GameClient.stubs(:landing).raises(Nhl::RequestError.new("timeout"))
 
     @worker.perform(@game_id, 0)
 

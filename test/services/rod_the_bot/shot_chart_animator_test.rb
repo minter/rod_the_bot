@@ -9,7 +9,7 @@ class RodTheBot::ShotChartAnimatorTest < ActiveSupport::TestCase
 
   def test_returns_nil_when_no_plottable_shots
     Rails.env.stubs(:test?).returns(false)
-    NhlApi.stubs(:fetch_pbp_feed).returns({"homeTeam" => {"id" => 1, "abbrev" => "HME"},
+    Nhl::GameClient.stubs(:play_by_play).returns({"homeTeam" => {"id" => 1, "abbrev" => "HME"},
                                             "awayTeam" => {"id" => 2, "abbrev" => "AWY"},
                                             "plays" => []})
     result = RodTheBot::ShotChartAnimator.new(game_id: 1, through_period: 1).call
@@ -23,7 +23,7 @@ class RodTheBot::ShotChartAnimatorTest < ActiveSupport::TestCase
       target = Pathname.new(tmp).join("p1.mp4")
       target.write("placeholder")
 
-      NhlApi.stubs(:fetch_pbp_feed).returns({"homeTeam" => {"id" => 1, "abbrev" => "HME"},
+      Nhl::GameClient.stubs(:play_by_play).returns({"homeTeam" => {"id" => 1, "abbrev" => "HME"},
                                               "awayTeam" => {"id" => 2, "abbrev" => "AWY"},
                                               "plays" => []})
 

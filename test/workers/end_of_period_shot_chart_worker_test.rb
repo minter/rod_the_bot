@@ -9,7 +9,7 @@ class RodTheBot::EndOfPeriodShotChartWorkerTest < ActiveSupport::TestCase
   def test_posts_video_when_service_returns_path
     fake_path = Pathname.new("test/fixtures/files/test_shot_chart.mp4")
     feed = {"homeTeam" => {"abbrev" => "EDM", "sog" => 21}, "awayTeam" => {"abbrev" => "VGK", "sog" => 17}}
-    NhlApi.stubs(:fetch_pbp_feed).with(@game_id).returns(feed)
+    Nhl::GameClient.stubs(:play_by_play).with(@game_id).returns(feed)
     RodTheBot::ShotChartAnimator.any_instance.stubs(:call).returns(fake_path)
 
     RodTheBot::EndOfPeriodShotChartWorker.new.perform(@game_id, 1)
@@ -28,7 +28,7 @@ class RodTheBot::EndOfPeriodShotChartWorkerTest < ActiveSupport::TestCase
   end
 
   def test_no_op_when_service_returns_nil
-    NhlApi.stubs(:fetch_pbp_feed).returns({"homeTeam" => {}, "awayTeam" => {}})
+    Nhl::GameClient.stubs(:play_by_play).returns({"homeTeam" => {}, "awayTeam" => {}})
     RodTheBot::ShotChartAnimator.any_instance.stubs(:call).returns(nil)
 
     RodTheBot::EndOfPeriodShotChartWorker.new.perform(@game_id, 1)
@@ -37,7 +37,7 @@ class RodTheBot::EndOfPeriodShotChartWorkerTest < ActiveSupport::TestCase
   end
 
   def test_swallows_exceptions
-    NhlApi.stubs(:fetch_pbp_feed).raises(StandardError, "boom")
+    Nhl::GameClient.stubs(:play_by_play).raises(StandardError, "boom")
 
     RodTheBot::EndOfPeriodShotChartWorker.new.perform(@game_id, 1)
     assert_equal 0, RodTheBot::Post.jobs.size
