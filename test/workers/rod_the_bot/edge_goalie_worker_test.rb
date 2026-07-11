@@ -22,7 +22,7 @@ class RodTheBot::EdgeGoalieWorkerTest < ActiveSupport::TestCase
       post = RodTheBot::Post.jobs.first["args"].first
 
       # Check the post includes key elements
-      assert_includes post, "EDGE STATS: PYOTR KOCHETKOV"
+      assert_includes post, "EDGE STATS: #52 PYOTR KOCHETKOV"
 
       # Should include top save zones (no header to save chars)
       assert_includes post, "L Corner"  # 98th percentile

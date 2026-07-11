@@ -79,7 +79,8 @@ module RodTheBot
       # Get top speed player name if available
       top_speed_player = data["topSkatingSpeeds"]&.first
       player_name = if top_speed_player && top_speed_player["player"]
-        "#{top_speed_player["player"]["firstName"]["default"]} #{top_speed_player["player"]["lastName"]["default"]}"
+        player = top_speed_player["player"]
+        Nhl::PlayerIdentity.from_landing(player, player_id: player["id"]).full_name
       end
 
       stats = <<~STATS

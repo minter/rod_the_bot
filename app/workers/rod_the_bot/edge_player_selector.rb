@@ -11,6 +11,7 @@ module RodTheBot
 
       # Get current roster
       roster = Nhl::Roster.for(team_abbrev)
+      @roster_names = roster.transform_values { |player| player[:name_number] }
       roster_player_ids = roster.keys.map(&:to_i)
 
       # Track player stats in recent games
@@ -73,7 +74,7 @@ module RodTheBot
           player_stats[player_id][:games] += 1
           player_stats[player_id][:points] += player["points"] || 0
           player_stats[player_id][:goals] += player["goals"] || 0
-          player_stats[player_id][:name] ||= player.dig("name", "default")
+          player_stats[player_id][:name] ||= @roster_names[player_id]
         end
       end
 

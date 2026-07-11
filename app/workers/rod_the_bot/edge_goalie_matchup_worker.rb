@@ -47,8 +47,8 @@ module RodTheBot
       our_team = our_player.dig("team", "abbrev") || ENV["NHL_TEAM_ABBREVIATION"]
       opp_team = opp_player.dig("team", "abbrev") || "OPP"
 
-      our_name = "#{our_player.dig("firstName", "default")} #{our_player.dig("lastName", "default")}"
-      opp_name = "#{opp_player.dig("firstName", "default")} #{opp_player.dig("lastName", "default")}"
+      our_name = Nhl::PlayerIdentity.from_landing(our_player, player_id: our_player["id"]).name_with_number
+      opp_name = Nhl::PlayerIdentity.from_landing(opp_player, player_id: opp_player["id"]).name_with_number
 
       # Extract key metrics
       our_gaa = our_stats.dig("goalsAgainstAvg", "value")

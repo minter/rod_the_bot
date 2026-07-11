@@ -40,7 +40,7 @@ module RodTheBot
 
       return nil unless player && stats
 
-      goalie_name = "#{player["firstName"]["default"]} #{player["lastName"]["default"]}"
+      goalie_name = Nhl::PlayerIdentity.from_landing(player, player_id: player["id"]).name_with_number
 
       # Get overall stats with percentiles
       gaa = stats.dig("goalsAgainstAvg", "value")

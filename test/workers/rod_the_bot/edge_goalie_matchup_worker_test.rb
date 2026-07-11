@@ -24,8 +24,8 @@ class RodTheBot::EdgeGoalieMatchupWorkerTest < ActiveSupport::TestCase
 
       # Check the post includes key elements
       assert_includes post, "GOALIE MATCHUP"
-      assert_includes post, "CAR: Pyotr Kochetkov"
-      assert_includes post, "NYR: Igor Shesterkin"
+      assert_includes post, "CAR: #52 Pyotr Kochetkov"
+      assert_includes post, "NYR: #31 Igor Shesterkin"
 
       # Should include GAA comparisons
       assert_includes post, "GAA"

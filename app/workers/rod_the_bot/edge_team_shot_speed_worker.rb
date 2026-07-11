@@ -76,7 +76,8 @@ module RodTheBot
       # Get hardest shot player name if available
       hardest_shot_player = data["hardestShots"]&.first
       player_name = if hardest_shot_player && hardest_shot_player["player"]
-        "#{hardest_shot_player["player"]["firstName"]["default"]} #{hardest_shot_player["player"]["lastName"]["default"]}"
+        player = hardest_shot_player["player"]
+        Nhl::PlayerIdentity.from_landing(player, player_id: player["id"]).full_name
       end
 
       stats = <<~STATS

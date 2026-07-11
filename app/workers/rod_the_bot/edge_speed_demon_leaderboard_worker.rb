@@ -52,7 +52,7 @@ module RodTheBot
         seen_player_ids.add(player_id)
         player_ids << player_id
         unique_players << {
-          name: "#{player["firstName"]["default"]} #{player["lastName"]["default"]}",
+          name: Nhl::PlayerIdentity.from_landing(player, player_id: player_id).full_name,
           speed: speed_entry["skatingSpeed"]["imperial"]&.round(2)
         }
 

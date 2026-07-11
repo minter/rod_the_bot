@@ -102,7 +102,7 @@ module RodTheBot
 
       roster["skaters"].each do |player|
         skater_stats[player["playerId"]] = {
-          name: player["firstName"]["default"] + " " + player["lastName"]["default"],
+          name: Nhl::PlayerIdentity.from_landing(player, player_id: player["playerId"]).name_with_number,
           games: player["gamesPlayed"],
           goals: player["goals"],
           assists: player["assists"],
@@ -115,7 +115,7 @@ module RodTheBot
 
       roster["goalies"].each do |player|
         goalie_stats[player["playerId"]] = {
-          name: player["firstName"]["default"] + " " + player["lastName"]["default"],
+          name: Nhl::PlayerIdentity.from_landing(player, player_id: player["playerId"]).name_with_number,
           games: player["gamesPlayed"],
           wins: player["wins"],
           losses: player["losses"],
