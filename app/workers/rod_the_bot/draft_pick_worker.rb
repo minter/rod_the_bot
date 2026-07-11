@@ -64,7 +64,7 @@ module RodTheBot
       manual_run = year.present?
       year ||= Date.today.year
 
-      data = NhlApi.fetch_draft_picks(year)
+      data = Nhl::DraftClient.picks(year)
 
       unless data.is_a?(Hash)
         Sidekiq.logger.error "Failed to fetch or parse draft data for year #{year}"
@@ -91,7 +91,7 @@ module RodTheBot
         end
       end
 
-      prospects_by_name = index_prospects(NhlApi.fetch_draft_rankings(draft_year))
+      prospects_by_name = index_prospects(Nhl::DraftClient.rankings(draft_year))
       picks = data["picks"] || []
       team_abbrev = ENV["NHL_TEAM_ABBREVIATION"] || "CAR"
 

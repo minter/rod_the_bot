@@ -19,8 +19,8 @@ class RodTheBot::DraftPickWorkerTest < ActiveSupport::TestCase
     dedupe_value = nil
 
     Timecop.freeze(Date.new(2026, 6, 26)) do
-      NhlApi.expects(:fetch_draft_picks).with(2026).returns(draft_data)
-      NhlApi.expects(:fetch_draft_rankings).with(2026).returns(rankings)
+      Nhl::DraftClient.expects(:picks).with(2026).returns(draft_data)
+      Nhl::DraftClient.expects(:rankings).with(2026).returns(rankings)
 
       @worker.perform
       dedupe_value = REDIS.get("draft_pick:2026:31")
@@ -38,8 +38,8 @@ class RodTheBot::DraftPickWorkerTest < ActiveSupport::TestCase
 
   def test_requeues_on_draft_day_before_draft_starts
     Timecop.freeze(Date.new(2026, 6, 26)) do
-      NhlApi.expects(:fetch_draft_picks).with(2026).returns(draft_data(state: "fut"))
-      NhlApi.expects(:fetch_draft_rankings).never
+      Nhl::DraftClient.expects(:picks).with(2026).returns(draft_data(state: "fut"))
+      Nhl::DraftClient.expects(:rankings).never
 
       @worker.perform
     end
@@ -50,8 +50,8 @@ class RodTheBot::DraftPickWorkerTest < ActiveSupport::TestCase
 
   def test_skips_before_inferred_draft_day
     Timecop.freeze(Date.new(2026, 6, 19)) do
-      NhlApi.expects(:fetch_draft_picks).with(2026).returns(draft_data(state: "fut"))
-      NhlApi.expects(:fetch_draft_rankings).never
+      Nhl::DraftClient.expects(:picks).with(2026).returns(draft_data(state: "fut"))
+      Nhl::DraftClient.expects(:rankings).never
 
       @worker.perform
     end
@@ -66,8 +66,8 @@ class RodTheBot::DraftPickWorkerTest < ActiveSupport::TestCase
     pick = car_pick.merge("amateurClubName" => long_club_name)
 
     Timecop.freeze(Date.new(2026, 6, 26)) do
-      NhlApi.expects(:fetch_draft_picks).with(2026).returns(draft_data(picks: [pick]))
-      NhlApi.expects(:fetch_draft_rankings).with(2026).returns(rankings)
+      Nhl::DraftClient.expects(:picks).with(2026).returns(draft_data(picks: [pick]))
+      Nhl::DraftClient.expects(:rankings).with(2026).returns(rankings)
 
       @worker.perform
     end
@@ -84,8 +84,8 @@ class RodTheBot::DraftPickWorkerTest < ActiveSupport::TestCase
   end
 
   def test_explicit_completed_draft_replay_processes_without_requeueing
-    NhlApi.expects(:fetch_draft_picks).with(2025).returns(draft_data(year: 2025, state: "over"))
-    NhlApi.expects(:fetch_draft_rankings).with(2025).returns(rankings)
+    Nhl::DraftClient.expects(:picks).with(2025).returns(draft_data(year: 2025, state: "over"))
+    Nhl::DraftClient.expects(:rankings).with(2025).returns(rankings)
 
     @worker.perform(2025, true)
 
@@ -96,8 +96,8 @@ class RodTheBot::DraftPickWorkerTest < ActiveSupport::TestCase
 
   def test_completed_draft_does_not_process_without_explicit_replay_flag
     Timecop.freeze(Date.new(2025, 6, 29)) do
-      NhlApi.expects(:fetch_draft_picks).with(2025).returns(draft_data(year: 2025, state: "over"))
-      NhlApi.expects(:fetch_draft_rankings).never
+      Nhl::DraftClient.expects(:picks).with(2025).returns(draft_data(year: 2025, state: "over"))
+      Nhl::DraftClient.expects(:rankings).never
 
       @worker.perform
     end

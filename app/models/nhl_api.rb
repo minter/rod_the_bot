@@ -84,52 +84,6 @@ class NhlApi
       (home_id.to_i == your_team_id) ? away_id.to_i : home_id.to_i
     end
 
-    def fetch_draft_picks(year)
-      get("/draft/picks/#{year}/all")
-    end
-
-    def fetch_draft_rankings(year)
-      Rails.cache.fetch("draft_rankings_#{year}", expires_in: 24.hours) do
-        {
-          north_american_skaters: get("/draft/rankings/#{year}/1")["rankings"],
-          international_skaters: get("/draft/rankings/#{year}/2")["rankings"],
-          north_american_goalies: get("/draft/rankings/#{year}/3")["rankings"],
-          international_goalies: get("/draft/rankings/#{year}/4")["rankings"]
-        }
-      end
-    end
-
-    def fetch_player_content(player_id)
-      Rails.cache.fetch("player_content_#{player_id}", expires_in: 8.hours) do
-        response = HTTParty.get("https://forge-dapi.d3.nhle.com/v2/content/en-us/players?tags.slug=playerid-#{player_id}")
-        raise Nhl::RequestError, "API request failed: #{response.code}" unless response.success?
-        response.parsed_response
-      end
-    end
-
-    def get_player_game_log(player_id, limit = 10)
-      Rails.cache.fetch("player_game_log_#{player_id}_#{limit}_#{Date.current}", expires_in: 4.hours) do
-        season = current_season
-        game_type = postseason? ? 3 : 2
-        # Use api-web endpoint documented for game logs
-        path = "/player/#{player_id}/game-log/#{season}/#{game_type}"
-        data = get(path)["gameLog"] || []
-        # api-web returns most-recent first; trim to limit
-        data.first(limit)
-      end
-    end
-
-    def get_goalie_game_log(player_id, limit = 10)
-      Rails.cache.fetch("goalie_game_log_#{player_id}_#{limit}_#{Date.current}", expires_in: 4.hours) do
-        season = current_season
-        game_type = postseason? ? 3 : 2
-        # Same api-web endpoint serves goalies as well
-        path = "/player/#{player_id}/game-log/#{season}/#{game_type}"
-        data = get(path)["gameLog"] || []
-        data.first(limit)
-      end
-    end
-
     private
 
     def get(path, options = {})

@@ -101,7 +101,7 @@ class RodTheBot::GameStartWorkerTest < ActiveSupport::TestCase
       NhlApi.expects(:officials).returns({referees: ["Ref1", "Ref2"], linesmen: ["Lines1", "Lines2"]})
       # Worker calls fetch_player_landing_feed 4 times:
       # 2 for goalie records + 2 for goalie images
-      Nhl::GameClient.expects(:player_landing_feed).times(4).returns({
+      Nhl::PlayerClient.expects(:landing).times(4).returns({
         "featuredStats" => {
           "regularSeason" => {
             "subSeason" => {"wins" => 10, "losses" => 5, "otLosses" => 2, "goalsAgainstAvg" => 2.5, "savePctg" => 0.915}
@@ -129,7 +129,7 @@ class RodTheBot::GameStartWorkerTest < ActiveSupport::TestCase
       @game_start_worker.instance_variable_set(:@feed, feed)
 
       # Mock player data with missing featuredStats
-      Nhl::GameClient.expects(:player_landing_feed).with(player_id).returns({})
+      Nhl::PlayerClient.expects(:landing).with(player_id).returns({})
 
       record = @game_start_worker.send(:find_goalie_record, player_id)
       assert_equal "(Stats unavailable)", record

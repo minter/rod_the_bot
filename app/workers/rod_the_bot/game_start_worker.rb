@@ -88,7 +88,7 @@ module RodTheBot
       return "(Preseason - Stats unavailable)" if Nhl::SeasonCalendar.preseason?
 
       season = (@feed["gameType"] == 3) ? "playoffs" : "regularSeason"
-      player = Nhl::GameClient.player_landing_feed(player_id)
+      player = Nhl::PlayerClient.landing(player_id)
 
       # Add error handling for missing or malformed data
       unless player && player["featuredStats"]

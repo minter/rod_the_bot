@@ -3,7 +3,7 @@ module RodTheBot
     def fetch_player_headshot(player_id)
       return nil unless player_id
 
-      player_feed = Nhl::GameClient.player_landing_feed(player_id)
+      player_feed = Nhl::PlayerClient.landing(player_id)
       headshot = player_feed&.dig("headshot")
 
       if headshot.nil?

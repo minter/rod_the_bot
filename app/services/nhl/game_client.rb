@@ -24,11 +24,6 @@ module Nhl
         get_json("/gamecenter/#{game_id}/right-rail")
       end
 
-      def player_landing_feed(player_id)
-        Rails.cache.fetch("player_landing_feed_#{player_id}", expires_in: 8.hours) do
-          get_json("/player/#{player_id}/landing")
-        end
-      end
     end
   end
 end

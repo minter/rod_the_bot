@@ -52,7 +52,7 @@ module RodTheBot
       avg_pp_toi_minutes = (avg_pp_toi_seconds / 60.0).round(1)
 
       # Get season totals
-      player_landing = Nhl::GameClient.player_landing_feed(player[:id])
+      player_landing = Nhl::PlayerClient.landing(player[:id])
       season_stats = player_landing.dig("featuredStats", "regularSeason", "subSeason")
       goals = season_stats["goals"]
       assists = season_stats["assists"]

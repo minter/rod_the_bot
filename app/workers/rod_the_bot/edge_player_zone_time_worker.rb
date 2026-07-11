@@ -50,7 +50,7 @@ module RodTheBot
       oz_starts_percentile = (edge_data.dig("zoneStarts", "offensiveZoneStartsPctgPercentile") * 100).round(0)
 
       # Get season totals
-      player_landing = Nhl::GameClient.player_landing_feed(player[:id])
+      player_landing = Nhl::PlayerClient.landing(player[:id])
       season_stats = player_landing.dig("featuredStats", "regularSeason", "subSeason")
       goals = season_stats["goals"]
       assists = season_stats["assists"]

@@ -78,12 +78,12 @@ module RodTheBot
     end
 
     def get_player_recent_games(player_id)
-      all_games = NhlApi.get_player_game_log(player_id, 20) # Get more games to filter
+      all_games = Nhl::PlayerClient.game_log(player_id, limit: 20) # Get more games to filter
       filter_games_by_season_type(all_games)
     end
 
     def get_goalie_recent_games(player_id)
-      all_games = NhlApi.get_goalie_game_log(player_id, 20) # Get more games to filter
+      all_games = Nhl::PlayerClient.game_log(player_id, limit: 20) # Get more games to filter
       filter_games_by_season_type(all_games)
     end
 
@@ -186,7 +186,7 @@ module RodTheBot
       end
 
       # Fallback to API call
-      player_data = Nhl::GameClient.player_landing_feed(player_id)
+      player_data = Nhl::PlayerClient.landing(player_id)
       format_player_name(player_data)
     end
 

@@ -50,7 +50,7 @@ class NhlApiTest < ActiveSupport::TestCase
 
   test "fetch_player_landing_feed" do
     VCR.use_cassette("nhl_player_#{@player_id}_landing") do
-      feed = Nhl::GameClient.player_landing_feed(@player_id)
+      feed = Nhl::PlayerClient.landing(@player_id)
       assert_kind_of Hash, feed
       assert_includes feed.keys, "featuredStats"
     end

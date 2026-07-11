@@ -156,19 +156,19 @@ module RodTheBot
 
       # Safely fetch headshot for scoring player
       if play["details"]["scoringPlayerId"].present?
-        player_feed = Nhl::GameClient.player_landing_feed(play["details"]["scoringPlayerId"])
+        player_feed = Nhl::PlayerClient.landing(play["details"]["scoringPlayerId"])
         images << player_feed&.dig("headshot")
       end
 
       # Safely fetch headshot for assist1 player
       if play["details"]["assist1PlayerId"].present?
-        player_feed = Nhl::GameClient.player_landing_feed(play["details"]["assist1PlayerId"])
+        player_feed = Nhl::PlayerClient.landing(play["details"]["assist1PlayerId"])
         images << player_feed&.dig("headshot")
       end
 
       # Safely fetch headshot for assist2 player
       if play["details"]["assist2PlayerId"].present?
-        player_feed = Nhl::GameClient.player_landing_feed(play["details"]["assist2PlayerId"])
+        player_feed = Nhl::PlayerClient.landing(play["details"]["assist2PlayerId"])
         images << player_feed&.dig("headshot")
       end
 

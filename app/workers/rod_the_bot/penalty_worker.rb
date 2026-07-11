@@ -149,7 +149,7 @@ module RodTheBot
       end
 
       # Always use the main player (committed player) for headshot
-      penalized_player_landing_feed = Nhl::GameClient.player_landing_feed(main_player_id)
+      penalized_player_landing_feed = Nhl::PlayerClient.landing(main_player_id)
 
       # Safely fetch headshot - may be nil in preseason
       headshot = penalized_player_landing_feed&.dig("headshot")

@@ -106,7 +106,7 @@ module RodTheBot
     end
 
     def get_goalie_headshot(goalie_id)
-      goalie_feed = Nhl::GameClient.player_landing_feed(goalie_id)
+      goalie_feed = Nhl::PlayerClient.landing(goalie_id)
       goalie_feed&.dig("headshot")
     rescue => e
       Rails.logger.warn "GoalieChangeWorker: Could not fetch headshot for player #{goalie_id}: #{e.message}"
