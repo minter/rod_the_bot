@@ -117,9 +117,9 @@ class RodTheBot::UpcomingMilestonesWorkerTest < ActiveSupport::TestCase
       post_content = RodTheBot::Post.jobs.first["args"].first
 
       assert_match(/🎯 Upcoming Milestones:/, post_content)
-      assert_match(/🔥 Jaccob Slavin: 1 assist away from 50/, post_content)
-      assert_match(/⚡ Frederik Andersen: 2 wins away from 300/, post_content)
-      assert_match(/⚡ Jordan Martinook: 2 goals away from 100/, post_content)
+      assert_match(/🔥 #20 Sebastian Aho: 1 assist away from 50/, post_content)
+      assert_match(/⚡ #60 Yaniv Perets: 2 wins away from 300/, post_content)
+      assert_match(/⚡ #53 Jackson Blake: 2 goals away from 100/, post_content)
     end
   end
 
@@ -184,8 +184,8 @@ class RodTheBot::UpcomingMilestonesWorkerTest < ActiveSupport::TestCase
       post_content = RodTheBot::Post.jobs.first["args"].first
 
       assert_match(/🎯 Upcoming Milestones \(Playoffs\):/, post_content)
-      assert_match(/⚡ Andrei Svechnikov: 2 assists away from 50/, post_content)
-      assert_match(/⚡ Frederik Andersen: 2 wins away from 50/, post_content)
+      assert_match(/⚡ #37 Andrei Svechnikov: 2 assists away from 50/, post_content)
+      assert_match(/⚡ #31 Frederik Andersen: 2 wins away from 50/, post_content)
     end
   end
 

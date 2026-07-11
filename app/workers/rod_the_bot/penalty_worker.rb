@@ -92,7 +92,7 @@ module RodTheBot
         @their_team = home
       end
 
-      players = build_players(@feed)
+      players = Nhl::PlayerDirectory.for_game(game_id).to_legacy_h
 
       # Always prioritize the player who committed the penalty for display and headshot
       committed_player_id = @play["details"]["committedByPlayerId"]
@@ -161,21 +161,13 @@ module RodTheBot
       Rails.logger.error "PenaltyWorker: Unexpected error for game #{game_id}: #{e.class} - #{e.message}\n#{e.backtrace&.first(5)&.join("\n")}"
     end
 
-    def build_players(feed)
-      players = {}
-      feed["rosterSpots"].each do |player|
-        players[player["playerId"]] = {
-          team_id: player["teamId"],
-          number: player["sweaterNumber"],
-          name: player["firstName"]["default"] + " " + player["lastName"]["default"]
-        }
-      end
-      players
-    end
-
     def format_penalty_name(desc_key)
       # Use custom mapping first, fallback to default formatting
       PENALTY_NAMES[desc_key] || desc_key.tr("-", " ").titlecase
+    end
+
+    def build_players(feed)
+      Nhl::PlayerDirectory.from_game_feed(feed).to_legacy_h
     end
   end
 end

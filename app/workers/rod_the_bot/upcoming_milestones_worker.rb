@@ -119,7 +119,7 @@ module RodTheBot
     end
 
     def format_milestone_line(milestone)
-      player_name = milestone["playerFullName"]
+      player_name = player_directory.resolve(milestone["playerId"]).name_with_number
       milestone_type = milestone["milestone"]
       current_value = get_current_value(milestone)
       target_value = milestone["milestoneAmount"]
@@ -138,6 +138,10 @@ module RodTheBot
       end
 
       "#{urgency} #{player_name}: #{pluralize(remaining, display_type)} away from #{target_value}\n"
+    end
+
+    def player_directory
+      @player_directory ||= Nhl::PlayerDirectory.for_team(ENV["NHL_TEAM_ABBREVIATION"])
     end
 
     def get_urgency_emoji(milestone_type, remaining)

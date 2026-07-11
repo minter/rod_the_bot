@@ -53,7 +53,7 @@ module RodTheBot
         # Use atomic operation to prevent race conditions - only proceed if we can claim this change
         change_lock_key = "game:#{game_id}:goalie_change_lock:#{defending_team_id}:#{goalie_id}"
         if REDIS.set(change_lock_key, "claimed", nx: true, ex: 300)  # 5 minute lock
-          new_goalie = get_goalie_info(play["details"]["goalieInNetId"])  # Use original integer for API calls
+          new_goalie = player_directory(game_id).fetch(play["details"]["goalieInNetId"])
           return if new_goalie.nil?
 
           # Update cache with new goalie
@@ -65,7 +65,7 @@ module RodTheBot
 
           RodTheBot::Post.perform_async(post, nil, nil, nil, images)
 
-          Rails.logger.info "GoalieChangeWorker: Posted goalie change for team #{defending_team_id}, #{current_goalie} → #{goalie_id} (#{new_goalie[:name]} ##{new_goalie[:number]})"
+          Rails.logger.info "GoalieChangeWorker: Posted goalie change for team #{defending_team_id}, #{current_goalie} → #{goalie_id} (#{new_goalie.name_with_number})"
         else
           Rails.logger.debug "GoalieChangeWorker: Change already claimed by another worker. Team #{defending_team_id}, #{current_goalie} → #{goalie_id}"
         end
@@ -81,28 +81,13 @@ module RodTheBot
       team_nickname = team["commonName"]["default"] # "Panthers"
 
       # Format goalie name with jersey number using consistent format
-      goalie_name = format_player_with_components(goalie[:number], goalie[:first_name], goalie[:last_name])
+      goalie_name = goalie.name_with_number
 
       <<~POST
         🥅 Goaltending change for #{city_name}!
 
         Now in goal for the #{team_nickname}, #{goalie_name}
       POST
-    end
-
-    def get_goalie_info(goalie_id)
-      # Get goalie info from current game roster
-      players = build_players(@feed)
-      goalie = players[goalie_id]
-
-      return nil if goalie.nil?
-
-      {
-        first_name: goalie[:first_name],
-        last_name: goalie[:last_name],
-        number: goalie[:number],
-        team_id: goalie[:team_id]
-      }
     end
 
     def get_goalie_headshot(goalie_id)
@@ -113,17 +98,8 @@ module RodTheBot
       nil
     end
 
-    def build_players(feed)
-      players = {}
-      feed["rosterSpots"].each do |player|
-        players[player["playerId"]] = {
-          team_id: player["teamId"],
-          number: player["sweaterNumber"],
-          first_name: player["firstName"]["default"],
-          last_name: player["lastName"]["default"]
-        }
-      end
-      players
+    def player_directory(game_id)
+      @player_directory ||= Nhl::PlayerDirectory.for_game(game_id)
     end
   end
 end

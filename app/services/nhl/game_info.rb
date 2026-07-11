@@ -37,16 +37,11 @@ module Nhl
       end
 
       def roster(game_id)
-        roster_from_feed(GameClient.play_by_play(game_id))
+        PlayerDirectory.for_game(game_id).to_legacy_h
       end
 
       def roster_from_feed(feed)
-        feed.fetch("rosterSpots", []).to_h do |player|
-          [player["playerId"], {
-            team_id: player["teamId"], number: player["sweaterNumber"],
-            name: "#{player.dig("firstName", "default")} #{player.dig("lastName", "default")}"
-          }]
-        end
+        PlayerDirectory.from_game_feed(feed).to_legacy_h
       end
 
       def opponent_team_id(game_id, team_id: ENV.fetch("NHL_TEAM_ID").to_i)

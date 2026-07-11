@@ -2,7 +2,6 @@ module RodTheBot
   class MilestoneCheckerWorker
     include Sidekiq::Worker
     include RodTheBot::PlayerFormatter
-
     def perform(game_id, play)
       @game_id = game_id
 
@@ -42,19 +41,13 @@ module RodTheBot
       # Get team goalies from the game feed (use cached feed)
       feed = game_feed
       roster_spots = feed&.dig("rosterSpots") || []
-      team_goalies = roster_spots.select do |player|
-        player["position"] == "G" && player["teamId"] == ENV["NHL_TEAM_ID"].to_i
+      team_goalies = roster_spots.filter_map do |player|
+        identity = player_directory.fetch(player["playerId"])
+        identity if identity&.position == "G" && identity.team_id == tracked_team_id
       end
 
       team_goalies.each do |goalie|
-        goalie_id = goalie["playerId"]
-        first_name = goalie.dig("firstName", "default") || ""
-        last_name = goalie.dig("lastName", "default") || ""
-        goalie_name = "#{first_name} #{last_name}".strip
-
-        next if goalie_name.empty? || goalie_id.nil?
-
-        enqueue_events(goalie_name, evaluator.goalie(goalie_id))
+        enqueue_events(goalie.name_with_number, evaluator.goalie(goalie.id))
       end
     end
 
@@ -88,6 +81,10 @@ module RodTheBot
 
     def game_roster
       @game_roster ||= Nhl::GameInfo.roster(@game_id)
+    end
+
+    def player_directory
+      @player_directory ||= Nhl::PlayerDirectory.for_game(@game_id)
     end
 
     def player_on_tracked_team?(player_id)

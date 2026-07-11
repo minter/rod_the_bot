@@ -50,15 +50,11 @@ module RodTheBot
     end
 
     def get_player_name_from_id(player_id)
-      # Use cached roster data if available
-      player = roster[player_id.to_i]
-      if player
-        return format_player_with_components(player[:sweaterNumber], player[:firstName], player[:lastName])
-      end
+      player_directory.resolve(player_id).name_with_number
+    end
 
-      # Fallback to API call
-      player_data = Nhl::PlayerClient.landing(player_id)
-      format_player_name(player_data)
+    def player_directory
+      @player_directory ||= Nhl::PlayerDirectory.for_team(ENV["NHL_TEAM_ABBREVIATION"])
     end
 
     def post_streaks_in_thread(streaks, season_type)

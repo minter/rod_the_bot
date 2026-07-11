@@ -3,6 +3,19 @@ require "test_helper"
 class RodTheBot::ThreeStarsWorkerTest < ActiveSupport::TestCase
   def setup
     @worker = RodTheBot::ThreeStarsWorker.new
+    identities = [
+      [8480336, "Sean", "Walker", 26],
+      [8482093, "Seth", "Jarvis", 24],
+      [8477478, "William", "Carrier", 28],
+      [8483465, "Joakim", "Kemell", 25],
+      [8479370, "Tyson", "Jost", 17],
+      [8477424, "Juuse", "Saros", 74]
+    ].map do |id, first, last, number|
+      Nhl::PlayerIdentity.new(id: id, first_name: first, last_name: last, sweater_number: number)
+    end
+    directory = Nhl::PlayerDirectory.new(identities)
+    Nhl::PlayerDirectory.stubs(:for_game).returns(directory)
+    @worker.instance_variable_set(:@players, directory)
     VCR.configure do |config|
       config.cassette_library_dir = "fixtures/vcr_cassettes"
       config.hook_into :webmock
@@ -24,11 +37,11 @@ class RodTheBot::ThreeStarsWorkerTest < ActiveSupport::TestCase
       expected_output = <<~POST
         Three Stars Of The Game:
 
-        ⭐️⭐️⭐️ CAR #28 W. Carrier (1G, 1A, 2PTS)
+        ⭐️⭐️⭐️ CAR #28 William Carrier (1G, 1A, 2PTS)
 
-        ⭐️⭐️ CAR #24 S. Jarvis (2G, 2PTS)
+        ⭐️⭐️ CAR #24 Seth Jarvis (2G, 2PTS)
 
-        ⭐️ CAR #26 S. Walker (1G, 2A, 3PTS)
+        ⭐️ CAR #26 Sean Walker (1G, 2A, 3PTS)
       POST
       assert_equal expected_output, post
     end
@@ -81,11 +94,11 @@ class RodTheBot::ThreeStarsWorkerTest < ActiveSupport::TestCase
     expected_output = <<~POST
       Three Stars Of The Game:
 
-      ⭐️⭐️⭐️ NSH #74 J. Saros (1.88 GAA, 0.920 SV%)
+      ⭐️⭐️⭐️ NSH #74 Juuse Saros (1.88 GAA, 0.920 SV%)
 
-      ⭐️⭐️ NSH #17 T. Jost (1G, 1PT)
+      ⭐️⭐️ NSH #17 Tyson Jost (1G, 1PT)
 
-      ⭐️ NSH #25 J. Kemell (1G, 1A, 2PTS)
+      ⭐️ NSH #25 Joakim Kemell (1G, 1A, 2PTS)
     POST
     assert_equal expected_output, post
   end
