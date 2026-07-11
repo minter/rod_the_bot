@@ -1,7 +1,6 @@
 module RodTheBot
   class PlayerStreaksWorker
     include Sidekiq::Worker
-    include RodTheBot::PlayerFormatter
     include ActionView::Helpers::TextHelper
 
     def perform

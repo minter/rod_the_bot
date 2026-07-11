@@ -1,7 +1,6 @@
 module RodTheBot
   class GameStartWorker
     include Sidekiq::Worker
-    include RodTheBot::PlayerFormatter
     include PlayerImageHelper
 
     MAX_GOALIE_RETRIES = 5
@@ -119,11 +118,11 @@ module RodTheBot
 
     def format_main_post(feed, home_goalie, home_goalie_record, away_goalie, away_goalie_record)
       # Get game roster data for consistent formatting
-      players = Nhl::GameInfo.roster(feed["id"])
+      players = Nhl::PlayerDirectory.from_game_feed(feed)
 
       # Format goalie names with jersey numbers using consistent format
-      home_goalie_name = format_player_from_roster(players, home_goalie["playerId"])
-      away_goalie_name = format_player_from_roster(players, away_goalie["playerId"])
+      home_goalie_name = players.name_with_number(home_goalie["playerId"])
+      away_goalie_name = players.name_with_number(away_goalie["playerId"])
 
       <<~POST
         🚦 It's puck drop at #{feed["venue"]["default"]} for #{feed["awayTeam"]["commonName"]["default"]} at #{feed["homeTeam"]["commonName"]["default"]}!

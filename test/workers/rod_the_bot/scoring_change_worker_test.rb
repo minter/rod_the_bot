@@ -69,12 +69,11 @@ class RodTheBot::ScoringChangeWorkerTest < ActiveSupport::TestCase
   def test_build_players
     VCR.use_cassette("nhl_game_#{@game_id}_build_players", record: :new_episodes) do
       feed = Nhl::GameClient.play_by_play(@game_id)
-      players = Nhl::GameInfo.roster_from_feed(feed)
+      players = Nhl::PlayerDirectory.from_game_feed(feed)
 
-      assert_kind_of Hash, players
-      assert_includes players.keys, 8480830
-      assert_equal "Andrei Svechnikov", players[8480830][:name]
-      assert_equal "37", players[8480830][:number].to_s
+      assert_kind_of Nhl::PlayerDirectory, players
+      assert_equal "Andrei Svechnikov", players.fetch(8480830).full_name
+      assert_equal "37", players.sweater_number(8480830).to_s
     end
   end
 
@@ -83,7 +82,7 @@ class RodTheBot::ScoringChangeWorkerTest < ActiveSupport::TestCase
       feed = Nhl::GameClient.play_by_play(@game_id)
       play = feed["plays"].find { |p| p["typeDescKey"] == "goal" }
       scoring_team = feed["homeTeam"]
-      players = Nhl::GameInfo.roster_from_feed(feed)
+      players = Nhl::PlayerDirectory.from_game_feed(feed)
 
       post = RodTheBot::ScoringChange::Formatter.new.correction(play: play, scoring_team: scoring_team, players: players)
 

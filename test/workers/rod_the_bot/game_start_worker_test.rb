@@ -12,6 +12,14 @@ class RodTheBot::GameStartWorkerTest < ActiveSupport::TestCase
   test "find_starting_goalie" do
     VCR.use_cassette("nhl_game_#{@game_id}_gamecenter_pbp_game_start") do
       feed = Nhl::GameClient.play_by_play(@game_id)
+      feed["rosterSpots"] = [
+        {"playerId" => 8479973, "firstName" => {"default" => "Linus"}, "lastName" => {"default" => "Ullmark"}, "sweaterNumber" => 35, "teamId" => 9},
+        {"playerId" => 8477924, "firstName" => {"default" => "Tristan"}, "lastName" => {"default" => "Jarry"}, "sweaterNumber" => 35, "teamId" => 5}
+      ]
+      feed["rosterSpots"] = [
+        {"playerId" => 8479973, "firstName" => {"default" => "Linus"}, "lastName" => {"default" => "Ullmark"}, "sweaterNumber" => 35, "teamId" => 9},
+        {"playerId" => 8477924, "firstName" => {"default" => "Tristan"}, "lastName" => {"default" => "Jarry"}, "sweaterNumber" => 35, "teamId" => 5}
+      ]
       @game_start_worker.instance_variable_set(:@feed, feed)
       goalie = @game_start_worker.send(:find_starting_goalie, "homeTeam")
 
@@ -34,16 +42,14 @@ class RodTheBot::GameStartWorkerTest < ActiveSupport::TestCase
   test "format_main_post" do
     VCR.use_cassette("nhl_game_#{@game_id}_gamecenter_pbp_game_start") do
       feed = Nhl::GameClient.play_by_play(@game_id)
+      feed["rosterSpots"] = [
+        {"playerId" => 8479973, "firstName" => {"default" => "Linus"}, "lastName" => {"default" => "Ullmark"}, "sweaterNumber" => 35, "teamId" => 9},
+        {"playerId" => 8477924, "firstName" => {"default" => "Tristan"}, "lastName" => {"default" => "Jarry"}, "sweaterNumber" => 35, "teamId" => 5}
+      ]
       home_goalie = {"playerId" => "8479973", "sweaterNumber" => "35", "name" => {"default" => "L. Ullmark"}}
       away_goalie = {"playerId" => "8477924", "sweaterNumber" => "35", "name" => {"default" => "T. Jarry"}}
       home_goalie_record = "(5-3-0, 3.22 GAA, 0.877 SV%)"
       away_goalie_record = "(5-3-0, 2.62 GAA, 0.907 SV%)"
-
-      # Mock the game_rosters call to avoid VCR issues
-      Nhl::GameInfo.expects(:roster).with(feed["id"]).returns({
-        "8479973" => {name: "Linus Ullmark", number: "35", team_id: 9},
-        "8477924" => {name: "Tristan Jarry", number: "35", team_id: 5}
-      })
 
       post = @game_start_worker.send(:format_main_post, feed, home_goalie, home_goalie_record, away_goalie, away_goalie_record)
 
@@ -94,7 +100,7 @@ class RodTheBot::GameStartWorkerTest < ActiveSupport::TestCase
       })
 
       # Mock the game_rosters call to avoid additional fetch_pbp_feed call
-      Nhl::GameInfo.expects(:roster).with(@game_id).returns({
+      Nhl::GameInfo.stubs(:roster).with(@game_id).returns({
         "123" => {name: "Home Goalie", number: "30", team_id: 1},
         "456" => {name: "Away Goalie", number: "31", team_id: 2}
       })
@@ -213,7 +219,7 @@ class RodTheBot::GameStartWorkerTest < ActiveSupport::TestCase
       "awayTeam" => {"id" => 2, "abbrev" => "AWAY", "commonName" => {"default" => "Away Team"}}
     })
 
-    Nhl::GameInfo.expects(:roster).with(@game_id).returns({})
+    Nhl::GameInfo.stubs(:roster).with(@game_id).returns({})
     Nhl::GameInfo.expects(:officials).returns({referees: ["Ref1"], linesmen: ["Lines1"]})
     Nhl::GameInfo.expects(:scratches).returns(nil)
 

@@ -2,7 +2,6 @@ module RodTheBot
   module ScoringChange
     class Formatter
       include RodTheBot::PeriodFormatter
-      include RodTheBot::PlayerFormatter
 
       CHALLENGES = {
         "chlg-hm-goal-interference" => "goaltender interference challenge",
@@ -25,13 +24,13 @@ module RodTheBot
           The #{scoring_team.dig("commonName", "default")} goal at #{play["timeInPeriod"]} of the #{period} now reads:
 
         POST
-        post << "🚨 #{format_player_from_roster(players, details["scoringPlayerId"])} (#{details["scoringPlayerTotal"]})\n"
+        post << "🚨 #{players.name_with_number(details["scoringPlayerId"])} (#{details["scoringPlayerTotal"]})\n"
         post << if details["assist1PlayerId"].present?
-          "🍎 #{format_player_from_roster(players, details["assist1PlayerId"])} (#{details["assist1PlayerTotal"]})\n"
+          "🍎 #{players.name_with_number(details["assist1PlayerId"])} (#{details["assist1PlayerTotal"]})\n"
         else
           "🍎 Unassisted\n"
         end
-        post << "🍎🍎 #{format_player_from_roster(players, details["assist2PlayerId"])} (#{details["assist2PlayerTotal"]})\n" if details["assist2PlayerId"].present?
+        post << "🍎🍎 #{players.name_with_number(details["assist2PlayerId"])} (#{details["assist2PlayerTotal"]})\n" if details["assist2PlayerId"].present?
         post
       end
 
@@ -39,7 +38,7 @@ module RodTheBot
         reason_code = challenge.dig("details", "reason")
         reason = CHALLENGES.fetch(reason_code, "video review")
         challenger = reason_code.include?("chlg-hm") ? home : (away if reason_code.include?("chlg-vis"))
-        scorer = players[original_play.dig("details", "scoringPlayerId").to_i]&.dig(:name) || "Unknown Player"
+        scorer = players.full_name(original_play.dig("details", "scoringPlayerId"))
         period = format_period_name(original_play.dig("periodDescriptor", "number"))
         team_name = scoring_team.dig("placeName", "default")
         review = challenger ? "successful #{reason} by #{challenger.dig("placeName", "default")}" : reason

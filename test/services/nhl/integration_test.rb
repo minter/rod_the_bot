@@ -143,9 +143,9 @@ class Nhl::IntegrationTest < ActiveSupport::TestCase
 
   test "game_rosters" do
     VCR.use_cassette("nhl_game_#{@game_id}_gamecenter_pbp") do
-      rosters = Nhl::GameInfo.roster(@game_id)
-      assert_kind_of Hash, rosters
-      assert rosters.values.all? { |player| player.key?(:name) }
+      directory = Nhl::PlayerDirectory.for_game(@game_id)
+      assert_kind_of Nhl::PlayerDirectory, directory
+      assert directory.fetch(8475744).full_name.present?
     end
   end
 

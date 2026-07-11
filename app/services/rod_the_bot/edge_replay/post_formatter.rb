@@ -2,17 +2,16 @@ module RodTheBot
   module EdgeReplay
     class PostFormatter
       include RodTheBot::PeriodFormatter
-      include RodTheBot::PlayerFormatter
 
       def format(play, players, feed)
         scorer_id = play.dig("details", "scoringPlayerId")
-        scorer = scorer_id ? format_player_from_roster(players, scorer_id) : "Unknown Player"
+        scorer = scorer_id ? players.name_with_number(scorer_id) : "Unknown Player"
         scoring_team = feed[feed.dig("homeTeam", "id") == play.dig("details", "eventOwnerTeamId") ? "homeTeam" : "awayTeam"]["abbrev"]
         period = format_period_name(play.dig("periodDescriptor", "number"))
 
         assists = %w[assist1PlayerId assist2PlayerId].filter_map do |key|
           player_id = play.dig("details", key)
-          format_player_from_roster(players, player_id) if player_id.present?
+          players.name_with_number(player_id) if player_id.present?
         end
         assist_text = assists.empty? ? "" : " Assisted by #{assists.join(", ")}."
 

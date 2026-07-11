@@ -1,7 +1,6 @@
 module RodTheBot
   class MilestoneCheckerWorker
     include Sidekiq::Worker
-    include RodTheBot::PlayerFormatter
     def perform(game_id, play)
       @game_id = game_id
 
@@ -34,7 +33,7 @@ module RodTheBot
     end
 
     def get_player_name(player_id)
-      format_player_from_roster(game_roster, player_id)
+      player_directory.name_with_number(player_id)
     end
 
     def check_goalie_milestones
@@ -80,7 +79,7 @@ module RodTheBot
     end
 
     def game_roster
-      @game_roster ||= Nhl::GameInfo.roster(@game_id)
+      player_directory
     end
 
     def player_directory
@@ -88,11 +87,10 @@ module RodTheBot
     end
 
     def player_on_tracked_team?(player_id)
-      player = game_roster[player_id] || game_roster[player_id.to_s]
+      player = game_roster.fetch(player_id)
       return false unless player
 
-      team_id = player[:team_id] || player["team_id"] || player["teamId"]
-      team_id.to_i == tracked_team_id
+      player.team_id == tracked_team_id
     end
 
   end

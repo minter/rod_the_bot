@@ -6,11 +6,11 @@ module RodTheBot
       @game_id = game_id
 
       # Get the roster for this game
-      roster = Nhl::GameInfo.roster(game_id)
+      roster = Nhl::PlayerDirectory.for_game(game_id)
 
       # Store pre-game career stats for all players in the game
-      roster.each do |player_id, player_data|
-        store_pregame_stats(player_id)
+      roster.each do |player|
+        store_pregame_stats(player.id)
       end
     end
 

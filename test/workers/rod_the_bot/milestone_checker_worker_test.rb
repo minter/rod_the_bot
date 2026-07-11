@@ -60,6 +60,10 @@ class RodTheBot::MilestoneCheckerWorkerTest < ActiveSupport::TestCase
         8482093 => {number: 24, name: "Seth Jarvis", team_id: 12},
         8476906 => {number: 65, name: "William Carrier", team_id: 12}
       })
+      Nhl::PlayerDirectory.stubs(:for_game).returns(Nhl::PlayerDirectory.new([
+        Nhl::PlayerIdentity.new(id: 8482093, first_name: "Seth", last_name: "Jarvis", sweater_number: 24, team_id: 12),
+        Nhl::PlayerIdentity.new(id: 8476906, first_name: "William", last_name: "Carrier", sweater_number: 65, team_id: 12)
+      ]))
 
       @worker.perform(@game_id, play)
 
@@ -110,6 +114,10 @@ class RodTheBot::MilestoneCheckerWorkerTest < ActiveSupport::TestCase
       Nhl::GameInfo.stubs(:roster).returns({
         8482093 => {number: 24, name: "Seth Jarvis", team_id: 12}
       })
+      Nhl::PlayerDirectory.stubs(:for_game).returns(Nhl::PlayerDirectory.new([
+        Nhl::PlayerIdentity.new(id: 8476906, first_name: "William", last_name: "Carrier", sweater_number: 65, team_id: 12),
+        Nhl::PlayerIdentity.new(id: 8482093, first_name: "Seth", last_name: "Jarvis", sweater_number: 24, team_id: 12)
+      ]))
 
       @worker.perform(@game_id, play)
 
@@ -162,6 +170,10 @@ class RodTheBot::MilestoneCheckerWorkerTest < ActiveSupport::TestCase
         8476906 => {number: 65, name: "William Carrier", team_id: 12},
         8482093 => {number: 24, name: "Seth Jarvis", team_id: 12}
       })
+      Nhl::PlayerDirectory.stubs(:for_game).returns(Nhl::PlayerDirectory.new([
+        Nhl::PlayerIdentity.new(id: 8476906, first_name: "William", last_name: "Carrier", sweater_number: 65, team_id: 12),
+        Nhl::PlayerIdentity.new(id: 8482093, first_name: "Seth", last_name: "Jarvis", sweater_number: 24, team_id: 12)
+      ]))
 
       @worker.perform(@game_id, play)
 

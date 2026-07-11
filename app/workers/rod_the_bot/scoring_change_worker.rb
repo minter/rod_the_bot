@@ -28,9 +28,9 @@ module RodTheBot
       return handle_overturned_goal(game_id, play_id, original_play, redis_key, result.challenge) if result.status == :overturned
       return unless result.status == :corrected
 
-      players = Nhl::GameInfo.roster_from_feed(@feed)
+      players = Nhl::PlayerDirectory.from_game_feed(@feed)
 
-      scoring_team_id = players[@play["details"]["scoringPlayerId"].to_i][:team_id]
+      scoring_team_id = players.fetch(@play["details"]["scoringPlayerId"]).team_id
       scoring_team = (@home["id"] == scoring_team_id) ? @home : @away
       post = formatter.correction(play: @play, scoring_team: scoring_team, players: players)
 
@@ -62,7 +62,7 @@ module RodTheBot
       return unless challenge_event
 
       # Get player and team data
-      players = Nhl::GameInfo.roster_from_feed(@feed)
+      players = Nhl::PlayerDirectory.from_game_feed(@feed)
       scoring_team_id = original_play["details"]["eventOwnerTeamId"]
       scoring_team = (@home["id"] == scoring_team_id) ? @home : @away
       post = formatter.overturn(

@@ -1,7 +1,6 @@
 module RodTheBot
   class GameStream
     include Sidekiq::Worker
-    include RodTheBot::PlayerFormatter
 
     attr_reader :feed, :game_id
 

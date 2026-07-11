@@ -82,7 +82,7 @@ module RodTheBot
       return unless pbp_play && pbp_play["typeDescKey"] == "goal"
 
       # Get roster data
-      players = Nhl::GameInfo.roster(game_id)
+      players = Nhl::PlayerDirectory.for_game(game_id)
 
       # Format post text
       post_text = post_formatter.format(pbp_play, players, pbp_feed)

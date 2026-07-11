@@ -5,7 +5,7 @@ class RodTheBot::ScoringChange::FormatterTest < ActiveSupport::TestCase
     VCR.use_cassette("nhl_game_2024010043_format_post") do
       feed = Nhl::GameClient.play_by_play("2024010043")
       play = feed.fetch("plays").find { |candidate| candidate["typeDescKey"] == "goal" }
-      players = Nhl::GameInfo.roster_from_feed(feed)
+      players = Nhl::PlayerDirectory.from_game_feed(feed)
 
       post = RodTheBot::ScoringChange::Formatter.new.correction(play: play, scoring_team: feed["homeTeam"], players: players)
 

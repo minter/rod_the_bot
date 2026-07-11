@@ -29,7 +29,7 @@ module RodTheBot
         @their_team = home
       end
 
-      players = Nhl::GameInfo.roster(game_id)
+      players = Nhl::PlayerDirectory.for_game(game_id)
 
       original_play = @play.deep_dup
 
@@ -65,10 +65,10 @@ module RodTheBot
 
       # Safely get scoring player data
       scoring_player_id = @play["details"]["scoringPlayerId"]
-      scoring_player = players[scoring_player_id] || players[scoring_player_id.to_s] || players[scoring_player_id.to_i]
+      scoring_player = players.fetch(scoring_player_id)
 
       unless scoring_player
-        Rails.logger.error "GoalWorker: Player not found in roster for game #{game_id}, play #{@play_id}, scoring_player_id: #{scoring_player_id} (type: #{scoring_player_id.class}). Players hash has #{players.size} entries. Sample keys: #{players.keys.first(3).inspect}"
+        Rails.logger.error "GoalWorker: Player not found in roster for game #{game_id}, play #{@play_id}, scoring_player_id: #{scoring_player_id}"
         return
       end
 

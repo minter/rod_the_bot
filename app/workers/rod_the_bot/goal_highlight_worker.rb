@@ -3,7 +3,6 @@ module RodTheBot
     include Sidekiq::Worker
     include ActiveSupport::Inflector
     include RodTheBot::PeriodFormatter
-    include RodTheBot::PlayerFormatter
 
     def perform(game_id, play_id, redis_key, initial_run_time = nil)
       initial_run_time ||= Time.now.to_i
@@ -73,11 +72,11 @@ module RodTheBot
 
     def format_post(landing_play)
       # Get roster data to find jersey numbers
-      players = Nhl::GameInfo.roster(@pbp_feed["id"])
+      players = Nhl::PlayerDirectory.from_game_feed(@pbp_feed)
 
       # Format scorer with jersey number
       scorer_id = @pbp_play["details"]["scoringPlayerId"]
-      scorer_name = format_player_from_roster(players, scorer_id)
+      scorer_name = players.name_with_number(scorer_id)
 
       team = landing_play["teamAbbrev"]["default"]
       time = landing_play["timeInPeriod"]
@@ -87,10 +86,10 @@ module RodTheBot
       # Format assists with jersey numbers
       assist_names = []
       if @pbp_play["details"]["assist1PlayerId"].present?
-        assist_names << format_player_from_roster(players, @pbp_play["details"]["assist1PlayerId"])
+        assist_names << players.name_with_number(@pbp_play["details"]["assist1PlayerId"])
       end
       if @pbp_play["details"]["assist2PlayerId"].present?
-        assist_names << format_player_from_roster(players, @pbp_play["details"]["assist2PlayerId"])
+        assist_names << players.name_with_number(@pbp_play["details"]["assist2PlayerId"])
       end
 
       assist_text = assist_names.empty? ? "" : " Assisted by #{assist_names.join(", ")}."

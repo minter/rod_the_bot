@@ -1,7 +1,6 @@
 module RodTheBot
   class GoalieChangeWorker
     include Sidekiq::Worker
-    include RodTheBot::PlayerFormatter
     include ActiveSupport::Inflector
 
     def perform(game_id, play)

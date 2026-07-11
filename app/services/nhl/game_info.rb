@@ -36,14 +36,6 @@ module Nhl
         end
       end
 
-      def roster(game_id)
-        PlayerDirectory.for_game(game_id).to_legacy_h
-      end
-
-      def roster_from_feed(feed)
-        PlayerDirectory.from_game_feed(feed).to_legacy_h
-      end
-
       def opponent_team_id(game_id, team_id: ENV.fetch("NHL_TEAM_ID").to_i)
         feed = GameClient.landing(game_id)
         home_id = feed&.dig("homeTeam", "id")

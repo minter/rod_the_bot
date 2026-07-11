@@ -3,7 +3,6 @@ module RodTheBot
     include Sidekiq::Worker
     include ActiveSupport::Inflector
     include RodTheBot::PeriodFormatter
-    include RodTheBot::PlayerFormatter
 
     SEVERITY = {
       "MIN" => "Minor",
@@ -92,7 +91,7 @@ module RodTheBot
         @their_team = home
       end
 
-      players = Nhl::PlayerDirectory.for_game(game_id).to_legacy_h
+      players = Nhl::PlayerDirectory.for_game(game_id)
 
       # Always prioritize the player who committed the penalty for display and headshot
       committed_player_id = @play["details"]["committedByPlayerId"]
@@ -100,7 +99,7 @@ module RodTheBot
 
       # Use committed player for main penalty info, fallback to served player if needed
       main_player_id = committed_player_id || served_player_id
-      main_player = players[main_player_id]
+      main_player = players.fetch(main_player_id)
 
       # Handle case where player is not found in roster (common in preseason)
       if main_player.nil?
@@ -108,7 +107,7 @@ module RodTheBot
         return
       end
 
-      post = if main_player[:team_id] == ENV["NHL_TEAM_ID"].to_i
+      post = if main_player.team_id == ENV["NHL_TEAM_ID"].to_i
         "🙃 #{@your_team["commonName"]["default"]} Penalty\n\n"
       else
         "😵‍💫 #{@their_team["commonName"]["default"]} Penalty!\n\n"
@@ -117,7 +116,7 @@ module RodTheBot
       period_name = format_period_name(@play["periodDescriptor"]["number"])
 
       post += if @play["details"]["typeCode"] == "BEN"
-        served_by_player_name = format_player_from_roster(players, served_player_id)
+        served_by_player_name = players.name_with_number(served_player_id)
         <<~POST
           Bench Minor - #{format_penalty_name(@play["details"]["descKey"])}
           Penalty is served by #{served_by_player_name}
@@ -125,14 +124,14 @@ module RodTheBot
           That's a #{@play["details"]["duration"]} minute penalty at #{@play["timeInPeriod"]} of the #{period_name}
         POST
       elsif @play["details"]["typeCode"] == "PS"
-        main_player_name = format_player_from_roster(players, committed_player_id)
+        main_player_name = players.name_with_number(committed_player_id)
         <<~POST
           #{main_player_name} - #{format_penalty_name(@play["details"]["descKey"].sub(/^ps-/, ""))}
           
           That's a penalty shot awarded at #{@play["timeInPeriod"]} of the #{period_name}
         POST
       else
-        main_player_name = format_player_from_roster(players, committed_player_id)
+        main_player_name = players.name_with_number(committed_player_id)
         penalty_message = <<~POST
           #{main_player_name} - #{format_penalty_name(@play["details"]["descKey"])}
           
@@ -141,7 +140,7 @@ module RodTheBot
 
         # Add serving note if someone else is serving the penalty
         if served_player_id && served_player_id != committed_player_id
-          served_by_player_name = format_player_from_roster(players, served_player_id)
+          served_by_player_name = players.name_with_number(served_player_id)
           penalty_message += "\n(Penalty served by #{served_by_player_name})"
         end
 
@@ -166,8 +165,5 @@ module RodTheBot
       PENALTY_NAMES[desc_key] || desc_key.tr("-", " ").titlecase
     end
 
-    def build_players(feed)
-      Nhl::PlayerDirectory.from_game_feed(feed).to_legacy_h
-    end
   end
 end

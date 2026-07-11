@@ -64,10 +64,9 @@ module Nhl
       fetch(player_id)&.sweater_number
     end
 
-    def to_legacy_h
-      @identities.transform_values do |identity|
-        {team_id: identity.team_id, number: identity.sweater_number, name: identity.full_name}
-      end
+    def each(&block)
+      @identities.each_value(&block)
     end
+
   end
 end
