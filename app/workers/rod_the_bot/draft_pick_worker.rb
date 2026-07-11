@@ -226,80 +226,8 @@ module RodTheBot
     end
 
     def enqueue_post_thread(post, dedupe_key)
-      chunks = split_post(post)
-      return if chunks.empty?
-
-      if chunks.one?
-        RodTheBot::Post.perform_async(chunks.first)
-        return
-      end
-
-      base_key = "#{dedupe_key}:post"
-      first_key = "#{base_key}:1"
-      RodTheBot::Post.perform_async(chunks.first, first_key)
-
-      chunks.drop(1).each_with_index do |chunk, index|
-        chunk_key = "#{base_key}:#{index + 2}"
-        parent_key = (index == 0) ? first_key : "#{base_key}:#{index + 1}"
-        RodTheBot::Post.perform_in((index + 1) * POST_DELAY, chunk, chunk_key, parent_key)
-      end
-    end
-
-    def split_post(post)
-      max_length = max_post_length
-      chunks = []
-      current = ""
-
-      post.split(/\n{2,}/).each do |paragraph|
-        paragraph_chunks(paragraph, max_length).each do |piece|
-          if current.blank?
-            current = piece
-          elsif "#{current}\n\n#{piece}".length <= max_length
-            current = "#{current}\n\n#{piece}"
-          else
-            chunks << current
-            current = piece
-          end
-        end
-      end
-
-      chunks << current if current.present?
-      chunks
-    end
-
-    def paragraph_chunks(paragraph, max_length)
-      return [paragraph] if paragraph.length <= max_length
-
-      chunks = []
-      paragraph.each_line(chomp: true) do |line|
-        chunks.concat(wrap_line(line, max_length))
-      end
-      chunks
-    end
-
-    def wrap_line(line, max_length)
-      chunks = []
-      current = ""
-
-      line.split(/\s+/).each do |word|
-        if current.blank?
-          current = word
-        elsif "#{current} #{word}".length <= max_length
-          current = "#{current} #{word}"
-        else
-          chunks << current
-          current = word
-        end
-      end
-
-      chunks << current if current.present?
-      chunks
-    end
-
-    def max_post_length
-      hashtags = ENV["TEAM_HASHTAGS"].to_s
-      hashtag_length = hashtags.empty? ? 0 : hashtags.length + 1
-      BLUESKY_CHARACTER_LIMIT - hashtag_length
+      chunks = PostThread.split(post)
+      PostThread.enqueue(chunks, key: "#{dedupe_key}:post", delay: POST_DELAY)
     end
 
     def format_height(total_inches)
