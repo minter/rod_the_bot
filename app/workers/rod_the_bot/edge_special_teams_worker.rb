@@ -22,27 +22,10 @@ module RodTheBot
     private
 
     def fetch_opponent_data(game_id, team_id)
-      return [nil, nil, nil] unless game_id
+      matchup = GameMatchup.for(game_id, team_id: team_id)
+      return [nil, nil, nil] unless matchup
 
-      game_feed = NhlApi.fetch_landing_feed(game_id)
-      return [nil, nil, nil] unless game_feed
-
-      home_id = game_feed.dig("homeTeam", "id")
-      away_id = game_feed.dig("awayTeam", "id")
-
-      if home_id == team_id
-        our_abbrev = game_feed.dig("homeTeam", "abbrev")
-        opp_abbrev = game_feed.dig("awayTeam", "abbrev")
-        opponent_id = away_id
-      else
-        our_abbrev = game_feed.dig("awayTeam", "abbrev")
-        opp_abbrev = game_feed.dig("homeTeam", "abbrev")
-        opponent_id = home_id
-      end
-
-      opp_zone_data = opponent_id ? NhlApi.fetch_team_zone_time_details(opponent_id) : nil
-
-      [our_abbrev, opp_abbrev, opp_zone_data]
+      [matchup.our_abbrev, matchup.opponent_abbrev, NhlApi.fetch_team_zone_time_details(matchup.opponent_team_id)]
     end
 
     def format_special_teams_post(data, opponent_data, our_team_abbrev, opponent_team_abbrev)
