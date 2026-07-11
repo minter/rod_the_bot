@@ -103,17 +103,17 @@ class RodTheBot::SchedulerTest < ActiveSupport::TestCase
 
   def test_playoff_series_state_tied
     series = {"topSeedWins" => 0, "bottomSeedWins" => 0, "topSeedTeamAbbrev" => "CAR", "bottomSeedTeamAbbrev" => "OTT"}
-    assert_equal "Series tied 0-0", @worker.send(:playoff_series_state, series)
+    assert_equal "Series tied 0-0", RodTheBot::Scheduling::GamedayPost.new.send(:series_state, series)
   end
 
   def test_playoff_series_state_top_seed_leads
     series = {"topSeedWins" => 2, "bottomSeedWins" => 1, "topSeedTeamAbbrev" => "CAR", "bottomSeedTeamAbbrev" => "OTT"}
-    assert_equal "CAR leads 2-1", @worker.send(:playoff_series_state, series)
+    assert_equal "CAR leads 2-1", RodTheBot::Scheduling::GamedayPost.new.send(:series_state, series)
   end
 
   def test_playoff_series_state_bottom_seed_leads
     series = {"topSeedWins" => 1, "bottomSeedWins" => 2, "topSeedTeamAbbrev" => "CAR", "bottomSeedTeamAbbrev" => "OTT"}
-    assert_equal "OTT leads 2-1", @worker.send(:playoff_series_state, series)
+    assert_equal "OTT leads 2-1", RodTheBot::Scheduling::GamedayPost.new.send(:series_state, series)
   end
 
   def test_playoff_status_line_game_one
@@ -125,7 +125,7 @@ class RodTheBot::SchedulerTest < ActiveSupport::TestCase
       "topSeedTeamAbbrev" => "CAR",
       "bottomSeedTeamAbbrev" => "OTT"
     }
-    assert_equal "Round 1, Game 1 — Series tied 0-0", @worker.send(:playoff_status_line, series)
+    assert_equal "Round 1, Game 1 — Series tied 0-0", RodTheBot::Scheduling::GamedayPost.new.send(:playoff_status_line, series)
   end
 
   def test_playoff_status_line_mid_series
@@ -137,7 +137,7 @@ class RodTheBot::SchedulerTest < ActiveSupport::TestCase
       "topSeedTeamAbbrev" => "CAR",
       "bottomSeedTeamAbbrev" => "OTT"
     }
-    assert_equal "Round 2, Game 4 — CAR leads 2-1", @worker.send(:playoff_status_line, series)
+    assert_equal "Round 2, Game 4 — CAR leads 2-1", RodTheBot::Scheduling::GamedayPost.new.send(:playoff_status_line, series)
   end
 
   def test_perform_postseason_gameday

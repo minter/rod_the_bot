@@ -3,8 +3,6 @@ module RodTheBot
 
   class Scheduler
     include Sidekiq::Worker
-    include ActionView::Helpers::TextHelper
-    include ActiveSupport::Inflector
 
     def perform
       if Nhl::SeasonCalendar.offseason?
@@ -50,57 +48,22 @@ module RodTheBot
       end
 
       if away["id"].to_i == ENV["NHL_TEAM_ID"].to_i || home["id"].to_i == ENV["NHL_TEAM_ID"].to_i
-        gameday_post = if Nhl::SeasonCalendar.preseason?
-          <<~POST
-            🗣️ It's a #{your_standings[:team_name]} Preseason Gameday!
-
-            #{away_standings[:team_name]}
-
-            at
-
-            #{home_standings[:team_name]}
-
-            ⏰ #{time_string}
-            📍 #{venue["default"]}
-            📺 #{tv}
-          POST
-        elsif Nhl::SeasonCalendar.postseason? && @game["seriesStatus"]
-          seed_labels = Nhl::StandingsClient.playoff_seed_labels
-          away_seed = seed_labels[away["abbrev"]] ? "(#{seed_labels[away["abbrev"]]}) " : ""
-          home_seed = seed_labels[home["abbrev"]] ? "(#{seed_labels[home["abbrev"]]}) " : ""
-          series_status = @game["seriesStatus"].merge(series_seed_abbrevs(@game["seriesStatus"]["seriesLetter"]))
-          <<~POST
-            🗣️ It's a #{your_standings[:team_name]} Playoff Gameday!
-
-            #{playoff_status_line(series_status)}
-
-            #{away_seed}#{away_standings[:team_name]}
-
-            at
-
-            #{home_seed}#{home_standings[:team_name]}
-
-            ⏰ #{time_string}
-            📍 #{venue["default"]}
-            📺 #{tv}
-          POST
-        else
-          <<~POST
-            🗣️ It's a #{your_standings[:team_name]} Gameday!
-
-            #{away_standings[:team_name]}
-            #{record(away_standings)}
-
-            at
-
-            #{home_standings[:team_name]}
-            #{record(home_standings)}
-
-            ⏰ #{time_string}
-            📍 #{venue["default"]}
-            📺 #{tv}
-          POST
-        end
+        preseason = Nhl::SeasonCalendar.preseason?
+        postseason = Nhl::SeasonCalendar.postseason? && @game["seriesStatus"].present?
+        seeds = postseason ? Nhl::StandingsClient.playoff_seed_labels : {}
+        series = postseason ? @game["seriesStatus"].merge(series_seed_abbrevs(@game["seriesStatus"]["seriesLetter"])) : nil
+        gameday_post = Scheduling::GamedayPost.new.build(
+          game: @game,
+          away: away_standings.merge(abbrev: away["abbrev"]),
+          home: home_standings.merge(abbrev: home["abbrev"]),
+          tracked: your_standings,
+          time: time_string,
+          television: tv,
+          preseason: preseason,
+          postseason: postseason,
+          seed_labels: seeds,
+          series_status: series
+        )
 
         RodTheBot::GameStream.perform_at(time - 15.minutes, game_id)
         RodTheBot::Post.perform_async(gameday_post, nil, nil, nil, [away_logo_url, home_logo_url])
@@ -114,47 +77,7 @@ module RodTheBot
     end
 
     def schedule_edge_posts(game_id, game_time)
-      # Calculate time until game start
-      time_until_game = game_time - Time.now
-
-      # Leave 30 minute buffer before game for GameStream
-      buffer_before_game = 30.minutes
-
-      # Start EDGE posts after traditional posts finish (15 minutes)
-      edge_start_time = 15.minutes
-
-      # Calculate available window for EDGE posts
-      available_window = time_until_game - buffer_before_game - edge_start_time
-
-      # If window is negative or too short, use compressed schedule
-      if available_window < 0
-        Rails.logger.warn "Scheduler: Game too soon, skipping EDGE posts"
-        return
-      end
-
-      # Define EDGE workers in desired order
-      edge_workers = [
-        RodTheBot::EdgePlayerZoneTimeWorker,
-        RodTheBot::EdgeTeamSpeedWorker,
-        RodTheBot::EdgeTeamShotSpeedWorker,
-        RodTheBot::EdgeMatchupWorker,
-        RodTheBot::EdgePlayerHotZonesWorker,
-        RodTheBot::EdgeSpecialTeamsWorker,
-        RodTheBot::EdgeEsMatchupWorker,
-        RodTheBot::EdgeSpeedDemonLeaderboardWorker,
-        RodTheBot::EdgePlayerWorkloadWorker
-      ]
-
-      # Calculate interval between posts
-      num_workers = edge_workers.length
-      interval = available_window / (num_workers + 1) # +1 for even spacing
-
-      # Schedule each worker at calculated intervals
-      edge_workers.each_with_index do |worker, index|
-        delay = edge_start_time + (interval * (index + 1))
-        worker.perform_in(delay, game_id)
-        Rails.logger.info "Scheduler: #{worker.name} scheduled for #{delay.to_i / 60} minutes from now"
-      end
+      Scheduling::EdgePosts.new.schedule(game_id: game_id, game_time: game_time)
     end
 
     def media(team)
@@ -183,10 +106,6 @@ module RodTheBot
 
     private
 
-    def playoff_status_line(series_status)
-      "Round #{series_status["round"]}, Game #{series_status["gameNumberOfSeries"]} \u2014 #{playoff_series_state(series_status)}"
-    end
-
     def series_seed_abbrevs(series_letter)
       return {} unless series_letter
 
@@ -203,23 +122,5 @@ module RodTheBot
       }.compact
     end
 
-    def playoff_series_state(series_status)
-      top_wins = series_status["topSeedWins"]
-      bottom_wins = series_status["bottomSeedWins"]
-
-      if top_wins == bottom_wins
-        "Series tied #{top_wins}-#{bottom_wins}"
-      elsif top_wins > bottom_wins
-        "#{series_status["topSeedTeamAbbrev"]} leads #{top_wins}-#{bottom_wins}"
-      else
-        "#{series_status["bottomSeedTeamAbbrev"]} leads #{bottom_wins}-#{top_wins}"
-      end
-    end
-
-    def record(team)
-      record = "(#{team[:wins]}-#{team[:losses]}-#{team[:ot]}, #{team[:points]} #{"point".pluralize(team[:points])})\n"
-      record += "#{ordinalize team[:division_rank]} in the #{team[:division_name]}" unless team[:division_name] == "Unknown"
-      record
-    end
   end
 end
