@@ -4,51 +4,6 @@ class NhlApi
   base_uri "https://api-web.nhle.com/v1"
 
   class << self
-    def fetch_roster(team_abbreviation)
-      get("/roster/#{team_abbreviation}/current")
-    end
-
-    def fetch_standings
-      Rails.cache.fetch("standings", expires_in: 8.hours) do
-        get("/standings/now")
-      end
-    end
-
-    def playoff_seed_labels
-      standings = fetch_standings
-      return {} unless standings && standings["standings"]
-
-      standings["standings"].each_with_object({}) do |team, map|
-        abbrev = team.dig("teamAbbrev", "default")
-        next unless abbrev
-
-        wildcard = team["wildcardSequence"].to_i
-        if wildcard > 0
-          map[abbrev] = "WC#{wildcard}"
-        else
-          div = team["divisionAbbrev"]
-          seq = team["divisionSequence"]
-          map[abbrev] = "#{div}#{seq}" if div && seq
-        end
-      end
-    end
-
-    def roster(team_abbreviation)
-      Rails.cache.fetch("team_roster_#{team_abbreviation}", expires_in: 5.hours) do
-        roster_data = fetch_roster(team_abbreviation)
-        players = {}
-
-        %w[forwards defensemen goalies].each do |position_group|
-          roster_data[position_group].each do |player|
-            player_data = symbolize_keys(player)
-            players[player_data[:id]] = clean_player_data(player_data)
-          end
-        end
-
-        players
-      end
-    end
-
     def teams
       Rails.cache.fetch("teams", expires_in: 30.days) do
         teams = {}
@@ -61,23 +16,6 @@ class NhlApi
         end
         teams
       end
-    end
-
-    def team_standings(team_abbreviation)
-      team = fetch_standings["standings"].find { |t| t["teamAbbrev"]["default"] == team_abbreviation }
-
-      return nil unless team
-
-      {
-        division_name: team["divisionName"],
-        division_rank: team["divisionSequence"],
-        points: team["points"],
-        wins: team["wins"],
-        losses: team["losses"],
-        ot: team["otLosses"],
-        team_name: team["teamName"]["default"],
-        season_id: team["seasonId"]
-      }
     end
 
     def officials(game_id)

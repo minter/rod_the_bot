@@ -32,7 +32,7 @@ class RodTheBot::DivisionStandingsWorkerTest < ActiveSupport::TestCase
 
   def test_sort_teams_in_division
     VCR.use_cassette("nhl_standings_now") do
-      standings = NhlApi.fetch_standings["standings"]
+      standings = Nhl::StandingsClient.standings["standings"]
       my_division = "Metropolitan"
       sorted_teams = @worker.send(:sort_teams_in_division, standings, my_division)
 
@@ -44,7 +44,7 @@ class RodTheBot::DivisionStandingsWorkerTest < ActiveSupport::TestCase
 
   def test_format_standings
     VCR.use_cassette("nhl_standings_now") do
-      standings = NhlApi.fetch_standings["standings"]
+      standings = Nhl::StandingsClient.standings["standings"]
       my_division = "Metropolitan"
       division_teams = @worker.send(:sort_teams_in_division, standings, my_division)
       post = @worker.send(:format_standings, my_division, division_teams)

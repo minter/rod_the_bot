@@ -3,10 +3,10 @@ module RodTheBot
     include Sidekiq::Worker
 
     def perform
-      standings = NhlApi.fetch_standings["standings"]
+      standings = Nhl::StandingsClient.standings["standings"]
       return if Nhl::SeasonCalendar.preseason?
 
-      my_division = NhlApi.team_standings(ENV["NHL_TEAM_ABBREVIATION"])[:division_name]
+      my_division = Nhl::StandingsClient.team(ENV["NHL_TEAM_ABBREVIATION"])[:division_name]
       division_teams = sort_teams_in_division(standings, my_division)
       post = format_standings(my_division, division_teams)
       RodTheBot::Post.perform_async(post)

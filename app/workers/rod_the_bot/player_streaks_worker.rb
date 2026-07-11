@@ -74,7 +74,7 @@ module RodTheBot
     end
 
     def roster
-      @roster ||= NhlApi.roster(ENV["NHL_TEAM_ABBREVIATION"])
+      @roster ||= Nhl::Roster.for(ENV["NHL_TEAM_ABBREVIATION"])
     end
 
     def get_player_recent_games(player_id)

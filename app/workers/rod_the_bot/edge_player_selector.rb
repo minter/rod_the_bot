@@ -10,7 +10,7 @@ module RodTheBot
       return [] if game_ids.empty?
 
       # Get current roster
-      roster = NhlApi.roster(team_abbrev)
+      roster = Nhl::Roster.for(team_abbrev)
       roster_player_ids = roster.keys.map(&:to_i)
 
       # Track player stats in recent games

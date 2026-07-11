@@ -13,8 +13,8 @@ class RodTheBot::EdgeTeamSpeedWorkerTest < ActiveSupport::TestCase
 
   test "perform creates post with team speed data" do
     game_id = 2025020660
-    NhlApi.stubs(:roster).with("CAR").returns({8482093 => {}})
-    NhlApi.stubs(:roster).with("NJD").returns({8477015 => {}})
+    Nhl::Roster.stubs(:for).with("CAR").returns({8482093 => {}})
+    Nhl::Roster.stubs(:for).with("NJD").returns({8477015 => {}})
 
     VCR.use_cassette("edge_team_speed_#{game_id}") do
       @worker.perform(game_id)
@@ -61,8 +61,8 @@ class RodTheBot::EdgeTeamSpeedWorkerTest < ActiveSupport::TestCase
 
   test "perform includes player headshots when available" do
     game_id = 2025020660
-    NhlApi.stubs(:roster).with("CAR").returns({8482093 => {}})
-    NhlApi.stubs(:roster).with("NJD").returns({8477015 => {}})
+    Nhl::Roster.stubs(:for).with("CAR").returns({8482093 => {}})
+    Nhl::Roster.stubs(:for).with("NJD").returns({8477015 => {}})
 
     VCR.use_cassette("edge_team_speed_#{game_id}") do
       @worker.perform(game_id)

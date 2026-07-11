@@ -165,9 +165,9 @@ class RodTheBot::SchedulerTest < ActiveSupport::TestCase
     Nhl::SeasonCalendar.stubs(:preseason?).returns(false)
     Nhl::SeasonCalendar.stubs(:postseason?).returns(true)
     Nhl::ScheduleClient.stubs(:todays_game).returns(game)
-    NhlApi.stubs(:team_standings).with("CAR").returns({team_name: "Carolina Hurricanes"})
-    NhlApi.stubs(:team_standings).with("OTT").returns({team_name: "Ottawa Senators"})
-    NhlApi.stubs(:playoff_seed_labels).returns({"CAR" => "M1", "OTT" => "WC2"})
+    Nhl::StandingsClient.stubs(:team).with("CAR").returns({team_name: "Carolina Hurricanes"})
+    Nhl::StandingsClient.stubs(:team).with("OTT").returns({team_name: "Ottawa Senators"})
+    Nhl::StandingsClient.stubs(:playoff_seed_labels).returns({"CAR" => "M1", "OTT" => "WC2"})
     Nhl::ScheduleClient.stubs(:postseason_carousel).returns(carousel_stub("C", top: "CAR", bottom: "OTT"))
 
     Timecop.freeze(Date.new(2026, 4, 24)) do
@@ -219,9 +219,9 @@ class RodTheBot::SchedulerTest < ActiveSupport::TestCase
     Nhl::SeasonCalendar.stubs(:preseason?).returns(false)
     Nhl::SeasonCalendar.stubs(:postseason?).returns(true)
     Nhl::ScheduleClient.stubs(:todays_game).returns(game)
-    NhlApi.stubs(:team_standings).with("CAR").returns({team_name: "Carolina Hurricanes"})
-    NhlApi.stubs(:team_standings).with("OTT").returns({team_name: "Ottawa Senators"})
-    NhlApi.stubs(:playoff_seed_labels).returns({"CAR" => "M1", "OTT" => "WC2"})
+    Nhl::StandingsClient.stubs(:team).with("CAR").returns({team_name: "Carolina Hurricanes"})
+    Nhl::StandingsClient.stubs(:team).with("OTT").returns({team_name: "Ottawa Senators"})
+    Nhl::StandingsClient.stubs(:playoff_seed_labels).returns({"CAR" => "M1", "OTT" => "WC2"})
     Nhl::ScheduleClient.stubs(:postseason_carousel).returns(carousel_stub("C", top: "CAR", bottom: "OTT"))
 
     Timecop.freeze(Date.new(2026, 4, 18)) do
@@ -260,9 +260,9 @@ class RodTheBot::SchedulerTest < ActiveSupport::TestCase
     Nhl::SeasonCalendar.stubs(:preseason?).returns(false)
     Nhl::SeasonCalendar.stubs(:postseason?).returns(true)
     Nhl::ScheduleClient.stubs(:todays_game).returns(game)
-    NhlApi.stubs(:team_standings).with("CAR").returns({team_name: "Carolina Hurricanes"})
-    NhlApi.stubs(:team_standings).with("OTT").returns({team_name: "Ottawa Senators"})
-    NhlApi.stubs(:playoff_seed_labels).returns({})
+    Nhl::StandingsClient.stubs(:team).with("CAR").returns({team_name: "Carolina Hurricanes"})
+    Nhl::StandingsClient.stubs(:team).with("OTT").returns({team_name: "Ottawa Senators"})
+    Nhl::StandingsClient.stubs(:playoff_seed_labels).returns({})
     Nhl::ScheduleClient.stubs(:postseason_carousel).returns(carousel_stub("C", top: "CAR", bottom: "OTT"))
 
     Timecop.freeze(Date.new(2026, 4, 18)) do
@@ -296,11 +296,11 @@ class RodTheBot::SchedulerTest < ActiveSupport::TestCase
     Nhl::SeasonCalendar.stubs(:preseason?).returns(false)
     Nhl::SeasonCalendar.stubs(:postseason?).returns(true)
     Nhl::ScheduleClient.stubs(:todays_game).returns(game)
-    NhlApi.stubs(:team_standings).with("CAR").returns({
+    Nhl::StandingsClient.stubs(:team).with("CAR").returns({
       team_name: "Carolina Hurricanes", wins: 40, losses: 20, ot: 5,
       points: 85, division_rank: 1, division_name: "Metropolitan"
     })
-    NhlApi.stubs(:team_standings).with("OTT").returns({
+    Nhl::StandingsClient.stubs(:team).with("OTT").returns({
       team_name: "Ottawa Senators", wins: 38, losses: 25, ot: 4,
       points: 80, division_rank: 5, division_name: "Atlantic"
     })
@@ -340,9 +340,9 @@ class RodTheBot::SchedulerTest < ActiveSupport::TestCase
     Nhl::SeasonCalendar.stubs(:preseason?).returns(false)
     Nhl::SeasonCalendar.stubs(:postseason?).returns(true)
     Nhl::ScheduleClient.stubs(:todays_game).returns(game)
-    NhlApi.stubs(:team_standings).with("CAR").returns({team_name: "Carolina Hurricanes"})
-    NhlApi.stubs(:team_standings).with("OTT").returns({team_name: "Ottawa Senators"})
-    NhlApi.stubs(:playoff_seed_labels).returns({"CAR" => "M1", "OTT" => "WC2"})
+    Nhl::StandingsClient.stubs(:team).with("CAR").returns({team_name: "Carolina Hurricanes"})
+    Nhl::StandingsClient.stubs(:team).with("OTT").returns({team_name: "Ottawa Senators"})
+    Nhl::StandingsClient.stubs(:playoff_seed_labels).returns({"CAR" => "M1", "OTT" => "WC2"})
     Nhl::ScheduleClient.stubs(:postseason_carousel).returns(carousel_stub("C", top: "CAR", bottom: "OTT"))
 
     Timecop.freeze(Date.new(2026, 4, 20)) do
@@ -379,9 +379,9 @@ class RodTheBot::SchedulerTest < ActiveSupport::TestCase
     Nhl::SeasonCalendar.stubs(:preseason?).returns(false)
     Nhl::SeasonCalendar.stubs(:postseason?).returns(true)
     Nhl::ScheduleClient.stubs(:todays_game).returns(game)
-    NhlApi.stubs(:team_standings).with("CAR").returns({team_name: "Carolina Hurricanes"})
-    NhlApi.stubs(:team_standings).with("OTT").returns({team_name: "Ottawa Senators"})
-    NhlApi.stubs(:playoff_seed_labels).returns({})
+    Nhl::StandingsClient.stubs(:team).with("CAR").returns({team_name: "Carolina Hurricanes"})
+    Nhl::StandingsClient.stubs(:team).with("OTT").returns({team_name: "Ottawa Senators"})
+    Nhl::StandingsClient.stubs(:playoff_seed_labels).returns({})
     Nhl::ScheduleClient.stubs(:postseason_carousel).returns(nil)
 
     Timecop.freeze(Date.new(2026, 4, 20)) do

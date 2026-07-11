@@ -13,8 +13,8 @@ class RodTheBot::EdgeTeamShotSpeedWorkerTest < ActiveSupport::TestCase
 
   test "perform creates post with shot speed data" do
     game_id = 2025020660
-    NhlApi.stubs(:roster).with("CAR").returns({8482100 => {}})
-    NhlApi.stubs(:roster).with("NJD").returns({8479772 => {}})
+    Nhl::Roster.stubs(:for).with("CAR").returns({8482100 => {}})
+    Nhl::Roster.stubs(:for).with("NJD").returns({8479772 => {}})
 
     VCR.use_cassette("edge_team_shot_speed_#{game_id}") do
       @worker.perform(game_id)
@@ -60,8 +60,8 @@ class RodTheBot::EdgeTeamShotSpeedWorkerTest < ActiveSupport::TestCase
   test "filters out traded players and shows next active player" do
     game_id = 2025020660
     # Simulate Nikishin being traded - CAR roster only has a different player
-    NhlApi.stubs(:roster).with("CAR").returns({8479407 => {}})
-    NhlApi.stubs(:roster).with("NJD").returns({8479772 => {}})
+    Nhl::Roster.stubs(:for).with("CAR").returns({8479407 => {}})
+    Nhl::Roster.stubs(:for).with("NJD").returns({8479772 => {}})
 
     VCR.use_cassette("edge_team_shot_speed_#{game_id}") do
       @worker.perform(game_id)
@@ -75,8 +75,8 @@ class RodTheBot::EdgeTeamShotSpeedWorkerTest < ActiveSupport::TestCase
 
   test "perform includes player headshots when available" do
     game_id = 2025020660
-    NhlApi.stubs(:roster).with("CAR").returns({8482100 => {}})
-    NhlApi.stubs(:roster).with("NJD").returns({8479772 => {}})
+    Nhl::Roster.stubs(:for).with("CAR").returns({8482100 => {}})
+    Nhl::Roster.stubs(:for).with("NJD").returns({8479772 => {}})
 
     VCR.use_cassette("edge_team_shot_speed_#{game_id}") do
       @worker.perform(game_id)

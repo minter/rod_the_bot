@@ -14,7 +14,7 @@ module RodTheBot
       return unless speed_data && speed_data["topSkatingSpeeds"]&.any?
 
       # Get current roster to verify players are active
-      roster = NhlApi.roster(ENV["NHL_TEAM_ABBREVIATION"])
+      roster = Nhl::Roster.for(ENV["NHL_TEAM_ABBREVIATION"])
       roster_ids = roster.keys.map(&:to_i)
 
       # Format and post

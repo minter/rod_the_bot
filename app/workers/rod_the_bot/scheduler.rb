@@ -36,8 +36,8 @@ module RodTheBot
 
       game_id = @game["id"]
 
-      away_standings = NhlApi.team_standings(away["abbrev"])
-      home_standings = NhlApi.team_standings(home["abbrev"])
+      away_standings = Nhl::StandingsClient.team(away["abbrev"])
+      home_standings = Nhl::StandingsClient.team(home["abbrev"])
       away_logo_url = @game["awayTeam"]["logo"]
       home_logo_url = @game["homeTeam"]["logo"]
       media = media(your_team)
@@ -65,7 +65,7 @@ module RodTheBot
             📺 #{tv}
           POST
         elsif Nhl::SeasonCalendar.postseason? && @game["seriesStatus"]
-          seed_labels = NhlApi.playoff_seed_labels
+          seed_labels = Nhl::StandingsClient.playoff_seed_labels
           away_seed = seed_labels[away["abbrev"]] ? "(#{seed_labels[away["abbrev"]]}) " : ""
           home_seed = seed_labels[home["abbrev"]] ? "(#{seed_labels[home["abbrev"]]}) " : ""
           series_status = @game["seriesStatus"].merge(series_seed_abbrevs(@game["seriesStatus"]["seriesLetter"]))

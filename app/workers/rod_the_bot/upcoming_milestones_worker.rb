@@ -28,7 +28,7 @@ module RodTheBot
 
     def get_current_roster_player_ids
       # Get current team roster
-      roster = NhlApi.roster(ENV["NHL_TEAM_ABBREVIATION"])
+      roster = Nhl::Roster.for(ENV["NHL_TEAM_ABBREVIATION"])
       roster.keys.map(&:to_s)
     end
 

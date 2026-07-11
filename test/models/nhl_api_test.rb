@@ -73,17 +73,18 @@ class NhlApiTest < ActiveSupport::TestCase
     end
   end
 
-  test "fetch_roster" do
+  test "normalized roster" do
     VCR.use_cassette("nhl_roster_#{@team_abbreviation}") do
-      roster = NhlApi.fetch_roster(@team_abbreviation)
+      roster = Nhl::Roster.for(@team_abbreviation)
       assert_kind_of Hash, roster
-      assert_includes roster.keys, "forwards"
+      assert roster.keys.all? { |id| id.is_a?(Integer) }
+      assert roster.values.all? { |player| player[:fullName].present? }
     end
   end
 
   test "fetch_standings" do
     VCR.use_cassette("nhl_standings") do
-      standings = NhlApi.fetch_standings
+      standings = Nhl::StandingsClient.standings
       assert_kind_of Hash, standings
       assert_includes standings.keys, "standings"
     end
@@ -109,7 +110,7 @@ class NhlApiTest < ActiveSupport::TestCase
 
   test "roster" do
     VCR.use_cassette("nhl_roster_#{@team_abbreviation}") do
-      roster = NhlApi.roster(@team_abbreviation)
+      roster = Nhl::Roster.for(@team_abbreviation)
       assert_kind_of Hash, roster
       assert roster.values.all? { |player| player.key?(:fullName) }
     end
@@ -117,7 +118,7 @@ class NhlApiTest < ActiveSupport::TestCase
 
   test "team_standings" do
     VCR.use_cassette("nhl_standings") do
-      standings = NhlApi.team_standings(@team_abbreviation)
+      standings = Nhl::StandingsClient.team(@team_abbreviation)
       assert_kind_of Hash, standings
       assert_includes standings.keys, :division_name
     end

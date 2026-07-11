@@ -12,7 +12,7 @@ module RodTheBot
       current_series = fetch_current_series(rounds)
       return if current_series.blank?
 
-      seed_labels = NhlApi.playoff_seed_labels
+      seed_labels = Nhl::StandingsClient.playoff_seed_labels
       post = format_series(current_series, seed_labels)
       RodTheBot::Post.perform_async(post)
     end

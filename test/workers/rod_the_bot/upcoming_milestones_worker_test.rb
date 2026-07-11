@@ -43,7 +43,7 @@ class RodTheBot::UpcomingMilestonesWorkerTest < ActiveSupport::TestCase
       Nhl::ScheduleClient.stubs(:todays_game).returns({"gameScheduleState" => "OK"})
 
       # Get actual roster to use real player IDs
-      roster = NhlApi.roster("CAR")
+      roster = Nhl::Roster.for("CAR")
       real_player_ids = roster.keys.map(&:to_s)
 
       # Mock the milestone data for Carolina Hurricanes using real player IDs
@@ -218,7 +218,7 @@ class RodTheBot::UpcomingMilestonesWorkerTest < ActiveSupport::TestCase
       Nhl::ScheduleClient.stubs(:todays_game).returns({"gameScheduleState" => "OK"})
 
       # Get actual roster to use real player IDs
-      roster = NhlApi.roster("CAR")
+      roster = Nhl::Roster.for("CAR")
       real_player_ids = roster.keys.map(&:to_s)
 
       # Mock many milestones to test threading using real player IDs
