@@ -45,6 +45,22 @@ class RodTheBot::PostTest < ActiveSupport::TestCase
     end
   end
 
+  def test_perform_reraises_posting_failures_and_preserves_video_for_retry
+    ENV["BLUESKY_ENABLED"] = "true"
+    video = Tempfile.new(["post-retry", ".mp4"])
+    video.close
+    @bsky.expects(:create_post).raises(StandardError, "temporary outage")
+
+    error = assert_raises(StandardError) do
+      @post.perform("test post", nil, nil, nil, [], video.path)
+    end
+
+    assert_equal "temporary outage", error.message
+    assert_path_exists video.path
+  ensure
+    video&.unlink
+  end
+
   def test_append_team_hashtags
     ENV["TEAM_HASHTAGS"] = "#team"
     result = @post.send(:append_team_hashtags, "test post")

@@ -165,15 +165,16 @@ class NhlVideoDownloadService
       output_path
     ]
 
-    # Redirect stderr to stdout and capture all output
-    output = `#{command.join(" ")} 2>&1`
+    # Pass arguments directly so remote URLs and local paths are never interpreted
+    # by a shell.
+    output, status = Open3.capture2e(*command)
 
-    if $?.success?
+    if status.success?
       Rails.logger.info "Video downloaded successfully to #{output_path}"
       output_path
     else
       Rails.logger.error "ffmpeg output: #{output}"
-      raise "ffmpeg failed with status #{$?.exitstatus}"
+      raise "ffmpeg failed with status #{status.exitstatus}"
     end
   end
 end

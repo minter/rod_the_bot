@@ -5,6 +5,7 @@ module RodTheBot
     attr_writer :bsky
 
     def perform(post, key = nil, parent_key = nil, embed_url = nil, embed_images = [], video_file_path = nil, root_key = nil)
+      completed = false
       post = append_team_hashtags(post)
       new_post = nil
 
@@ -38,11 +39,13 @@ module RodTheBot
       if ENV["DEBUG_POSTS"] == "true"
         log_post(post)
       end
+      completed = true
     rescue => e
       Rails.logger.error "Post: Failed to post to Bluesky: #{e.class} - #{e.message}\n#{e.backtrace&.first(5)&.join("\n")}"
+      raise
     ensure
-      # Always clean up video files to prevent accumulation
-      if video_file_path
+      # Preserve media when a post fails so Sidekiq can retry with the same file.
+      if completed && video_file_path
         begin
           File.unlink(video_file_path) if File.exist?(video_file_path)
         rescue => e

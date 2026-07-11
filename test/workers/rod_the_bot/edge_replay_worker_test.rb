@@ -81,6 +81,18 @@ class RodTheBot::EdgeReplayWorkerTest < ActiveSupport::TestCase
     # Skipping for now as it's an integration test
   end
 
+  test "downloaded EDGE JSON path includes the game id" do
+    response = mock("response")
+    response.stubs(:is_a?).with(Net::HTTPSuccess).returns(true)
+    response.stubs(:body).returns("[]")
+    Net::HTTP.any_instance.stubs(:request).returns(response)
+
+    path = @worker.send(:download_edge_json, 2025020660, 544, @output_dir)
+    @created_files << path
+
+    assert_equal @output_dir.join("2025020660_ev544.json"), path
+  end
+
   def teardown
     Sidekiq::Worker.clear_all
     @created_files.each do |file|

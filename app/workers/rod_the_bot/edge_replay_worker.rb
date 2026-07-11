@@ -98,7 +98,7 @@ module RodTheBot
       season_slug = season_slug_from_game_id(game_id)
       url = "https://wsr.nhle.com/sprites/#{season_slug}/#{game_id}/ev#{event_id}.json"
 
-      json_path = output_dir.join("ev#{event_id}.json")
+      json_path = output_dir.join("#{game_id}_ev#{event_id}.json")
 
       # Use NHL.com-like headers to avoid Cloudflare blocking
       uri = URI.parse(url)
