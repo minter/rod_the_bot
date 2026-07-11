@@ -111,61 +111,17 @@ module RodTheBot
 
       return if milestone_chunks.empty?
 
-      # Post first chunk as main post
-      first_chunk = milestone_chunks.first
-      first_key = "#{base_key}:1"
-      RodTheBot::Post.perform_async(first_chunk, first_key)
-
-      # Post remaining chunks as replies
-      milestone_chunks[1..].each_with_index do |chunk, index|
-        chunk_key = "#{base_key}:#{index + 2}"
-        parent_key = (index == 0) ? first_key : "#{base_key}:#{index + 1}"
-        RodTheBot::Post.perform_in(((index + 1) * 30).seconds, chunk, chunk_key, parent_key)
-      end
+      PostThread.enqueue(milestone_chunks, key: base_key)
     end
 
     def split_milestones_into_chunks(milestones, season_type)
-      chunks = []
-      current_chunk = []
-
-      # Account for team hashtags that will be added by Post worker
-      hashtags = ENV["TEAM_HASHTAGS"] || ""
-      hashtag_length = hashtags.empty? ? 0 : hashtags.length + 1 # +1 for newline
-      max_content_length = 300 - hashtag_length
-
       # Header for first chunk - only show season type for playoffs
       header = if season_type == "Playoffs"
         "🎯 Upcoming Milestones (#{season_type}):\n\n"
       else
         "🎯 Upcoming Milestones:\n\n"
       end
-      current_chunk_size = header.length
-      current_chunk << header
-
-      milestones.each do |milestone|
-        milestone_line = format_milestone_line(milestone)
-        line_length = milestone_line.length # Already includes newline
-
-        # If adding this milestone would exceed the limit, start a new chunk
-        if current_chunk_size + line_length > max_content_length && !current_chunk.empty?
-          # Finish current chunk (no extra newline - Post worker will add it)
-          chunks << current_chunk.join
-
-          # Start new chunk
-          current_chunk = []
-          current_chunk_size = 0
-        end
-
-        current_chunk << milestone_line
-        current_chunk_size += line_length
-      end
-
-      # Add final chunk if it has content (no extra newline - Post worker will add it)
-      if !current_chunk.empty?
-        chunks << current_chunk.join
-      end
-
-      chunks
+      PostThread.split_lines(milestones.map { |milestone| format_milestone_line(milestone) }, header: header)
     end
 
     def format_milestone_line(milestone)

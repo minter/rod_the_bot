@@ -205,61 +205,17 @@ module RodTheBot
 
       return if streak_chunks.empty?
 
-      # Post first chunk as main post
-      first_chunk = streak_chunks.first
-      first_key = "#{base_key}:1"
-      RodTheBot::Post.perform_async(first_chunk, first_key)
-
-      # Post remaining chunks as replies
-      streak_chunks.drop(1).each_with_index do |chunk, index|
-        chunk_key = "#{base_key}:#{index + 2}"
-        parent_key = (index == 0) ? first_key : "#{base_key}:#{index + 1}"
-        RodTheBot::Post.perform_in(((index + 1) * 30).seconds, chunk, chunk_key, parent_key)
-      end
+      PostThread.enqueue(streak_chunks, key: base_key)
     end
 
     def split_streaks_into_chunks(streaks, season_type)
-      chunks = []
-      current_chunk = []
-
-      # Account for team hashtags that will be added by Post worker
-      hashtags = ENV["TEAM_HASHTAGS"] || ""
-      hashtag_length = hashtags.empty? ? 0 : hashtags.length + 1 # +1 for newline
-      max_content_length = 300 - hashtag_length
-
       # Header for first chunk
       header = if season_type == "Playoffs"
         "🔥 Active Streaks (#{season_type}):\n\n"
       else
         "🔥 Active Streaks:\n\n"
       end
-      current_chunk_size = header.length
-      current_chunk << header
-
-      streaks.each do |streak|
-        streak_line = format_streak_line(streak)
-        line_length = streak_line.length # Already includes newline
-
-        # If adding this streak would exceed the limit, start a new chunk
-        if current_chunk_size + line_length > max_content_length && !current_chunk.empty?
-          # Finish current chunk
-          chunks << current_chunk.join
-
-          # Start new chunk
-          current_chunk = []
-          current_chunk_size = 0
-        end
-
-        current_chunk << streak_line
-        current_chunk_size += line_length
-      end
-
-      # Add final chunk if it has content
-      if !current_chunk.empty?
-        chunks << current_chunk.join
-      end
-
-      chunks
+      PostThread.split_lines(streaks.map { |streak| format_streak_line(streak) }, header: header)
     end
 
     def format_streak_line(streak)

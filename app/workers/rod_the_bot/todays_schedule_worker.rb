@@ -92,51 +92,11 @@ module RodTheBot
 
       return if game_chunks.empty?
 
-      # Post first chunk as main post
-      first_chunk = game_chunks.first
-      first_key = "#{base_key}:1"
-      RodTheBot::Post.perform_async(first_chunk, first_key)
-
-      # Post remaining chunks as replies
-      game_chunks[1..].each_with_index do |chunk, index|
-        chunk_key = "#{base_key}:#{index + 2}"
-        parent_key = (index == 0) ? first_key : "#{base_key}:#{index + 1}"
-        RodTheBot::Post.perform_in(((index + 1) * 30).seconds, chunk, chunk_key, parent_key)
-      end
+      PostThread.enqueue(game_chunks, key: base_key)
     end
 
     def split_games_into_chunks(games, base_text, max_content_length)
-      chunks = []
-      current_chunk = []
-      current_chunk_size = base_text.length
-
-      # Start with the base text
-      current_chunk << base_text
-
-      games.each do |game_line|
-        line_with_newline = "#{game_line}\n"
-        line_length = line_with_newline.length
-
-        # If adding this game would exceed the limit, start a new chunk
-        if current_chunk_size + line_length > max_content_length && !current_chunk.empty?
-          # Finish current chunk
-          chunks << current_chunk.join
-
-          # Start new chunk (no base text for continuation posts)
-          current_chunk = []
-          current_chunk_size = 0
-        end
-
-        current_chunk << line_with_newline
-        current_chunk_size += line_length
-      end
-
-      # Add final chunk if it has content
-      if !current_chunk.empty?
-        chunks << current_chunk.join
-      end
-
-      chunks
+      PostThread.split_lines(games.map { |game| "#{game}\n" }, header: base_text, limit: max_content_length)
     end
   end
 end

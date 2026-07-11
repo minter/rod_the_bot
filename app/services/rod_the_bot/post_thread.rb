@@ -28,6 +28,20 @@ module RodTheBot
       end
     end
 
+    def self.split_lines(lines, header: nil, limit: content_limit)
+      chunks = []
+      current = +header.to_s
+      lines.each do |line|
+        if current.present? && current.length + line.length > limit
+          chunks << current
+          current = +""
+        end
+        current << line
+      end
+      chunks << current if current.present?
+      chunks
+    end
+
     def self.content_limit
       hashtags = ENV["TEAM_HASHTAGS"].to_s
       CHARACTER_LIMIT - (hashtags.empty? ? 0 : hashtags.length + 1)
