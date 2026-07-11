@@ -1,6 +1,7 @@
 module RodTheBot
   class EdgeSpecialTeamsWorker
     include Sidekiq::Worker
+    include WorkerErrorHandling
 
     def perform(game_id = nil)
       return if Nhl::SeasonCalendar.preseason?
@@ -14,9 +15,7 @@ module RodTheBot
       post_text = format_special_teams_post(zone_data, opponent_zone_data, our_team_abbrev, opponent_team_abbrev)
       RodTheBot::Post.perform_async(post_text) if post_text
     rescue => e
-      Rails.logger.error("EdgeSpecialTeamsWorker error: #{e.message}")
-      Rails.logger.error(e.backtrace.join("\n"))
-      nil
+      retry_job(e, game_id: game_id, operation: "edge_special_teams")
     end
 
     private

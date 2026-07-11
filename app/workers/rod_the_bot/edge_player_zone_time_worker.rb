@@ -1,10 +1,11 @@
 module RodTheBot
   class EdgePlayerZoneTimeWorker
     include Sidekiq::Worker
+    include WorkerErrorHandling
     include EdgePlayerSelector
     include PlayerImageHelper
 
-    def perform(_game_id = nil)
+    def perform(game_id = nil)
       return if Nhl::SeasonCalendar.preseason?
 
       # Get eligible players (hot + elite zone control)
@@ -30,9 +31,7 @@ module RodTheBot
       post_text = format_zone_time_spotlight(selected_player, edge_data)
       RodTheBot::Post.perform_async(post_text, nil, nil, nil, [player_headshot]) if post_text
     rescue => e
-      Rails.logger.error("EdgePlayerZoneTimeWorker error: #{e.message}")
-      Rails.logger.error(e.backtrace.join("\n"))
-      nil
+      retry_job(e, game_id: game_id, operation: "edge_player_zone_time")
     end
 
     private

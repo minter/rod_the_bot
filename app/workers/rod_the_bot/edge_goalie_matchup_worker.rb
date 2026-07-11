@@ -1,6 +1,7 @@
 module RodTheBot
   class EdgeGoalieMatchupWorker
     include Sidekiq::Worker
+    include WorkerErrorHandling
     include PlayerImageHelper
 
     # Compare both starting goalies head-to-head
@@ -29,9 +30,7 @@ module RodTheBot
 
       RodTheBot::Post.perform_async(post_text, post_key, parent_key, nil, goalie_images)
     rescue => e
-      Rails.logger.error("EdgeGoalieMatchupWorker error: #{e.message}")
-      Rails.logger.error(e.backtrace.join("\n"))
-      nil
+      retry_job(e, game_id: game_id, player_id: our_goalie_id, opponent_player_id: opponent_goalie_id, operation: "edge_goalie_matchup")
     end
 
     private

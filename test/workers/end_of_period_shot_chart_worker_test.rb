@@ -36,10 +36,12 @@ class RodTheBot::EndOfPeriodShotChartWorkerTest < ActiveSupport::TestCase
     assert_equal 0, RodTheBot::Post.jobs.size
   end
 
-  def test_swallows_exceptions
+  def test_raises_exceptions_for_sidekiq_retry
     Nhl::GameClient.stubs(:play_by_play).raises(StandardError, "boom")
 
-    RodTheBot::EndOfPeriodShotChartWorker.new.perform(@game_id, 1)
+    assert_raises(StandardError) do
+      RodTheBot::EndOfPeriodShotChartWorker.new.perform(@game_id, 1)
+    end
     assert_equal 0, RodTheBot::Post.jobs.size
   end
 end

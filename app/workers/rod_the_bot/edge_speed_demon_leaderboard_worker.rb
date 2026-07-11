@@ -1,9 +1,10 @@
 module RodTheBot
   class EdgeSpeedDemonLeaderboardWorker
     include Sidekiq::Worker
+    include WorkerErrorHandling
     include PlayerImageHelper
 
-    def perform(_game_id = nil)
+    def perform(game_id = nil)
       return if Nhl::SeasonCalendar.preseason?
 
       # Get team ID from environment
@@ -25,9 +26,7 @@ module RodTheBot
         RodTheBot::Post.perform_async(post_text, nil, nil, nil, headshots)
       end
     rescue => e
-      Rails.logger.error("EdgeSpeedDemonLeaderboardWorker error: #{e.message}")
-      Rails.logger.error(e.backtrace.join("\n"))
-      nil
+      retry_job(e, game_id: game_id, operation: "edge_speed_leaderboard")
     end
 
     private

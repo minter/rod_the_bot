@@ -1,6 +1,7 @@
 module RodTheBot
   class ThreeMinuteRecapWorker
     include Sidekiq::Worker
+    include WorkerErrorHandling
 
     MAX_RETRIES = 6 # 1 hour max (6 retries * 10 minutes)
 
@@ -27,9 +28,9 @@ module RodTheBot
         RodTheBot::Post.perform_async(post, nil, nil, "https://www.nhl.com/video/#{away_code}-at-#{home_code}-recap-#{recap_id}")
       end
     rescue Nhl::RequestError => e
-      Rails.logger.error "ThreeMinuteRecapWorker: API error for game #{game_id}: #{e.message}"
+      retry_job(e, game_id: game_id, operation: "fetch_recap")
     rescue => e
-      Rails.logger.error "ThreeMinuteRecapWorker: Unexpected error for game #{game_id}: #{e.class} - #{e.message}\n#{e.backtrace&.first(5)&.join("\n")}"
+      retry_job(e, game_id: game_id, operation: "process_recap")
     end
 
     private

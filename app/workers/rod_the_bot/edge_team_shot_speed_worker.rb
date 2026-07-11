@@ -1,6 +1,7 @@
 module RodTheBot
   class EdgeTeamShotSpeedWorker
     include Sidekiq::Worker
+    include WorkerErrorHandling
     include PlayerImageHelper
 
     def perform(game_id = nil)
@@ -27,9 +28,7 @@ module RodTheBot
       post_text = format_team_shot_speed_post(shot_data, opponent_shot_data, our_team_abbrev, opponent_team_abbrev)
       RodTheBot::Post.perform_async(post_text, nil, nil, nil, headshots) if post_text
     rescue => e
-      Rails.logger.error("EdgeTeamShotSpeedWorker error: #{e.message}")
-      Rails.logger.error(e.backtrace.join("\n"))
-      nil
+      retry_job(e, game_id: game_id, operation: "edge_team_shot_speed")
     end
 
     private

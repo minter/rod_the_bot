@@ -1,6 +1,7 @@
 module RodTheBot
   class EndOfPeriodWorker
     include Sidekiq::Worker
+    include WorkerErrorHandling
     include ActiveSupport::Inflector
     include RodTheBot::PeriodFormatter
 
@@ -22,9 +23,9 @@ module RodTheBot
       RodTheBot::EndOfPeriodStatsWorker.perform_in(60, game_id, period_descriptor.fetch("number", 1))
       RodTheBot::EndOfPeriodShotChartWorker.perform_in(75, game_id, period_descriptor.fetch("number", 1))
     rescue Nhl::RequestError => e
-      Rails.logger.error "EndOfPeriodWorker: API error for game #{game_id}: #{e.message}"
+      retry_job(e, game_id: game_id, operation: "fetch_period_end")
     rescue => e
-      Rails.logger.error "EndOfPeriodWorker: Unexpected error for game #{game_id}: #{e.class} - #{e.message}\n#{e.backtrace&.first(5)&.join("\n")}"
+      retry_job(e, game_id: game_id, operation: "process_period_end")
     end
 
     private

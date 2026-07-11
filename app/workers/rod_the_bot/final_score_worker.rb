@@ -1,6 +1,7 @@
 module RodTheBot
   class FinalScoreWorker
     include Sidekiq::Worker
+    include WorkerErrorHandling
 
     attr_reader :feed
 
@@ -20,9 +21,9 @@ module RodTheBot
       RodTheBot::Post.perform_async(post)
       RodTheBot::EndOfPeriodStatsWorker.perform_async(game_id, "")
     rescue Nhl::RequestError => e
-      Rails.logger.error "FinalScoreWorker: API error for game #{game_id}: #{e.message}"
+      retry_job(e, game_id: game_id, operation: "fetch_final_score")
     rescue => e
-      Rails.logger.error "FinalScoreWorker: Unexpected error for game #{game_id}: #{e.class} - #{e.message}\n#{e.backtrace&.first(5)&.join("\n")}"
+      retry_job(e, game_id: game_id, operation: "process_final_score")
     end
 
     private

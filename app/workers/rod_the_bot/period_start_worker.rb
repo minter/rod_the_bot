@@ -1,6 +1,7 @@
 module RodTheBot
   class PeriodStartWorker
     include Sidekiq::Worker
+    include WorkerErrorHandling
     include ActiveSupport::Inflector
     include RodTheBot::PeriodFormatter
 
@@ -26,9 +27,9 @@ module RodTheBot
         RodTheBot::Post.perform_async(post)
       end
     rescue Nhl::RequestError => e
-      Rails.logger.error "PeriodStartWorker: API error for game #{game_id}: #{e.message}"
+      retry_job(e, game_id: game_id, operation: "fetch_period_start")
     rescue => e
-      Rails.logger.error "PeriodStartWorker: Unexpected error for game #{game_id}: #{e.class} - #{e.message}\n#{e.backtrace&.first(5)&.join("\n")}"
+      retry_job(e, game_id: game_id, operation: "process_period_start")
     end
 
     def format_post(period_descriptor, home, away)

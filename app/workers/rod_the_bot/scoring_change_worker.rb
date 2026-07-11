@@ -1,6 +1,7 @@
 module RodTheBot
   class ScoringChangeWorker
     include Sidekiq::Worker
+    include WorkerErrorHandling
 
     def perform(game_id, play_id, original_play, redis_key)
       # Determine parent_key: Use most recent reply if it exists, otherwise use goal post (root)
@@ -37,9 +38,9 @@ module RodTheBot
       # Post as reply - Post worker will update last_reply_key after successful post
       RodTheBot::Post.perform_async(post, scoring_key, parent_key, nil, ScoringChange::Images.for(@play), nil, redis_key)
     rescue Nhl::RequestError => e
-      Rails.logger.error "ScoringChangeWorker: API error for game #{game_id}, play #{play_id}: #{e.message}"
+      retry_job(e, game_id: game_id, play_id: play_id, operation: "fetch_scoring_change")
     rescue => e
-      Rails.logger.error "ScoringChangeWorker: Unexpected error for game #{game_id}, play #{play_id}: #{e.class} - #{e.message}\n#{e.backtrace&.first(5)&.join("\n")}"
+      retry_job(e, game_id: game_id, play_id: play_id, operation: "process_scoring_change")
     end
 
     private

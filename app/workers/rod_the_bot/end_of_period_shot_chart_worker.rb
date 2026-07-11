@@ -1,6 +1,7 @@
 module RodTheBot
   class EndOfPeriodShotChartWorker
     include Sidekiq::Worker
+    include WorkerErrorHandling
 
     sidekiq_options retry: false
 
@@ -28,9 +29,9 @@ module RodTheBot
         nil
       )
     rescue Nhl::RequestError => e
-      Rails.logger.error "EndOfPeriodShotChartWorker: API error for game #{game_id}: #{e.message}"
+      retry_job(e, game_id: game_id, period: period_number, operation: "fetch_shot_chart")
     rescue => e
-      Rails.logger.error "EndOfPeriodShotChartWorker: Unexpected error for game #{game_id}: #{e.class} - #{e.message}\n#{e.backtrace&.first(5)&.join("\n")}"
+      retry_job(e, game_id: game_id, period: period_number, operation: "render_shot_chart")
     end
 
     private

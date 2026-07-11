@@ -1,6 +1,7 @@
 module RodTheBot
   class EdgeGoalieWorker
     include Sidekiq::Worker
+    include WorkerErrorHandling
     include PlayerImageHelper
 
     # Post EDGE stats for the starting goalie of our team
@@ -26,9 +27,7 @@ module RodTheBot
 
       RodTheBot::Post.perform_async(post_text, post_key, nil, nil, [goalie_headshot])
     rescue => e
-      Rails.logger.error("EdgeGoalieWorker error: #{e.message}")
-      Rails.logger.error(e.backtrace.join("\n"))
-      nil
+      retry_job(e, game_id: game_id, player_id: goalie_player_id, operation: "edge_goalie")
     end
 
     private

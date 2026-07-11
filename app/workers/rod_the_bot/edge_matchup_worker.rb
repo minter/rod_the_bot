@@ -1,6 +1,7 @@
 module RodTheBot
   class EdgeMatchupWorker
     include Sidekiq::Worker
+    include WorkerErrorHandling
 
     def perform(game_id)
       return if Nhl::SeasonCalendar.preseason?
@@ -48,9 +49,7 @@ module RodTheBot
 
       RodTheBot::Post.perform_async(post_text) if post_text && post_text.length <= max_content_length
     rescue => e
-      Rails.logger.error("EdgeMatchupWorker error: #{e.message}")
-      Rails.logger.error(e.backtrace.join("\n"))
-      nil
+      retry_job(e, game_id: game_id, operation: "edge_matchup")
     end
 
     private

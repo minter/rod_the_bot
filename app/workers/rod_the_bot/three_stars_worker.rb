@@ -1,6 +1,7 @@
 module RodTheBot
   class ThreeStarsWorker
     include Sidekiq::Worker
+    include WorkerErrorHandling
     attr_reader :feed
 
     MAX_RETRIES = 15 # 15 minutes max (15 retries * 60 seconds)
@@ -19,9 +20,9 @@ module RodTheBot
         Rails.logger.warn "ThreeStarsWorker: Three stars data unavailable for game #{game_id} after #{retry_count} retries. Giving up."
       end
     rescue Nhl::RequestError => e
-      Rails.logger.error "ThreeStarsWorker: API error for game #{game_id}: #{e.message}"
+      retry_job(e, game_id: game_id, operation: "fetch_three_stars")
     rescue => e
-      Rails.logger.error "ThreeStarsWorker: Unexpected error for game #{game_id}: #{e.class} - #{e.message}\n#{e.backtrace&.first(5)&.join("\n")}"
+      retry_job(e, game_id: game_id, operation: "process_three_stars")
     end
 
     private

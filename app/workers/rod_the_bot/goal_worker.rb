@@ -1,6 +1,7 @@
 module RodTheBot
   class GoalWorker
     include Sidekiq::Worker
+    include WorkerErrorHandling
 
     def perform(game_id, play)
       @game_id = game_id
@@ -91,9 +92,9 @@ module RodTheBot
       # Mark as completed only after successfully scheduling all workers
       REDIS.set(completion_key, "true", ex: 172800)
     rescue Nhl::RequestError => e
-      Rails.logger.error "GoalWorker: API error for game #{@game_id}, play #{play["eventId"]}: #{e.message}"
+      retry_job(e, game_id: @game_id, play_id: play["eventId"], operation: "fetch_goal")
     rescue => e
-      Rails.logger.error "GoalWorker: Unexpected error for game #{@game_id}, play #{play["eventId"]}: #{e.class} - #{e.message}\n#{e.backtrace&.first(5)&.join("\n")}"
+      retry_job(e, game_id: @game_id, play_id: play["eventId"], operation: "process_goal")
     end
 
     def post_builder

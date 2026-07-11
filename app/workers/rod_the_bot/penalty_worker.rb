@@ -1,6 +1,7 @@
 module RodTheBot
   class PenaltyWorker
     include Sidekiq::Worker
+    include WorkerErrorHandling
 
     MAX_DESC_RETRIES = 12
 
@@ -42,9 +43,9 @@ module RodTheBot
       headshot = Nhl::PlayerClient.landing(main_player_id)&.dig("headshot")
       RodTheBot::Post.perform_async(post, nil, nil, nil, headshot ? [headshot] : [])
     rescue Nhl::RequestError => e
-      Rails.logger.error "PenaltyWorker: API error for game #{game_id}: #{e.message}"
+      retry_job(e, game_id: game_id, play_id: play&.dig("eventId"), operation: "fetch_penalty")
     rescue => e
-      Rails.logger.error "PenaltyWorker: Unexpected error for game #{game_id}: #{e.class} - #{e.message}\n#{e.backtrace&.first(5)&.join("\n")}"
+      retry_job(e, game_id: game_id, play_id: play&.dig("eventId"), operation: "process_penalty")
     end
 
     def format_penalty_name(desc_key)
