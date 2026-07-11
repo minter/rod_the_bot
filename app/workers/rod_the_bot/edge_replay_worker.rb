@@ -96,35 +96,7 @@ module RodTheBot
 
     def generate_replay(input_json_path, output_path, options = {})
       options = default_options.merge(options)
-
-      frames = JSON.parse(File.read(input_json_path))
-      unless frames.is_a?(Array) && frames.any?
-        Rails.logger.error "Invalid EDGE JSON format"
-        return nil
-      end
-
-      start_idx = [options[:start].to_i, 0].max
-      end_idx = options[:frames] ? [start_idx + options[:frames].to_i, frames.length].min : frames.length
-      selected = frames[start_idx...end_idx] || []
-
-      if selected.empty?
-        Rails.logger.error "No frames to render"
-        return nil
-      end
-
-      Dir.mktmpdir("edge_replay_") do |tmpdir|
-        frames_dir = File.join(tmpdir, "frames")
-        FileUtils.mkdir_p(frames_dir)
-
-        render_frames_imagemagick!(selected, options, frames_dir, tmpdir)
-
-        tmp_video = File.join(tmpdir, "video.mp4")
-        encode_video(frames_dir, tmp_video, options[:fps])
-
-        FileUtils.mv(tmp_video, output_path)
-      end
-
-      output_path
+      generator.generate(input_json_path, output_path, options: options)
     end
 
     def render_frames_imagemagick!(selected, options, frames_dir, tmpdir)
@@ -348,22 +320,6 @@ module RodTheBot
       run_cmd!(cmd, "Composite rink and logo onto canvas")
     end
 
-    def encode_video(frames_dir, output_path, fps)
-      run_cmd!(
-        [
-          "ffmpeg", "-y", "-hide_banner", "-loglevel", "error",
-          "-framerate", fps.to_s,
-          "-i", File.join(frames_dir, "frame_%05d.png"),
-          "-c:v", "libx264",
-          "-pix_fmt", "yuv420p",
-          "-movflags", "+faststart",
-          "-vf", "scale=trunc(iw/2)*2:trunc(ih/2)*2",
-          output_path
-        ],
-        "ffmpeg encode"
-      )
-    end
-
     # Helper methods from script
 
     def puck_entity?(ent)
@@ -459,11 +415,20 @@ module RodTheBot
       @post_formatter ||= EdgeReplay::PostFormatter.new
     end
 
-    def run_cmd!(cmd, label)
-      stdout, status = Open3.capture2e(*cmd)
-      return if status.success?
+    def encoder
+      @encoder ||= EdgeReplay::Encoder.new(command_runner: command_runner)
+    end
 
-      raise "#{label} failed:\n#{stdout}"
+    def generator
+      @generator ||= EdgeReplay::Generator.new(renderer: method(:render_frames_imagemagick!), encoder: encoder)
+    end
+
+    def command_runner
+      @command_runner ||= EdgeReplay::CommandRunner.new
+    end
+
+    def run_cmd!(cmd, label)
+      command_runner.run(cmd, label: label)
     end
   end
 end
