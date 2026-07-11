@@ -37,7 +37,11 @@ module Nhl
       end
 
       def roster(game_id)
-        GameClient.play_by_play(game_id).fetch("rosterSpots", []).to_h do |player|
+        roster_from_feed(GameClient.play_by_play(game_id))
+      end
+
+      def roster_from_feed(feed)
+        feed.fetch("rosterSpots", []).to_h do |player|
           [player["playerId"], {
             team_id: player["teamId"], number: player["sweaterNumber"],
             name: "#{player.dig("firstName", "default")} #{player.dig("lastName", "default")}"
