@@ -26,7 +26,7 @@ class RodTheBot::ThreeMinuteRecapWorkerTest < ActiveSupport::TestCase
 
     Nhl::GameClient.stubs(:boxscore).returns(mock_boxscore)
     Nhl::GameClient.stubs(:right_rail).returns(mock_right_rail)
-    NhlApi.stubs(:fetch_league_schedule).returns(mock_schedule)
+    Nhl::ScheduleClient.stubs(:league_schedule).returns(mock_schedule)
 
     assert_difference -> { RodTheBot::Post.jobs.size }, 1 do
       assert_no_difference -> { RodTheBot::ThreeMinuteRecapWorker.jobs.size } do
@@ -54,7 +54,7 @@ class RodTheBot::ThreeMinuteRecapWorkerTest < ActiveSupport::TestCase
 
     Nhl::GameClient.stubs(:boxscore).returns(mock_boxscore)
     Nhl::GameClient.stubs(:right_rail).returns(mock_right_rail)
-    NhlApi.stubs(:fetch_league_schedule).returns(mock_schedule)
+    Nhl::ScheduleClient.stubs(:league_schedule).returns(mock_schedule)
 
     assert_no_difference -> { RodTheBot::Post.jobs.size } do
       assert_difference -> { RodTheBot::ThreeMinuteRecapWorker.jobs.size }, 1 do
@@ -82,7 +82,7 @@ class RodTheBot::ThreeMinuteRecapWorkerTest < ActiveSupport::TestCase
 
     Nhl::GameClient.stubs(:boxscore).returns(mock_boxscore)
     Nhl::GameClient.stubs(:right_rail).returns(mock_right_rail)
-    NhlApi.stubs(:fetch_league_schedule).returns(mock_schedule)
+    Nhl::ScheduleClient.stubs(:league_schedule).returns(mock_schedule)
 
     assert_no_difference -> { RodTheBot::Post.jobs.size } do
       assert_no_difference -> { RodTheBot::ThreeMinuteRecapWorker.jobs.size } do
@@ -98,7 +98,7 @@ class RodTheBot::ThreeMinuteRecapWorkerTest < ActiveSupport::TestCase
 
     Nhl::GameClient.stubs(:boxscore).returns(mock_boxscore)
     Nhl::GameClient.stubs(:right_rail).returns(mock_right_rail)
-    NhlApi.stubs(:fetch_league_schedule).returns(mock_schedule)
+    Nhl::ScheduleClient.stubs(:league_schedule).returns(mock_schedule)
 
     assert_no_difference -> { RodTheBot::Post.jobs.size } do
       assert_no_difference -> { RodTheBot::ThreeMinuteRecapWorker.jobs.size } do

@@ -67,7 +67,7 @@ class NhlApiTest < ActiveSupport::TestCase
   test "fetch_team_schedule" do
     date = "2023-11-30"
     VCR.use_cassette("nhl_schedule_#{date}") do
-      schedule = NhlApi.fetch_team_schedule(date: date)
+      schedule = Nhl::ScheduleClient.team_schedule(date: date)
       assert_kind_of Hash, schedule
       assert_includes schedule.keys, "games"
     end
@@ -92,7 +92,7 @@ class NhlApiTest < ActiveSupport::TestCase
   test "fetch_scores" do
     date = "2023-11-29"
     VCR.use_cassette("nhl_scores_#{date}") do
-      scores = NhlApi.fetch_scores(date: date)
+      scores = Nhl::ScheduleClient.scores(date: date)
       assert_kind_of Array, scores
       assert scores.all? { |game| game["gameDate"] == date }
     end
@@ -101,7 +101,7 @@ class NhlApiTest < ActiveSupport::TestCase
   test "todays_game" do
     date = "2023-11-30"
     VCR.use_cassette("nhl_schedule_#{date}") do
-      game = NhlApi.todays_game(date: date)
+      game = Nhl::ScheduleClient.todays_game(date: date)
       assert_kind_of Hash, game
       assert_equal date, game["gameDate"]
     end

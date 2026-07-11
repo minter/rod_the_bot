@@ -46,7 +46,7 @@ module RodTheBot
       # Walk backwards through schedule to find completed games
       while recent_games.length < last_n && days_back < 30
         date = (Date.today - days_back.days).strftime("%Y-%m-%d")
-        schedule = NhlApi.fetch_team_schedule(date: date)
+        schedule = Nhl::ScheduleClient.team_schedule(date: date)
 
         if schedule && schedule["games"]
           completed = schedule["games"].select { |g| g["gameState"] == "OFF" || g["gameState"] == "FINAL" }

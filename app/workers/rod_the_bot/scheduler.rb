@@ -21,7 +21,7 @@ module RodTheBot
       else
         RodTheBot::DivisionStandingsWorker.perform_in(16.minutes)
       end
-      @game = NhlApi.todays_game
+      @game = Nhl::ScheduleClient.todays_game
 
       return if @game.nil? || @game["gameScheduleState"] != "OK"
 
@@ -171,7 +171,7 @@ module RodTheBot
     def self.game_stream_scheduled_today?
       return false if Nhl::SeasonCalendar.offseason?
 
-      game = NhlApi.todays_game
+      game = Nhl::ScheduleClient.todays_game
       return false if game.nil? || game["gameScheduleState"] != "OK"
 
       your_team_id = ENV["NHL_TEAM_ID"].to_i
@@ -190,7 +190,7 @@ module RodTheBot
     def series_seed_abbrevs(series_letter)
       return {} unless series_letter
 
-      carousel = NhlApi.fetch_postseason_carousel
+      carousel = Nhl::ScheduleClient.postseason_carousel
       return {} unless carousel
 
       series = (carousel["rounds"] || []).flat_map { |round| round["series"] || [] }

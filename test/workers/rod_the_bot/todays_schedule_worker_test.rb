@@ -44,7 +44,7 @@ class RodTheBot::TodaysScheduleWorkerTest < ActiveSupport::TestCase
   test "format_schedule with games" do
     VCR.use_cassette("nhl_schedule_20241008") do
       date = "2024-10-08"
-      schedule = NhlApi.fetch_league_schedule(date: date)
+      schedule = Nhl::ScheduleClient.league_schedule(date: date)
 
       formatted_schedule = @worker.send(:format_schedule, schedule, date)
 
@@ -63,7 +63,7 @@ class RodTheBot::TodaysScheduleWorkerTest < ActiveSupport::TestCase
   test "format_schedule with no games" do
     VCR.use_cassette("nhl_schedule_20241006") do
       date = "2024-10-06"
-      schedule = NhlApi.fetch_league_schedule(date: date)
+      schedule = Nhl::ScheduleClient.league_schedule(date: date)
 
       formatted_schedule = @worker.send(:format_schedule, schedule, date)
 
@@ -76,7 +76,7 @@ class RodTheBot::TodaysScheduleWorkerTest < ActiveSupport::TestCase
   test "format_game_time" do
     VCR.use_cassette("nhl_schedule_20241006") do
       date = "2024-10-06"
-      schedule = NhlApi.fetch_league_schedule(date: date)
+      schedule = Nhl::ScheduleClient.league_schedule(date: date)
       game = schedule["gameWeek"][2]["games"].first
       formatted_time = @worker.send(:format_game_time, game)
 
@@ -87,7 +87,7 @@ class RodTheBot::TodaysScheduleWorkerTest < ActiveSupport::TestCase
   test "format_non_ok_game_time" do
     VCR.use_cassette("nhl_schedule_20241006") do
       date = "2024-10-06"
-      schedule = NhlApi.fetch_league_schedule(date: date)
+      schedule = Nhl::ScheduleClient.league_schedule(date: date)
       game = schedule["gameWeek"][1]["games"].first
       formatted_time = @worker.send(:format_game_time, game)
 

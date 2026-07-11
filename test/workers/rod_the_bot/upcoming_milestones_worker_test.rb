@@ -40,7 +40,7 @@ class RodTheBot::UpcomingMilestonesWorkerTest < ActiveSupport::TestCase
       Nhl::SeasonCalendar.stubs(:preseason?).returns(false)
       Nhl::SeasonCalendar.stubs(:offseason?).returns(false)
       Nhl::SeasonCalendar.stubs(:postseason?).returns(false)
-      NhlApi.stubs(:todays_game).returns({"gameScheduleState" => "OK"})
+      Nhl::ScheduleClient.stubs(:todays_game).returns({"gameScheduleState" => "OK"})
 
       # Get actual roster to use real player IDs
       roster = NhlApi.roster("CAR")
@@ -128,7 +128,7 @@ class RodTheBot::UpcomingMilestonesWorkerTest < ActiveSupport::TestCase
       Nhl::SeasonCalendar.stubs(:preseason?).returns(false)
       Nhl::SeasonCalendar.stubs(:offseason?).returns(false)
       Nhl::SeasonCalendar.stubs(:postseason?).returns(true)
-      NhlApi.stubs(:todays_game).returns({"gameScheduleState" => "OK"})
+      Nhl::ScheduleClient.stubs(:todays_game).returns({"gameScheduleState" => "OK"})
 
       # Mock playoff milestone data
       mock_skater_milestones = {
@@ -194,7 +194,7 @@ class RodTheBot::UpcomingMilestonesWorkerTest < ActiveSupport::TestCase
       Nhl::SeasonCalendar.stubs(:preseason?).returns(false)
       Nhl::SeasonCalendar.stubs(:offseason?).returns(false)
       Nhl::SeasonCalendar.stubs(:postseason?).returns(false)
-      NhlApi.stubs(:todays_game).returns({"gameScheduleState" => "OK"})
+      Nhl::ScheduleClient.stubs(:todays_game).returns({"gameScheduleState" => "OK"})
 
       # Mock empty milestone data
       mock_skater_milestones = {"data" => []}
@@ -215,7 +215,7 @@ class RodTheBot::UpcomingMilestonesWorkerTest < ActiveSupport::TestCase
       Nhl::SeasonCalendar.stubs(:preseason?).returns(false)
       Nhl::SeasonCalendar.stubs(:offseason?).returns(false)
       Nhl::SeasonCalendar.stubs(:postseason?).returns(false)
-      NhlApi.stubs(:todays_game).returns({"gameScheduleState" => "OK"})
+      Nhl::ScheduleClient.stubs(:todays_game).returns({"gameScheduleState" => "OK"})
 
       # Get actual roster to use real player IDs
       roster = NhlApi.roster("CAR")

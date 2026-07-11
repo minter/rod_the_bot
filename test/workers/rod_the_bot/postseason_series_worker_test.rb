@@ -49,7 +49,7 @@ class RodTheBot::PostseasonSeriesWorkerTest < ActiveSupport::TestCase
   end
 
   def test_perform_skips_when_no_carousel
-    NhlApi.expects(:fetch_postseason_carousel).returns(nil)
+    Nhl::ScheduleClient.expects(:postseason_carousel).returns(nil)
     @worker.perform
     assert_equal 0, RodTheBot::Post.jobs.size
   end
@@ -62,7 +62,7 @@ class RodTheBot::PostseasonSeriesWorkerTest < ActiveSupport::TestCase
         ])
       ]
     }
-    NhlApi.expects(:fetch_postseason_carousel).returns(carousel)
+    Nhl::ScheduleClient.expects(:postseason_carousel).returns(carousel)
     NhlApi.expects(:playoff_seed_labels).returns({})
     @worker.perform
     assert_equal 1, RodTheBot::Post.jobs.size
@@ -80,7 +80,7 @@ class RodTheBot::PostseasonSeriesWorkerTest < ActiveSupport::TestCase
         ])
       ]
     }
-    NhlApi.expects(:fetch_postseason_carousel).returns(carousel)
+    Nhl::ScheduleClient.expects(:postseason_carousel).returns(carousel)
     NhlApi.expects(:playoff_seed_labels).returns({"BUF" => "A1", "BOS" => "WC1"})
     @worker.perform
     post = RodTheBot::Post.jobs.first["args"].first
@@ -98,7 +98,7 @@ class RodTheBot::PostseasonSeriesWorkerTest < ActiveSupport::TestCase
         ])
       ]
     }
-    NhlApi.expects(:fetch_postseason_carousel).returns(carousel)
+    Nhl::ScheduleClient.expects(:postseason_carousel).returns(carousel)
     NhlApi.expects(:playoff_seed_labels).returns({})
     @worker.perform
     post = RodTheBot::Post.jobs.first["args"].first
@@ -147,7 +147,7 @@ class RodTheBot::PostseasonSeriesWorkerTest < ActiveSupport::TestCase
         ])
       ]
     }
-    NhlApi.expects(:fetch_postseason_carousel).returns(carousel)
+    Nhl::ScheduleClient.expects(:postseason_carousel).returns(carousel)
     NhlApi.expects(:playoff_seed_labels).returns({})
     @worker.perform
     post = RodTheBot::Post.jobs.first["args"].first

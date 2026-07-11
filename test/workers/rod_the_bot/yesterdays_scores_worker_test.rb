@@ -35,7 +35,7 @@ class RodTheBot::YesterdaysScoresWorkerTest < ActiveSupport::TestCase
   def test_format_scores_no_games
     Timecop.freeze(Date.new(2023, 11, 24)) do
       VCR.use_cassette("nhl_scores_scoreboard_20231123") do
-        scores = NhlApi.fetch_scores
+        scores = Nhl::ScheduleClient.scores
         post = @worker.send(:format_scores, scores)
         expected_post = <<~POST
           🙌 Final scores from last night's games:

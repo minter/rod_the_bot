@@ -3,7 +3,7 @@ module RodTheBot
     include Sidekiq::Worker
 
     def perform
-      scores = NhlApi.fetch_scores
+      scores = Nhl::ScheduleClient.scores
       scores_post = format_scores(scores)
       post_scores(scores_post)
     end
@@ -93,7 +93,7 @@ module RodTheBot
     end
 
     def find_series_matchup(team1, team2)
-      response = NhlApi.fetch_postseason_carousel
+      response = Nhl::ScheduleClient.postseason_carousel
       return unless response&.dig("rounds")
 
       response["rounds"].each do |round|

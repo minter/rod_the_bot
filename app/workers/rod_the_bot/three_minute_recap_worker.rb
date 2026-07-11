@@ -35,7 +35,7 @@ module RodTheBot
     private
 
     def get_game(gamedate, game_id)
-      schedule = NhlApi.fetch_league_schedule(date: gamedate)
+      schedule = Nhl::ScheduleClient.league_schedule(date: gamedate)
       schedule["gameWeek"].each do |week|
         game = week["games"]&.find { |g| g["id"] == game_id }
         return game if game

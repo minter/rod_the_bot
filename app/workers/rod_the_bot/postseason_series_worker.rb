@@ -3,7 +3,7 @@ module RodTheBot
     include Sidekiq::Worker
 
     def perform
-      carousel = NhlApi.fetch_postseason_carousel
+      carousel = Nhl::ScheduleClient.postseason_carousel
       return if carousel.blank?
 
       rounds = carousel["rounds"]

@@ -4,7 +4,7 @@ module RodTheBot
 
     def perform
       date = Date.today.strftime("%Y-%m-%d")
-      schedule = NhlApi.fetch_league_schedule(date: date)
+      schedule = Nhl::ScheduleClient.league_schedule(date: date)
       games = format_schedule(schedule, date)
       time_zone_abbr = Time.zone.tzinfo.abbreviation
       playoffs = Nhl::SeasonCalendar.postseason? ? "playoff " : ""

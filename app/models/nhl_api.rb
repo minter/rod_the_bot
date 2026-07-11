@@ -4,13 +4,6 @@ class NhlApi
   base_uri "https://api-web.nhle.com/v1"
 
   class << self
-    def fetch_team_schedule(date: Time.now.strftime("%Y-%m-%d"))
-      Time.zone = TZInfo::Timezone.get(ENV["TIME_ZONE"])
-      Rails.cache.fetch("team_schedule_#{date}", expires_in: 12.hours) do
-        get("/club-schedule/#{ENV["NHL_TEAM_ABBREVIATION"]}/week/#{date}")
-      end
-    end
-
     def fetch_roster(team_abbreviation)
       get("/roster/#{team_abbreviation}/current")
     end
@@ -38,32 +31,6 @@ class NhlApi
           map[abbrev] = "#{div}#{seq}" if div && seq
         end
       end
-    end
-
-    def fetch_scores(date: Date.yesterday.strftime("%Y-%m-%d"))
-      Rails.cache.fetch("scores_#{date}", expires_in: 18.hours) do
-        response = get("/score/#{date}")
-        games = response["games"] || []
-        games.find_all { |game| game["gameDate"] == date }
-      end
-    end
-
-    def fetch_postseason_carousel
-      get("/playoff-series/carousel/#{Nhl::SeasonCalendar.current_season}/")
-    rescue Nhl::RequestError
-      nil
-    end
-
-    def fetch_league_schedule(date: Time.now.strftime("%Y-%m-%d"))
-      Rails.cache.fetch("league_schedule_#{date}", expires_in: 3.hours) do
-        get("/schedule/#{date}")
-      end
-    end
-
-    def todays_game(date: Time.now.strftime("%Y-%m-%d"))
-      schedule = fetch_team_schedule(date: date)
-      games = schedule["games"] || []
-      games.find { |game| game["gameDate"] == date }
     end
 
     def roster(team_abbreviation)
