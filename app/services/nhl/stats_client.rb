@@ -24,14 +24,6 @@ module Nhl
         {}
       end
 
-      def player_career_stats(player_id)
-        cached("player_career_stats_#{player_id}", 1.hour) do
-          get_json("/skater/stats?cayenneExp=playerId=#{player_id}")
-        end
-      rescue RequestError
-        {}
-      end
-
       private
 
       def cached(key, expires_in, &block)

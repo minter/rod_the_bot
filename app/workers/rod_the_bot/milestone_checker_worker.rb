@@ -54,9 +54,7 @@ module RodTheBot
       points = calculate_career_total(player_id, "points")
 
       # Check for milestone goals
-      milestone_goals = [1, 50, 100, 200, 250, 300, 400, 500]
-
-      if milestone_goals.include?(goals)
+      if Milestones::Thresholds.include?("goal", goals)
         post = if goals == 1
           # First career goal - check if this is also first career point
           if points == 1
@@ -77,9 +75,7 @@ module RodTheBot
       goals = calculate_career_total(player_id, "goals")
 
       # Check for milestone points
-      milestone_points = [1, 50, 100, 200, 250, 300, 400, 500, 600, 700, 750, 800, 900, 1000]
-
-      if milestone_points.include?(points)
+      if Milestones::Thresholds.include?("point", points)
         if points == 1
           # First career point - check if this is also first career goal
           if goals == 1
@@ -100,9 +96,7 @@ module RodTheBot
       assists = calculate_career_total(player_id, "assists")
 
       # Check for milestone assists (skip first career assist - handled under points)
-      milestone_assists = [50, 100, 200, 250, 300, 400, 500, 600, 700, 750, 800, 900, 1000]
-
-      if milestone_assists.include?(assists)
+      if Milestones::Thresholds.include?("assist", assists)
         post = format_milestone_achievement_post(player_name, "assist", assists)
         RodTheBot::Post.perform_async(post)
       end
@@ -134,9 +128,7 @@ module RodTheBot
       wins = calculate_career_total(goalie_id, "wins")
 
       # Check for milestone wins
-      milestone_wins = [1, 50, 100, 200, 300, 400, 500]
-
-      if milestone_wins.include?(wins)
+      if Milestones::Thresholds.include?("win", wins)
         post = if wins == 1
           format_first_career_post(goalie_name, "win")
         else
@@ -151,9 +143,7 @@ module RodTheBot
       shutouts = calculate_career_total(goalie_id, "shutouts")
 
       # Check for milestone shutouts
-      milestone_shutouts = [1, 10, 20, 30, 40, 50, 100]
-
-      if milestone_shutouts.include?(shutouts)
+      if Milestones::Thresholds.include?("shutout", shutouts)
         post = if shutouts == 1
           format_first_career_post(goalie_name, "shutout")
         else
@@ -164,62 +154,15 @@ module RodTheBot
     end
 
     def calculate_career_total(player_id, stat_type)
-      # Try to use pre-game stats + in-game stats for accurate calculation
-      pregame_key = "pregame:#{@game_id}:player:#{player_id}:#{stat_type}"
-      pregame_stat = REDIS.get(pregame_key)
-
-      if pregame_stat
-        # We have pre-game stats, calculate based on what happened in this game
-        pregame_total = pregame_stat.to_i
-        ingame_total = get_ingame_stats(player_id, stat_type)
-        return pregame_total + ingame_total
-      end
-
-      # Fall back to API if pre-game stats aren't available (shouldn't happen in normal operation)
-      # This uses the unreliable NHL stats API that may not have updated yet
-      Rails.logger.warn "MilestoneCheckerWorker: No pre-game stats found for player #{player_id}, falling back to API"
-      career_stats = get_player_career_stats_from_api(player_id)
-      career_stats.dig("data", 0, stat_type) || 0
-    end
-
-    def get_ingame_stats(player_id, stat_type)
-      # Cache feed to avoid fetching multiple times
-      feed = game_feed
-      plays = feed&.dig("plays") || []
-      return 0 if plays.empty?
-
-      # Normalize player_id to integer for consistent comparison
-      player_id_int = player_id.to_i
-
-      case stat_type
-      when "goals"
-        plays.count { |play|
-          play["typeDescKey"] == "goal" &&
-            play.dig("details", "scoringPlayerId").to_i == player_id_int
-        }
-      when "assists"
-        plays.count { |play|
-          play["typeDescKey"] == "goal" &&
-            (play.dig("details", "assist1PlayerId").to_i == player_id_int ||
-             play.dig("details", "assist2PlayerId").to_i == player_id_int)
-        }
-      when "points"
-        goals = get_ingame_stats(player_id, "goals")
-        assists = get_ingame_stats(player_id, "assists")
-        goals + assists
-      else
-        0
-      end
+      career_total.for(player_id, stat_type)
     end
 
     def game_feed
       @game_feed ||= Nhl::GameClient.play_by_play(@game_id)
     end
 
-    def get_player_career_stats_from_api(player_id)
-      # Fetch from API (for fallback when pre-game stats aren't available)
-      response = HTTParty.get("https://api.nhle.com/stats/rest/en/skater/stats?cayenneExp=playerId=#{player_id}")
-      response.success? ? response.parsed_response : {}
+    def career_total
+      @career_total ||= Milestones::CareerTotal.new(game_id: @game_id, feed: method(:game_feed))
     end
 
     def tracked_team_id

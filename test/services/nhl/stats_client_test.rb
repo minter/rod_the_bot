@@ -14,4 +14,5 @@ class Nhl::StatsClientTest < ActiveSupport::TestCase
 
     assert_equal({}, Nhl::StatsClient.skater_milestones)
   end
+
 end

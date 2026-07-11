@@ -16,6 +16,10 @@ module Nhl
           get_json("/player/#{player_id}/game-log/#{season}/#{game_type}").fetch("gameLog", []).first(limit)
         end
       end
+
+      def career_totals(player_id, season_type: :regularSeason)
+        landing(player_id).dig("careerTotals", season_type.to_s) || {}
+      end
     end
   end
 end

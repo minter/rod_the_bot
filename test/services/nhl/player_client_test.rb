@@ -40,4 +40,13 @@ class Nhl::PlayerClientTest < ActiveSupport::TestCase
       assert games.any? { |game| game["gamesStarted"] == 0 && game["decision"].nil? }
     end
   end
+
+  test "career totals match the NHL player landing contract" do
+    VCR.use_cassette("nhl_player_landing_career_8482093") do
+      totals = Nhl::PlayerClient.career_totals(8482093)
+
+      assert_operator totals["gamesPlayed"], :>, 0
+      assert %w[goals assists points].all? { |stat| totals.key?(stat) }
+    end
+  end
 end
