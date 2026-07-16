@@ -30,7 +30,7 @@ module RodTheBot
         served = details["servedByPlayerId"]
         main = players.fetch(committed || served)
         return unless main
-        post = main.team_id == tracked_team_id ? "🙃 #{your_team.dig("commonName", "default")} Penalty\n\n" : "😵‍💫 #{their_team.dig("commonName", "default")} Penalty!\n\n"
+        post = (main.team_id == tracked_team_id) ? "🙃 #{your_team.dig("commonName", "default")} Penalty\n\n" : "😵‍💫 #{their_team.dig("commonName", "default")} Penalty!\n\n"
         period = format_period_name(play.dig("periodDescriptor", "number"))
         post + case details["typeCode"]
         when "BEN"

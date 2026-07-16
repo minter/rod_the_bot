@@ -18,7 +18,7 @@ module RodTheBot
       end
 
       def team_rankings(rankings, part:)
-        keys = part == 1 ? [[:average_goals_scored, "Average Goals Scored"], [:average_goals_allowed, "Average Goals Allowed"], [:power_play_percentage, "Power Play Percentage"], [:penalty_kill_percentage, "Penalty Kill Percentage"]] : [[:shots_per_game, "Shots Per Game"], [:shots_allowed_per_game, "Shots Allowed Per Game"], [:faceoff_percentage, "Faceoff Percentage"], [:points_percentage, "Points Percentage"]]
+        keys = (part == 1) ? [[:average_goals_scored, "Average Goals Scored"], [:average_goals_allowed, "Average Goals Allowed"], [:power_play_percentage, "Power Play Percentage"], [:penalty_kill_percentage, "Penalty Kill Percentage"]] : [[:shots_per_game, "Shots Per Game"], [:shots_allowed_per_game, "Shots Allowed Per Game"], [:faceoff_percentage, "Faceoff Percentage"], [:points_percentage, "Points Percentage"]]
         body = keys.map { |key, label| "#{label}: #{rankings[key][:value]} (Rank: #{rankings[key][:rank]})" }.join("\n")
         "📊 #{@season_type} stats and NHL ranks for the #{@team_name} (#{part}/2)\n\n#{body}\n"
       end

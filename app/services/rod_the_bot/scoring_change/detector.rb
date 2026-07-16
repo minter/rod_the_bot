@@ -12,7 +12,7 @@ module RodTheBot
         return Result.new(status: :overturned, play: nil, challenge: nearby_challenge(original_play)) unless play
         return Result.new(status: :unchanged, play: play, challenge: nil) unless play["typeDescKey"] == "goal"
 
-        status = participants(play) == participants(original_play) ? :unchanged : :corrected
+        status = (participants(play) == participants(original_play)) ? :unchanged : :corrected
         Result.new(status: status, play: play, challenge: nil)
       end
 

@@ -17,7 +17,7 @@ module Nhl
         response.parsed_response
       rescue JSON::ParserError => e
         raise RequestError, "Invalid JSON fetching #{path}: #{e.class} - #{e.message}"
-      rescue Net::OpenTimeout, Net::ReadTimeout, Timeout::Error, SocketError,
+      rescue Timeout::Error, SocketError,
         Errno::ECONNREFUSED, Errno::ECONNRESET, EOFError => e
         raise RequestError, "Network error fetching #{path}: #{e.class} - #{e.message}"
       end

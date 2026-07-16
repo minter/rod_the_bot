@@ -5,7 +5,11 @@ module RodTheBot
       include ActiveSupport::Inflector
 
       def build(game:, away:, home:, tracked:, time:, television:, preseason:, postseason:, seed_labels: {}, series_status: nil)
-        title = preseason ? "Preseason Gameday" : (postseason ? "Playoff Gameday" : "Gameday")
+        title = if preseason
+          "Preseason Gameday"
+        else
+          (postseason ? "Playoff Gameday" : "Gameday")
+        end
         lines = ["🗣️ It's a #{tracked[:team_name]} #{title}!", ""]
         lines += [playoff_status_line(series_status), ""] if postseason && series_status
         lines += team_lines(away, seed_labels, show_record: !preseason && !postseason)
@@ -30,7 +34,7 @@ module RodTheBot
         top = status["topSeedWins"]
         bottom = status["bottomSeedWins"]
         return "Series tied #{top}-#{bottom}" if top == bottom
-        top > bottom ? "#{status["topSeedTeamAbbrev"]} leads #{top}-#{bottom}" : "#{status["bottomSeedTeamAbbrev"]} leads #{bottom}-#{top}"
+        (top > bottom) ? "#{status["topSeedTeamAbbrev"]} leads #{top}-#{bottom}" : "#{status["bottomSeedTeamAbbrev"]} leads #{bottom}-#{top}"
       end
 
       def record(team)

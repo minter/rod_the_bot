@@ -30,7 +30,7 @@ module RodTheBot
       away = @game["awayTeam"]
       your_team = (home["id"].to_i == ENV["NHL_TEAM_ID"].to_i) ? home : away
       @your_team_is = (home["id"].to_i == ENV["NHL_TEAM_ID"].to_i) ? "homeTeam" : "awayTeam"
-      venue = @game["venue"]
+      @game["venue"]
 
       game_id = @game["id"]
 
@@ -121,6 +121,5 @@ module RodTheBot
         "bottomSeedTeamAbbrev" => series.dig("bottomSeed", "abbrev")
       }.compact
     end
-
   end
 end

@@ -6,7 +6,7 @@ module RodTheBot
       def format(play, players, feed)
         scorer_id = play.dig("details", "scoringPlayerId")
         scorer = scorer_id ? players.name_with_number(scorer_id) : "Unknown Player"
-        scoring_team = feed[feed.dig("homeTeam", "id") == play.dig("details", "eventOwnerTeamId") ? "homeTeam" : "awayTeam"]["abbrev"]
+        scoring_team = feed[(feed.dig("homeTeam", "id") == play.dig("details", "eventOwnerTeamId")) ? "homeTeam" : "awayTeam"]["abbrev"]
         period = format_period_name(play.dig("periodDescriptor", "number"))
 
         assists = %w[assist1PlayerId assist2PlayerId].filter_map do |key|

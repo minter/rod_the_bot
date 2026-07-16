@@ -23,7 +23,6 @@ module Nhl
       def right_rail(game_id)
         get_json("/gamecenter/#{game_id}/right-rail")
       end
-
     end
   end
 end

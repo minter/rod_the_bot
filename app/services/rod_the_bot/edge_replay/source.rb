@@ -20,7 +20,7 @@ module RodTheBot
 
       def game_data(game_id)
         data = Nhl::GameClient.landing(game_id)
-        data if data&.dig("homeTeam") && data&.dig("awayTeam")
+        data if data&.dig("homeTeam") && data.dig("awayTeam")
       rescue => e
         Rails.logger.error "Error fetching game data: #{e.message}"
         nil

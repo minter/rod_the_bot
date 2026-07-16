@@ -37,5 +37,4 @@ class Nhl::StatsClientTest < ActiveSupport::TestCase
 
     assert_equal [{"playerId" => 1}], Nhl::StatsClient.shift_charts(2025020660)
   end
-
 end

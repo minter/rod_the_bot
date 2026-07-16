@@ -1,6 +1,5 @@
 module Nhl
   class EdgeClient < Client
-
     base_uri "https://api-web.nhle.com/v1"
 
     ENDPOINTS = {
@@ -17,12 +16,11 @@ module Nhl
     class << self
       ENDPOINTS.each do |name, (path, ttl)|
         define_method("fetch_#{name}") do |subject_id, season: nil, game_type: nil|
-          period = season && game_type ? "#{season}/#{game_type}" : "now"
+          period = (season && game_type) ? "#{season}/#{game_type}" : "now"
           cache_key = "edge_#{name}_#{subject_id}_#{period.tr("/", "_")}"
           Rails.cache.fetch(cache_key, expires_in: ttl) { get_json("/edge/#{path}/#{subject_id}/#{period}") }
         end
       end
-
     end
   end
 end

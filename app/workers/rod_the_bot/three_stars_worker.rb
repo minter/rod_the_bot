@@ -2,6 +2,7 @@ module RodTheBot
   class ThreeStarsWorker
     include Sidekiq::Worker
     include WorkerErrorHandling
+
     attr_reader :feed
 
     MAX_RETRIES = 15 # 15 minutes max (15 retries * 60 seconds)

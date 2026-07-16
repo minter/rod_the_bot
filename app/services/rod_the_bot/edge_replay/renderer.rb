@@ -23,32 +23,32 @@ module RodTheBot
         background_path = File.join(frames_dir, "_background.png")
         game_data = options[:game_data] || {}
         build_background!(background_path, options, game_data, tmpdir)
-  
+
         w = options[:width].to_i
         h = options[:height].to_i
         tf = rink_transform(options)
-  
+
         # Determine home team ID from game data
         home_team_id = game_data.dig("homeTeam", "id")
-  
+
         fps = options.fetch(:fps, 30).to_f
         speed = options.fetch(:speed, 1.0).to_f
         speed = 1.0 if speed <= 0
         tick_seconds = options.fetch(:tick_seconds, 0.1).to_f
-  
+
         # Render base images for each tracking frame
         base_dir = File.join(frames_dir, "_base")
         FileUtils.mkdir_p(base_dir)
-  
+
         selected.each_with_index do |frame, i|
           on_ice = frame["onIce"] || {}
           entities = on_ice.values.select { |e| e.is_a?(Hash) }
           puck = entities.select { |e| puck_entity?(e) }
           players = entities.reject { |e| puck_entity?(e) }
-  
+
           out_png = File.join(base_dir, format("base_%05d.png", i))
           cmd = ["magick", background_path]
-  
+
           # Draw puck first
           puck.each do |ent|
             x = map_x(ent["x"], tf)
@@ -56,18 +56,18 @@ module RodTheBot
             r = 6
             cmd += ["-fill", "#111111", "-stroke", "none", "-draw", "circle #{x},#{y} #{(x + r).round(2)},#{y}"]
           end
-  
+
           # Draw players
           players.each do |ent|
             team_abbrev = ent["teamAbbrev"].to_s
             team_id = ent["teamId"]
             is_home = team_id == home_team_id
             primary_color = TEAM_COLORS.fetch(team_abbrev, "#444444")
-  
+
             x = map_x(ent["x"], tf)
             y = map_y(ent["y"], tf)
             r = 24
-  
+
             if is_home
               # Home team: solid primary color circle with white numbers
               cmd += [
@@ -86,10 +86,10 @@ module RodTheBot
               ]
               number_color = primary_color
             end
-  
+
             num = ent["sweaterNumber"]
             next if num.nil? || num == ""
-  
+
             dx = (x - (w / 2.0)).round
             dy = (y - (h / 2.0)).round
             cmd += [
@@ -100,11 +100,11 @@ module RodTheBot
               "-annotate", "#{"+" if dx >= 0}#{dx}#{"+" if dy >= 0}#{dy}", num.to_s
             ]
           end
-  
+
           cmd << out_png
           run_cmd!(cmd, "ImageMagick frame render #{i}")
         end
-  
+
         # Build output frame sequence with repeats based on timeStamp deltas
         time_stamps = selected.map { |f| f.is_a?(Hash) ? f["timeStamp"] : nil }.map { |v| v.is_a?(Numeric) ? v.to_i : nil }
         deltas = []
@@ -113,7 +113,7 @@ module RodTheBot
         end
         positive = deltas.compact.select { |d| d > 0 }
         fallback_delta = positive.empty? ? 1 : positive.tally.max_by { |_, c| c }[0]
-  
+
         out_idx = 0
         selected.each_index do |i|
           delta_ticks = if i < deltas.length && deltas[i].is_a?(Integer) && deltas[i] > 0
@@ -124,7 +124,7 @@ module RodTheBot
           seconds = delta_ticks * tick_seconds
           repeats = [(seconds * fps / speed).round, 1].max
           base_png = File.join(base_dir, format("base_%05d.png", i))
-  
+
           repeats.times do
             out_png = File.join(frames_dir, format("frame_%05d.png", out_idx))
             FileUtils.cp(base_png, out_png)
@@ -132,18 +132,18 @@ module RodTheBot
           end
         end
       end
-  
+
       def build_background!(background_path, options, game_data, tmpdir)
         w = options[:width].to_i
         h = options[:height].to_i
         tf = rink_transform(options)
-  
+
         # Get SVG path
         svg_path = Rails.root.join("config", "rink", "Icehockeylayout.svg")
         unless File.exist?(svg_path)
           raise "SVG rink template not found at: #{svg_path}"
         end
-  
+
         # SVG ice surface coordinates
         # These represent the actual ice surface in the SVG coordinate system
         # EDGE coordinates (0,0) to (2400, 1020) map to this ice surface
@@ -151,60 +151,60 @@ module RodTheBot
         svg_ice_surface_y = 27.09
         svg_ice_surface_width = 690.18
         svg_ice_surface_height = 293.32
-  
+
         # ViewBox for rendering (includes boards for rounded corners)
         svg_padding = 15.6
         svg_render_x = svg_ice_surface_x - svg_padding
         svg_render_y = svg_ice_surface_y - svg_padding
         svg_render_width = svg_ice_surface_width + (svg_padding * 2)
         svg_render_height = svg_ice_surface_height + (svg_padding * 2)
-  
+
         # Canvas pixel dimensions for the EDGE rink (0-2400, 0-1020)
         rink_width_px = (tf[:x1] - tf[:x0]).round
         rink_height_px = (tf[:y1] - tf[:y0]).round
-  
+
         # Calculate the scale factor from SVG ice surface to canvas pixels
         # This ensures the SVG ice surface matches the EDGE rink size on canvas
         svg_to_canvas_scale_x = rink_width_px.to_f / svg_ice_surface_width
         svg_to_canvas_scale_y = rink_height_px.to_f / svg_ice_surface_height
-  
+
         # Render the SVG (with padding) at the correct size
         # The rendered PNG will be larger than the ice surface due to padding
         render_width_px = (svg_render_width * svg_to_canvas_scale_x).round
         render_height_px = (svg_render_height * svg_to_canvas_scale_y).round
-  
+
         # Convert SVG to PNG
         tmp_rink_png = File.join(File.dirname(background_path), "_rink_only.png")
         tmp_svg = File.join(File.dirname(background_path), "_rink_cropped.svg")
-  
+
         svg_content = File.read(svg_path)
         svg_content = svg_content.sub(
           /viewBox="[^"]*"/,
           "viewBox=\"#{svg_render_x.round(2)} #{svg_render_y.round(2)} #{svg_render_width.round(2)} #{svg_render_height.round(2)}\""
         )
         File.write(tmp_svg, svg_content)
-  
+
         run_cmd!(
           ["rsvg-convert", "-w", render_width_px.to_s, "-h", render_height_px.to_s, "-o", tmp_rink_png, tmp_svg],
           "Convert SVG to PNG"
         )
-  
+
         # Calculate where to position the rendered PNG on the canvas
         # The ice surface portion of the PNG must align with tf[:x0], tf[:y0]
         # The padding in the rendered PNG is at the edges
         padding_px_x = (svg_padding * svg_to_canvas_scale_x).round
         padding_px_y = (svg_padding * svg_to_canvas_scale_y).round
-  
+
         # Position the PNG so the ice surface corner aligns with the EDGE rink corner
         png_x = tf[:x0].round - padding_px_x
         png_y = tf[:y0].round - padding_px_y
-  
+
         # Composite rink onto canvas
         cmd = [
           "magick", "-size", "#{w}x#{h}", "xc:#0b0f14",
           tmp_rink_png, "-geometry", "+#{png_x}+#{png_y}", "-composite"
         ]
-  
+
         # Add home team logo overlay at center ice if available
         home_team_logo_path = source.team_logo(game_data.dig("homeTeam", "logo"), tmpdir) if game_data.dig("homeTeam", "logo")
         if home_team_logo_path && File.exist?(home_team_logo_path)
@@ -216,54 +216,54 @@ module RodTheBot
           logo_size = (340 * tf[:scale]).round
           logo_x = (center_x - logo_size / 2).round
           logo_y = (center_y - logo_size / 2).round
-  
+
           # Convert SVG to PNG and make it semi-transparent (ghosted effect)
           tmp_logo_png = File.join(tmpdir, "_logo.png")
           tmp_logo_resized = File.join(tmpdir, "_logo_resized.png")
-  
+
           # Convert SVG to PNG first
           run_cmd!(
             ["rsvg-convert", "-w", logo_size.to_s, "-h", logo_size.to_s, "-o", tmp_logo_png, home_team_logo_path],
             "Convert logo SVG to PNG"
           )
-  
+
           # Apply transparency (ghosted effect - 15% opacity)
           run_cmd!(
             ["magick", tmp_logo_png, "-alpha", "set", "-channel", "A", "-evaluate", "multiply", "0.15", "+channel", tmp_logo_resized],
             "Apply ghosted effect to logo"
           )
-  
+
           cmd += [tmp_logo_resized, "-geometry", "+#{logo_x}+#{logo_y}", "-composite"]
         end
-  
+
         cmd << background_path
         run_cmd!(cmd, "Composite rink and logo onto canvas")
       end
-  
+
       # Helper methods from script
-  
+
       def puck_entity?(ent)
         pid = ent["playerId"]
         team = ent["teamAbbrev"]
         (pid.nil? || pid == "") && (team.nil? || team == "")
       end
-  
+
       def rink_transform(options)
         w = options[:width].to_f
         h = options[:height].to_f
         rink_w = options[:rink_w].to_f
         rink_h = options[:rink_h].to_f
         pad = options.fetch(:pad, 14).to_f
-  
+
         avail_w = [w - (2.0 * pad), 1.0].max
         avail_h = [h - (2.0 * pad), 1.0].max
         scale = [avail_w / rink_w, avail_h / rink_h].min
-  
+
         drawn_w = rink_w * scale
         drawn_h = rink_h * scale
         x0 = ((w - drawn_w) / 2.0).round(2)
         y0 = ((h - drawn_h) / 2.0).round(2)
-  
+
         {
           scale: scale,
           x0: x0,
@@ -274,15 +274,15 @@ module RodTheBot
           rink_h: rink_h
         }
       end
-  
+
       def map_x(x, tf)
         (tf[:x0] + (x.to_f * tf[:scale])).round(2)
       end
-  
+
       def map_y(y, tf)
         (tf[:y0] + (y.to_f * tf[:scale])).round(2)
       end
-  
+
       def default_options
         {
           width: 1280,
@@ -296,7 +296,6 @@ module RodTheBot
           frames: nil
         }
       end
-  
 
       private
 

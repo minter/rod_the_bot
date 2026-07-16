@@ -1,6 +1,5 @@
 module Nhl
   class SeasonCalendar < Client
-
     base_uri "https://api-web.nhle.com/v1"
 
     class << self
@@ -32,7 +31,6 @@ module Nhl
       def local_today
         Time.use_zone(ENV.fetch("TIME_ZONE")) { Time.zone.today }
       end
-
     end
   end
 end

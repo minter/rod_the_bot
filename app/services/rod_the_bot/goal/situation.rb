@@ -6,7 +6,7 @@ module RodTheBot
         away_goalies, away_skaters, home_skaters, home_goalies = code.chars.map(&:to_i)
         away_players = away_goalies + away_skaters
         home_players = home_goalies + home_skaters
-        @scoring_players, @opposing_players, @opposing_goalies = scoring_team_id.to_i == home_id.to_i ? [home_players, away_players, away_goalies] : [away_players, home_players, home_goalies]
+        @scoring_players, @opposing_players, @opposing_goalies = (scoring_team_id.to_i == home_id.to_i) ? [home_players, away_players, away_goalies] : [away_players, home_players, home_goalies]
       end
 
       def penalty_shot?
