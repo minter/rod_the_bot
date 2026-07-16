@@ -26,11 +26,13 @@ class RodTheBot::PlayerStreaks::AnalyzerTest < ActiveSupport::TestCase
   end
 
   test "filters mixed season and game-type data" do
-    logs = ->(_id, _limit) { [
-      {"seasonId" => "20252026", "gameTypeId" => 2, "points" => 1},
-      {"seasonId" => "20242025", "gameTypeId" => 2, "points" => 1},
-      {"seasonId" => "20252026", "gameTypeId" => 3, "points" => 1}
-    ] }
+    logs = ->(_id, _limit) {
+      [
+        {"seasonId" => "20252026", "gameTypeId" => 2, "points" => 1},
+        {"seasonId" => "20242025", "gameTypeId" => 2, "points" => 1},
+        {"seasonId" => "20252026", "gameTypeId" => 3, "points" => 1}
+      ]
+    }
     analyzer = RodTheBot::PlayerStreaks::Analyzer.new(game_log: logs, season: "20252026", game_type: 2, minimum_length: 2)
 
     assert_empty analyzer.analyze(player_ids: [42])

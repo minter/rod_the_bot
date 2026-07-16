@@ -40,7 +40,7 @@ module RodTheBot
         lines << "Ranking: #{ranking["finalRank"].ordinalize} in #{category}" if ranking["finalRank"] && category
         lines << height_line(ranking["heightInInches"])
         lines << weight_line(ranking["weightInPounds"])
-        lines << "#{position == "G" ? "Catches" : "Shoots"}: #{ranking["shootsCatches"]}" if ranking["shootsCatches"]
+        lines << "#{(position == "G") ? "Catches" : "Shoots"}: #{ranking["shootsCatches"]}" if ranking["shootsCatches"]
         lines << "Birthday: #{Date.parse(ranking["birthDate"]).strftime("%m/%d/%Y")}" if ranking["birthDate"]
         lines << "Birthplace: #{birthplace(ranking)}" if birthplace(ranking).present?
         lines.compact.join("\n")
@@ -60,7 +60,7 @@ module RodTheBot
         province = ranking["birthStateProvince"]
         country = ranking["birthCountry"]
         return "#{city}, #{province}" if province.present?
-        city.present? && country.present? ? "#{city}, #{COUNTRIES[country] || country}" : city
+        (city.present? && country.present?) ? "#{city}, #{COUNTRIES[country] || country}" : city
       end
     end
   end

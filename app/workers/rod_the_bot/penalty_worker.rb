@@ -26,7 +26,7 @@ module RodTheBot
       home = feed["homeTeam"]
       away = feed["awayTeam"]
       tracked_team_id = ENV["NHL_TEAM_ID"].to_i
-      your_team, their_team = home["id"].to_i == tracked_team_id ? [home, away] : [away, home]
+      your_team, their_team = (home["id"].to_i == tracked_team_id) ? [home, away] : [away, home]
       players = Nhl::PlayerDirectory.for_game(game_id)
       main_player_id = penalty.dig("details", "committedByPlayerId") || penalty.dig("details", "servedByPlayerId")
 

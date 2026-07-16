@@ -1,5 +1,3 @@
-require "set"
-
 module RodTheBot
   module PlayerStreaks
     class Analyzer
@@ -43,7 +41,7 @@ module RodTheBot
 
       def goalie_streaks(player_id, games)
         result = goalie_win_streak(games)
-        result[:length] >= minimum_length ? [streak(player_id, "Wins", result)] : []
+        (result[:length] >= minimum_length) ? [streak(player_id, "Wins", result)] : []
       end
 
       def active_streak(games)

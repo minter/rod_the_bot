@@ -4,10 +4,12 @@ class RodTheBot::Milestones::CareerTotalTest < ActiveSupport::TestCase
   test "combines pregame totals with goals and assists from the recorded game feed shape" do
     redis = MockRedis.new
     redis.set("pregame:10:player:42:points", 99)
-    feed = -> { {"plays" => [
-      {"typeDescKey" => "goal", "details" => {"scoringPlayerId" => 42}},
-      {"typeDescKey" => "goal", "details" => {"assist1PlayerId" => 42}}
-    ]} }
+    feed = -> {
+      {"plays" => [
+        {"typeDescKey" => "goal", "details" => {"scoringPlayerId" => 42}},
+        {"typeDescKey" => "goal", "details" => {"assist1PlayerId" => 42}}
+      ]}
+    }
 
     total = RodTheBot::Milestones::CareerTotal.new(game_id: 10, feed: feed, redis: redis)
 

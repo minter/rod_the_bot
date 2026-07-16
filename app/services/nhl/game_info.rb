@@ -42,7 +42,7 @@ module Nhl
         away_id = feed&.dig("awayTeam", "id")
         return unless home_id && away_id
 
-        home_id.to_i == team_id ? away_id.to_i : home_id.to_i
+        (home_id.to_i == team_id) ? away_id.to_i : home_id.to_i
       end
 
       private

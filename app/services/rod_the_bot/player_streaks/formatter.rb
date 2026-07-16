@@ -2,7 +2,7 @@ module RodTheBot
   module PlayerStreaks
     class Formatter
       def chunks(streaks, season_type:)
-        header = season_type == "Playoffs" ? "🔥 Active Streaks (Playoffs):\n\n" : "🔥 Active Streaks:\n\n"
+        header = (season_type == "Playoffs") ? "🔥 Active Streaks (Playoffs):\n\n" : "🔥 Active Streaks:\n\n"
         PostThread.split_lines(streaks.map { |streak| line(streak) }, header: header)
       end
 

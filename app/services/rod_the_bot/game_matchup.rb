@@ -10,7 +10,7 @@ module RodTheBot
 
       home = feed["homeTeam"]
       away = feed["awayTeam"]
-      ours, opponent = home["id"].to_i == team_id ? [home, away] : [away, home]
+      ours, opponent = (home["id"].to_i == team_id) ? [home, away] : [away, home]
 
       Matchup.new(
         our_team_id: ours["id"].to_i,

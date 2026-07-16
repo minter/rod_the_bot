@@ -21,17 +21,17 @@ module RodTheBot
 
       result = detector.detect(game_id: game_id, team_id: defending_team_id, goalie_id: goalie_id, event_id: play["eventId"], plays: @feed["plays"])
       if result.status == :changed
-          new_goalie = player_directory(game_id).fetch(play["details"]["goalieInNetId"])
-          return if new_goalie.nil?
-          detector.commit(game_id: game_id, team_id: defending_team_id, goalie_id: goalie_id)
+        new_goalie = player_directory(game_id).fetch(play["details"]["goalieInNetId"])
+        return if new_goalie.nil?
+        detector.commit(game_id: game_id, team_id: defending_team_id, goalie_id: goalie_id)
 
-          post = build_post(defending_team, new_goalie)
-          headshot = get_goalie_headshot(play["details"]["goalieInNetId"])  # Use original integer
-          images = headshot ? [headshot] : []
+        post = build_post(defending_team, new_goalie)
+        headshot = get_goalie_headshot(play["details"]["goalieInNetId"])  # Use original integer
+        images = headshot ? [headshot] : []
 
-          RodTheBot::Post.perform_async(post, nil, nil, nil, images)
+        RodTheBot::Post.perform_async(post, nil, nil, nil, images)
 
-          Rails.logger.info "GoalieChangeWorker: Posted goalie change for team #{defending_team_id}, #{result.previous_goalie_id} → #{goalie_id} (#{new_goalie.name_with_number})"
+        Rails.logger.info "GoalieChangeWorker: Posted goalie change for team #{defending_team_id}, #{result.previous_goalie_id} → #{goalie_id} (#{new_goalie.name_with_number})"
       end
     end
 

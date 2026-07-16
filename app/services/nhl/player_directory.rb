@@ -68,6 +68,5 @@ module Nhl
     def each(&block)
       @identities.each_value(&block)
     end
-
   end
 end

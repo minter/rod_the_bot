@@ -1,6 +1,7 @@
 module RodTheBot
   class MilestoneCheckerWorker
     include Sidekiq::Worker
+
     def perform(game_id, play)
       @game_id = game_id
 
@@ -92,6 +93,5 @@ module RodTheBot
 
       player.team_id == tracked_team_id
     end
-
   end
 end
