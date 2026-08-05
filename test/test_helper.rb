@@ -20,6 +20,8 @@ class ActiveSupport::TestCase
   setup do
     # Reset MockRedis before each test
     REDIS.flushdb
+    # Clear Sidekiq queues so jobs can't leak between tests
+    Sidekiq::Worker.clear_all
   end
 end
 
