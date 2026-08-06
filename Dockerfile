@@ -61,7 +61,7 @@ RUN apt-get update -qq && \
     rm -rf /var/cache/apt/archives/*
 
 # Install specific version of bundler
-ARG BUNDLER_VERSION=4.0.14
+ARG BUNDLER_VERSION=4.0.18
 RUN gem install bundler --no-document -v "${BUNDLER_VERSION}"
 
 # Install application gems
