@@ -3,6 +3,12 @@ require "test_helper"
 class RodTheBot::SeasonStatsWorkerTest < ActiveSupport::TestCase
   def setup
     @worker = RodTheBot::SeasonStatsWorker.new
+    @team_abbreviation = ENV["NHL_TEAM_ABBREVIATION"]
+    ENV["NHL_TEAM_ABBREVIATION"] = "CAR"
+  end
+
+  def teardown
+    ENV["NHL_TEAM_ABBREVIATION"] = @team_abbreviation
   end
 
   def test_top_skaters_rejects_zero_values
@@ -36,5 +42,34 @@ class RodTheBot::SeasonStatsWorkerTest < ActiveSupport::TestCase
     leaders = @worker.send(:top_skaters, stats, :goals)
     assert_equal 5, leaders.length
     assert_equal ["P10", "P9", "P8", "P7", "P6"], leaders.map { |_, v| v[:name] }
+  end
+
+  test "perform does not fetch stats during preseason" do
+    Nhl::SeasonCalendar.expects(:preseason?).returns(true)
+    Nhl::PlayerClient.expects(:club_stats).never
+
+    @worker.perform("Carolina Hurricanes")
+
+    assert_empty RodTheBot::Post.jobs
+  end
+
+  test "perform requests current season stats explicitly" do
+    Nhl::SeasonCalendar.expects(:preseason?).returns(false)
+    Nhl::SeasonCalendar.expects(:current_season).returns("20262027")
+    Nhl::SeasonCalendar.expects(:postseason?).returns(false)
+    Nhl::PlayerClient.expects(:club_stats).with(
+      "CAR",
+      season: "20262027",
+      game_type: 2
+    ).returns(
+      "season" => "20262027",
+      "gameType" => 2,
+      "skaters" => [],
+      "goalies" => []
+    )
+
+    @worker.perform("Carolina Hurricanes")
+
+    assert_empty RodTheBot::Post.jobs
   end
 end

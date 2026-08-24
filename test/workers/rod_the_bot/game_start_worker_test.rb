@@ -135,7 +135,7 @@ class RodTheBot::GameStartWorkerTest < ActiveSupport::TestCase
       @game_start_worker.instance_variable_set(:@feed, feed)
 
       # Mock player data with missing featuredStats
-      Nhl::PlayerClient.expects(:landing).with(player_id).returns({})
+      Nhl::PlayerClient.expects(:landing).with(player_id, expected_season: 20242025).returns({})
 
       record = @game_start_worker.send(:find_goalie_record, player_id)
       assert_equal "(Stats unavailable)", record
@@ -150,6 +150,13 @@ class RodTheBot::GameStartWorkerTest < ActiveSupport::TestCase
       record = @game_start_worker.send(:find_goalie_record, nil)
       assert_equal "(Stats unavailable)", record
     end
+  end
+
+  test "find_goalie_record rejects stats from another season" do
+    @game_start_worker.instance_variable_set(:@feed, {"season" => 20262027, "gameType" => 2})
+    Nhl::PlayerClient.expects(:landing).with("42", expected_season: 20262027).returns(nil)
+
+    assert_equal "(Stats unavailable)", @game_start_worker.send(:find_goalie_record, "42")
   end
 
   test "find_starting_goalie handles missing goalies" do

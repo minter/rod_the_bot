@@ -34,8 +34,8 @@ module RodTheBot
 
       game_id = @game["id"]
 
-      away_standings = Nhl::StandingsClient.team(away["abbrev"])
-      home_standings = Nhl::StandingsClient.team(home["abbrev"])
+      away_standings = standings_for(away)
+      home_standings = standings_for(home)
       away_logo_url = @game["awayTeam"]["logo"]
       home_logo_url = @game["homeTeam"]["logo"]
       media = media(your_team)
@@ -105,6 +105,19 @@ module RodTheBot
     end
 
     private
+
+    def standings_for(team)
+      standings = if @game["season"]
+        Nhl::StandingsClient.team(team["abbrev"], season: @game["season"])
+      else
+        Nhl::StandingsClient.team(team["abbrev"])
+      end
+      return standings if standings
+
+      {
+        team_name: [team.dig("placeName", "default"), team.dig("commonName", "default")].compact.join(" ").presence || team["abbrev"]
+      }
+    end
 
     def series_seed_abbrevs(series_letter)
       return {} unless series_letter

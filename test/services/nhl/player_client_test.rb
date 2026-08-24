@@ -59,4 +59,26 @@ class Nhl::PlayerClientTest < ActiveSupport::TestCase
 
     assert_equal 20252026, Nhl::PlayerClient.club_stats("CAR")["season"]
   end
+
+  test "requests explicit club stats by season and game type" do
+    Nhl::PlayerClient.expects(:get_json).with("/club-stats/CAR/20262027/2").returns(
+      "season" => "20262027",
+      "gameType" => 2,
+      "skaters" => [],
+      "goalies" => []
+    )
+
+    assert_equal "20262027", Nhl::PlayerClient.club_stats("CAR", season: "20262027", game_type: 2)["season"]
+  end
+
+  test "rejects cached featured stats from another season" do
+    Nhl::PlayerClient.expects(:get_json).with("/player/42/landing").returns(
+      "featuredStats" => {"season" => 20252026}
+    )
+    Rails.logger.expects(:warn).with(
+      "Player landing season mismatch for player 42: expected 20262027, got 20252026"
+    )
+
+    assert_nil Nhl::PlayerClient.landing(42, expected_season: 20262027)
+  end
 end

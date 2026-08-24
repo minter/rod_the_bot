@@ -1,7 +1,7 @@
 module RodTheBot
   module EdgePlayerSelector
     # Get players who are on roster, played in recent games, and meet criteria
-    def select_eligible_players(criteria:, last_n_games: 5, min_games_played: 4)
+    def select_eligible_players(criteria:, last_n_games: 5, min_games_played: 4, game_id: nil)
       team_id = ENV["NHL_TEAM_ID"].to_i
       team_abbrev = ENV["NHL_TEAM_ABBREVIATION"]
 
@@ -23,7 +23,7 @@ module RodTheBot
       player_stats.each do |player_id, stats|
         next if stats[:games] < min_games_played
 
-        if meets_criteria?(player_id, stats, criteria)
+        if meets_criteria?(player_id, stats, criteria, game_id: game_id)
           eligible_players << {
             id: player_id,
             name: stats[:name],
@@ -94,12 +94,12 @@ module RodTheBot
       players
     end
 
-    def meets_criteria?(player_id, stats, criteria)
+    def meets_criteria?(player_id, stats, criteria, game_id: nil)
       case criteria
       when :zone_control_elite
         return false if stats[:points] < 3
 
-        edge_data = Nhl::EdgeClient.fetch_skater_zone_time(player_id)
+        edge_data = Nhl::EdgeClient.fetch_skater_zone_time(player_id, game_id: game_id)
         return false unless edge_data && edge_data["zoneTimeDetails"]
 
         all_situations = edge_data["zoneTimeDetails"].find { |d| d["strengthCode"] == "all" }
@@ -114,7 +114,7 @@ module RodTheBot
       when :hot_zones
         return false if stats[:goals] < 3
 
-        shot_location_data = Nhl::EdgeClient.fetch_skater_shot_location_detail(player_id)
+        shot_location_data = Nhl::EdgeClient.fetch_skater_shot_location_detail(player_id, game_id: game_id)
         return false unless shot_location_data && shot_location_data["shotLocationDetails"]
 
         elite_zones = shot_location_data["shotLocationDetails"].select do |zone|
@@ -126,7 +126,7 @@ module RodTheBot
       when :high_workload
         return false if stats[:points] < 5
 
-        distance_data = Nhl::EdgeClient.fetch_skater_skating_distance_detail(player_id)
+        distance_data = Nhl::EdgeClient.fetch_skater_skating_distance_detail(player_id, game_id: game_id)
         return false unless distance_data && distance_data["skatingDistanceLast10"]
 
         # Get average distance from recent games

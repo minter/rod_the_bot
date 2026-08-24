@@ -12,7 +12,8 @@ module RodTheBot
       eligible_players = select_eligible_players(
         last_n_games: 5,
         min_games_played: 4,
-        criteria: :hot_zones
+        criteria: :hot_zones,
+        game_id: game_id
       )
 
       return if eligible_players.empty?
@@ -21,7 +22,7 @@ module RodTheBot
       selected_player = eligible_players.sample
 
       # Fetch shot location data
-      shot_data = Nhl::EdgeClient.fetch_skater_shot_location_detail(selected_player[:id])
+      shot_data = Nhl::EdgeClient.fetch_skater_shot_location_detail(selected_player[:id], game_id: game_id)
       return unless shot_data && shot_data["shotLocationDetails"]
 
       # Get player headshot

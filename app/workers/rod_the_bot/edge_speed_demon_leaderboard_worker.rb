@@ -11,7 +11,7 @@ module RodTheBot
       team_id = ENV["NHL_TEAM_ID"].to_i
 
       # Fetch team speed data
-      speed_data = Nhl::EdgeClient.fetch_team_skating_speed_detail(team_id)
+      speed_data = Nhl::EdgeClient.fetch_team_skating_speed_detail(team_id, game_id: game_id)
       return unless speed_data && speed_data["topSkatingSpeeds"]&.any?
 
       # Get current roster to verify players are active

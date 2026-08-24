@@ -14,7 +14,6 @@ class RodTheBot::UpcomingMilestonesWorkerTest < ActiveSupport::TestCase
   end
 
   test "perform skips during preseason" do
-    skip "VCR cassette issue - needs schedule API call recorded"
     Nhl::SeasonCalendar.stubs(:preseason?).returns(true)
     Nhl::SeasonCalendar.stubs(:offseason?).returns(false)
 
@@ -24,15 +23,13 @@ class RodTheBot::UpcomingMilestonesWorkerTest < ActiveSupport::TestCase
   end
 
   test "perform skips during offseason" do
-    skip "VCR cassette issue - needs schedule API call recorded"
-    VCR.use_cassette("nhl_roster_CAR", allow_playback_repeats: true) do
-      Nhl::SeasonCalendar.stubs(:preseason?).returns(false)
-      Nhl::SeasonCalendar.stubs(:offseason?).returns(true)
+    Nhl::SeasonCalendar.stubs(:preseason?).returns(false)
+    Nhl::SeasonCalendar.stubs(:offseason?).returns(true)
+    Nhl::Roster.expects(:for).never
 
-      @worker.perform
+    @worker.perform
 
-      assert_equal 0, RodTheBot::Post.jobs.size
-    end
+    assert_equal 0, RodTheBot::Post.jobs.size
   end
 
   test "perform with regular season milestones" do

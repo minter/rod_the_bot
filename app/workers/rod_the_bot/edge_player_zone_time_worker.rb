@@ -12,7 +12,8 @@ module RodTheBot
       eligible_players = select_eligible_players(
         last_n_games: 5,
         min_games_played: 4,
-        criteria: :zone_control_elite
+        criteria: :zone_control_elite,
+        game_id: game_id
       )
 
       return if eligible_players.empty?
@@ -21,14 +22,14 @@ module RodTheBot
       selected_player = eligible_players.sample
 
       # Fetch EDGE data
-      edge_data = Nhl::EdgeClient.fetch_skater_zone_time(selected_player[:id])
+      edge_data = Nhl::EdgeClient.fetch_skater_zone_time(selected_player[:id], game_id: game_id)
       return unless edge_data && edge_data["zoneTimeDetails"]
 
       # Get player headshot
       player_headshot = fetch_player_headshot(selected_player[:id])
 
       # Format and post
-      post_text = format_zone_time_spotlight(selected_player, edge_data)
+      post_text = format_zone_time_spotlight(selected_player, edge_data, season: season_for(game_id))
       RodTheBot::Post.perform_async(post_text, nil, nil, nil, [player_headshot]) if post_text
     rescue => e
       retry_job(e, game_id: game_id, operation: "edge_player_zone_time")
@@ -36,7 +37,7 @@ module RodTheBot
 
     private
 
-    def format_zone_time_spotlight(player, edge_data)
+    def format_zone_time_spotlight(player, edge_data, season: nil)
       all_situations = edge_data["zoneTimeDetails"].find { |d| d["strengthCode"] == "all" }
       return nil unless all_situations
 
@@ -49,8 +50,11 @@ module RodTheBot
       oz_starts_percentile = (edge_data.dig("zoneStarts", "offensiveZoneStartsPctgPercentile") * 100).round(0)
 
       # Get season totals
-      player_landing = Nhl::PlayerClient.landing(player[:id])
+      player_landing = Nhl::PlayerClient.landing(player[:id], expected_season: season)
+      return unless player_landing
+
       season_stats = player_landing.dig("featuredStats", "regularSeason", "subSeason")
+      return unless season_stats
       goals = season_stats["goals"]
       assists = season_stats["assists"]
       points = season_stats["points"]
@@ -65,6 +69,10 @@ module RodTheBot
 
         Season totals: #{goals}G-#{assists}A = #{points} points
       POST
+    end
+
+    def season_for(game_id)
+      Nhl::GameId.new(game_id).season if game_id
     end
   end
 end

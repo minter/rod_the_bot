@@ -8,7 +8,7 @@ module RodTheBot
       return if Nhl::SeasonCalendar.preseason?
 
       team_id = ENV["NHL_TEAM_ID"].to_i
-      speed_data = Nhl::EdgeClient.fetch_team_skating_speed_detail(team_id)
+      speed_data = Nhl::EdgeClient.fetch_team_skating_speed_detail(team_id, game_id: game_id)
       return unless speed_data && speed_data["skatingSpeedDetails"]&.any?
 
       our_team_abbrev, opponent_team_abbrev, opponent_speed_data = fetch_opponent_data(game_id, team_id)
@@ -37,7 +37,7 @@ module RodTheBot
       matchup = GameMatchup.for(game_id, team_id: team_id)
       return [nil, nil, nil] unless matchup
 
-      [matchup.our_abbrev, matchup.opponent_abbrev, Nhl::EdgeClient.fetch_team_skating_speed_detail(matchup.opponent_team_id)]
+      [matchup.our_abbrev, matchup.opponent_abbrev, Nhl::EdgeClient.fetch_team_skating_speed_detail(matchup.opponent_team_id, game_id: game_id)]
     end
 
     def filter_to_active_players(data, players_key, team_abbrev)

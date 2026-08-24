@@ -17,15 +17,25 @@ module Nhl
         end.compact
       end
 
-      def team(team_abbreviation)
+      def team(team_abbreviation, season: nil)
         entry = standings.fetch("standings", []).find { |candidate| candidate.dig("teamAbbrev", "default") == team_abbreviation }
         return unless entry
 
-        {
+        team = {
+          team_name: entry.dig("teamName", "default"),
+          season_id: entry["seasonId"]
+        }
+
+        if season && entry["seasonId"].to_s != season.to_s
+          Rails.logger.warn "Standings season mismatch for #{team_abbreviation}: expected #{season}, got #{entry["seasonId"] || "none"}"
+          return team
+        end
+
+        team.merge(
           division_name: entry["divisionName"], division_rank: entry["divisionSequence"],
           points: entry["points"], wins: entry["wins"], losses: entry["losses"],
-          ot: entry["otLosses"], team_name: entry.dig("teamName", "default"), season_id: entry["seasonId"]
-        }
+          ot: entry["otLosses"]
+        )
       end
 
       private

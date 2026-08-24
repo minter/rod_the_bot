@@ -15,10 +15,21 @@ module Nhl
 
     class << self
       ENDPOINTS.each do |name, (path, ttl)|
-        define_method("fetch_#{name}") do |subject_id, season: nil, game_type: nil|
+        define_method("fetch_#{name}") do |subject_id, season: nil, game_type: nil, game_id: nil|
+          if game_id
+            context = GameId.new(game_id)
+            season ||= context.season
+            game_type ||= context.game_type
+          end
+
           period = (season && game_type) ? "#{season}/#{game_type}" : "now"
           cache_key = "edge_#{name}_#{subject_id}_#{period.tr("/", "_")}"
           Rails.cache.fetch(cache_key, expires_in: ttl) { get_json("/edge/#{path}/#{subject_id}/#{period}") }
+        rescue RequestError => e
+          raise unless period != "now" && e.message.end_with?("HTTP 404")
+
+          Rails.logger.warn "EDGE data unavailable for #{path}/#{subject_id}/#{period}"
+          nil
         end
       end
     end

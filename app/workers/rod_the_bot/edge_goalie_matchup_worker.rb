@@ -11,8 +11,8 @@ module RodTheBot
       return unless our_goalie_id && opponent_goalie_id
 
       # Fetch EDGE data for both goalies
-      our_data = Nhl::EdgeClient.fetch_goalie_detail(our_goalie_id)
-      opp_data = Nhl::EdgeClient.fetch_goalie_detail(opponent_goalie_id)
+      our_data = Nhl::EdgeClient.fetch_goalie_detail(our_goalie_id, game_id: game_id)
+      opp_data = Nhl::EdgeClient.fetch_goalie_detail(opponent_goalie_id, game_id: game_id)
 
       return unless our_data&.dig("player") && opp_data&.dig("player")
 

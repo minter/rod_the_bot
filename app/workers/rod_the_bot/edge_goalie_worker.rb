@@ -11,7 +11,7 @@ module RodTheBot
       return unless goalie_player_id
 
       # Fetch EDGE goalie data
-      goalie_data = Nhl::EdgeClient.fetch_goalie_detail(goalie_player_id)
+      goalie_data = Nhl::EdgeClient.fetch_goalie_detail(goalie_player_id, game_id: game_id)
       return unless goalie_data && goalie_data["player"]
 
       # Format post

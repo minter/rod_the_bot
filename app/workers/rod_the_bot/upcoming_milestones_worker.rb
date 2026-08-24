@@ -4,8 +4,8 @@ module RodTheBot
     include ActionView::Helpers::TextHelper
 
     def perform
-      # Skip preseason - stats don't count
-      return if Nhl::SeasonCalendar.preseason?
+      # Skip offseason and preseason - stats don't count
+      return if Nhl::SeasonCalendar.offseason? || Nhl::SeasonCalendar.preseason?
 
       team_id = ENV["NHL_TEAM_ID"].to_i
       game_type = Nhl::SeasonCalendar.postseason? ? 3 : 2

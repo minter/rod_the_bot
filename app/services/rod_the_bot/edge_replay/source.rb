@@ -73,11 +73,7 @@ module RodTheBot
       end
 
       def season_slug(game_id)
-        value = game_id.to_s.strip
-        raise ArgumentError, "Invalid game_id" unless value.match?(/\A\d{10}\z/)
-
-        year = value.first(4).to_i
-        "#{year}#{year + 1}"
+        Nhl::GameId.new(game_id).season
       end
     end
   end

@@ -38,6 +38,8 @@ module RodTheBot
       end
 
       def record(team)
+        return unless %i[wins losses ot points].all? { |key| team[key].present? }
+
         line = "(#{team[:wins]}-#{team[:losses]}-#{team[:ot]}, #{team[:points]} #{"point".pluralize(team[:points])})"
         line += "\n#{ordinalize team[:division_rank]} in the #{team[:division_name]}" unless team[:division_name] == "Unknown"
         line

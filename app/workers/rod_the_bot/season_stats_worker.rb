@@ -5,11 +5,14 @@ module RodTheBot
     include ActiveSupport::Inflector
 
     def perform(your_team)
+      return if Nhl::SeasonCalendar.preseason?
+
       @season = nil
       @season_type = nil
       @season_type_id = nil
-      skater_stats, goalie_stats = collect_roster_stats
-      return if Nhl::SeasonCalendar.preseason?
+      season = Nhl::SeasonCalendar.current_season
+      game_type = Nhl::SeasonCalendar.postseason? ? 3 : 2
+      skater_stats, goalie_stats = collect_roster_stats(season: season, game_type: game_type)
       return if skater_stats.empty? || goalie_stats.empty?
 
       presentation = SeasonStats::Formatter.new(season_type: @season_type, team_name: your_team)
@@ -42,12 +45,21 @@ module RodTheBot
       RodTheBot::Post.perform_in(76.minutes, team_season_stats_post_2, stats_post_2_key, stats_post_1_key)
     end
 
-    def collect_roster_stats
+    def collect_roster_stats(season: Nhl::SeasonCalendar.current_season, game_type: 2)
       skater_stats = {}
       goalie_stats = {}
-      roster = Nhl::PlayerClient.club_stats(ENV["NHL_TEAM_ABBREVIATION"])
+      roster = Nhl::PlayerClient.club_stats(
+        ENV["NHL_TEAM_ABBREVIATION"],
+        season: season,
+        game_type: game_type
+      )
       @season = roster["season"]
       @season_type_id = roster["gameType"]
+      unless @season.to_s == season.to_s && @season_type_id.to_i == game_type.to_i
+        Rails.logger.warn "SeasonStatsWorker: Expected season #{season}/#{game_type}, got #{@season || "none"}/#{@season_type_id || "none"}"
+        return [skater_stats, goalie_stats]
+      end
+
       @season_type = case roster["gameType"]
       when 1
         "Preseason"
@@ -57,9 +69,7 @@ module RodTheBot
         "Playoff"
       end
 
-      @season_type = "#{@season[0..3]}-#{@season[4..7]} #{@season_type}" if @season != Nhl::SeasonCalendar.current_season
-
-      roster["skaters"].each do |player|
+      roster.fetch("skaters", []).each do |player|
         skater_stats[player["playerId"]] = {
           name: Nhl::PlayerIdentity.from_landing(player, player_id: player["playerId"]).name_with_number,
           games: player["gamesPlayed"],
@@ -72,7 +82,7 @@ module RodTheBot
         }
       end
 
-      roster["goalies"].each do |player|
+      roster.fetch("goalies", []).each do |player|
         goalie_stats[player["playerId"]] = {
           name: Nhl::PlayerIdentity.from_landing(player, player_id: player["playerId"]).name_with_number,
           games: player["gamesPlayed"],

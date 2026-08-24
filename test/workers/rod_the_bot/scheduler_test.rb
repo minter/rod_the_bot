@@ -101,6 +101,56 @@ class RodTheBot::SchedulerTest < ActiveSupport::TestCase
     end
   end
 
+  def test_perform_omits_records_when_standings_have_not_rolled_over
+    game = {
+      "id" => 2026020001,
+      "season" => 20262027,
+      "gameType" => 2,
+      "gameDate" => "2026-09-29",
+      "gameScheduleState" => "OK",
+      "startTimeUTC" => "2026-09-29T23:00:00Z",
+      "venue" => {"default" => "Lenovo Center"},
+      "homeTeam" => {
+        "id" => 12,
+        "abbrev" => "CAR",
+        "placeName" => {"default" => "Carolina"},
+        "commonName" => {"default" => "Hurricanes"},
+        "logo" => "home.svg",
+        "radioLink" => "home-radio"
+      },
+      "awayTeam" => {
+        "id" => 13,
+        "abbrev" => "FLA",
+        "placeName" => {"default" => "Florida"},
+        "commonName" => {"default" => "Panthers"},
+        "logo" => "away.svg",
+        "radioLink" => "away-radio"
+      },
+      "tvBroadcasts" => []
+    }
+
+    Nhl::SeasonCalendar.stubs(:offseason?).returns(false)
+    Nhl::SeasonCalendar.stubs(:preseason?).returns(false)
+    Nhl::SeasonCalendar.stubs(:postseason?).returns(false)
+    Nhl::ScheduleClient.stubs(:todays_game).returns(game)
+    Nhl::StandingsClient.expects(:team).with("FLA", season: 20262027).returns(
+      team_name: "Florida Panthers", season_id: 20252026
+    )
+    Nhl::StandingsClient.expects(:team).with("CAR", season: 20262027).returns(
+      team_name: "Carolina Hurricanes", season_id: 20252026
+    )
+
+    Timecop.freeze(Time.zone.local(2026, 9, 29, 10)) do
+      @worker.perform
+    end
+
+    post = RodTheBot::Post.jobs.first["args"].first
+    assert_includes post, "Florida Panthers\n\nat\n\nCarolina Hurricanes"
+    refute_includes post, "53-22-7"
+    refute_match(/\(\d+-\d+-\d+,/, post)
+    assert_equal "Carolina Hurricanes", RodTheBot::SeasonStatsWorker.jobs.first["args"].first
+  end
+
   def test_playoff_series_state_tied
     series = {"topSeedWins" => 0, "bottomSeedWins" => 0, "topSeedTeamAbbrev" => "CAR", "bottomSeedTeamAbbrev" => "OTT"}
     assert_equal "Series tied 0-0", RodTheBot::Scheduling::GamedayPost.new.send(:series_state, series)
