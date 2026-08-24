@@ -188,6 +188,9 @@ Key system components and dependencies:
 * FFmpeg: Video processing for highlights and replays
 * ImageMagick + librsvg: Image processing
 
+Potential NHL sources that have been identified but are not yet integrated are
+recorded in [NHL data sources](docs/NHL_DATA_SOURCES.md).
+
 ## Contributing
 
 Bug reports and pull requests are welcome on GitHub at https://github.com/minter/rod_the_bot
