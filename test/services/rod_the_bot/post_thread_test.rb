@@ -22,8 +22,8 @@ class RodTheBot::PostThreadTest < ActiveSupport::TestCase
 
     RodTheBot::PostThread.enqueue(chunks, key: "thread", delay: 10.seconds)
 
-    assert_equal ["one", "thread:1"], RodTheBot::Post.jobs.first["args"]
-    assert_equal ["two", "thread:2", "thread:1"], RodTheBot::Post.jobs.second["args"]
-    assert_equal ["three", "thread:3", "thread:2"], RodTheBot::Post.jobs.third["args"]
+    assert_equal ["one", {"key" => "thread:1"}], RodTheBot::Post.jobs.first["args"]
+    assert_equal ["two", {"key" => "thread:2", "parent_key" => "thread:1"}], RodTheBot::Post.jobs.second["args"]
+    assert_equal ["three", {"key" => "thread:3", "parent_key" => "thread:2"}], RodTheBot::Post.jobs.third["args"]
   end
 end

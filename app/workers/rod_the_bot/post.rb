@@ -4,7 +4,13 @@ module RodTheBot
 
     attr_writer :bsky
 
-    def perform(post, key = nil, parent_key = nil, embed_url = nil, embed_images = [], video_file_path = nil, root_key = nil, link_facets = [])
+    def perform(post, options = {})
+      key = options["key"]
+      parent_key = options["parent_key"]
+      embed_url = options["embed_url"]
+      embed_images = options.fetch("embed_images", [])
+      video_file_path = options["video_file_path"]
+      root_key = options["root_key"]
       completed = false
       post = append_team_hashtags(post)
       new_post = nil
@@ -13,7 +19,7 @@ module RodTheBot
         create_session
         return if @bsky.nil?
 
-        facets = build_link_facets(post, link_facets)
+        facets = build_link_facets(post, options.fetch("links", []))
         parent_uri = REDIS.get(parent_key) if parent_key
         reply_uri = REDIS.get(key) if key && !parent_key
         new_post = if parent_uri

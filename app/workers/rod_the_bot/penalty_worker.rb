@@ -43,7 +43,7 @@ module RodTheBot
         tracked_team_id: tracked_team_id
       )
       headshot = Nhl::PlayerClient.landing(main_player_id)&.dig("headshot")
-      RodTheBot::Post.perform_async(post, nil, nil, nil, headshot ? [headshot] : [])
+      RodTheBot::Post.perform_async(post, {"embed_images" => headshot ? [headshot] : []})
     rescue Nhl::RequestError => e
       retry_job(e, game_id: game_id, play_id: play&.dig("eventId"), operation: "fetch_penalty")
     rescue => e

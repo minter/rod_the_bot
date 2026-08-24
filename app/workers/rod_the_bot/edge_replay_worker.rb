@@ -106,7 +106,15 @@ module RodTheBot
       end
 
       # Post as reply - Post worker will update last_reply_key after successful post
-      RodTheBot::Post.perform_async(post_text, edge_replay_key, parent_key, nil, [], video_path, redis_key)
+      RodTheBot::Post.perform_async(
+        post_text,
+        {
+          "key" => edge_replay_key,
+          "parent_key" => parent_key,
+          "video_file_path" => video_path,
+          "root_key" => redis_key
+        }
+      )
     end
 
     def post_formatter

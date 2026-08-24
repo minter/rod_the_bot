@@ -70,8 +70,8 @@ class RodTheBot::EdgeGoalieMatchupWorkerTest < ActiveSupport::TestCase
 
       # Check that parent_key points to edge_goalie post
       args = RodTheBot::Post.jobs.first["args"]
-      post_key = args[1]
-      parent_key = args[2]
+      post_key = args[1]["key"]
+      parent_key = args[1]["parent_key"]
 
       assert_match(/edge_goalie_matchup_#{game_id}/, post_key)
       assert_match(/edge_goalie_#{game_id}/, parent_key)
@@ -87,8 +87,7 @@ class RodTheBot::EdgeGoalieMatchupWorkerTest < ActiveSupport::TestCase
       @worker.perform(game_id, our_goalie_id, opp_goalie_id)
 
       assert_equal 1, RodTheBot::Post.jobs.size
-      # Check that images array is passed (5th argument)
-      images = RodTheBot::Post.jobs.first["args"][4]
+      images = RodTheBot::Post.jobs.first["args"][1]["embed_images"]
       assert_kind_of Array, images
       # Should have 2 images (both goalie headshots)
       assert_operator images.compact.length, :<=, 2

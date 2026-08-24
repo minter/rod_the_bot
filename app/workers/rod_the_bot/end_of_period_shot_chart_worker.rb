@@ -21,12 +21,7 @@ module RodTheBot
       post_text = format_post(home, away, period_number)
       RodTheBot::Post.perform_async(
         post_text,
-        nil,
-        nil,
-        nil,
-        [],
-        path.to_s,
-        nil
+        {"video_file_path" => path.to_s}
       )
     rescue Nhl::RequestError => e
       retry_job(e, game_id: game_id, period: period_number, operation: "fetch_shot_chart")

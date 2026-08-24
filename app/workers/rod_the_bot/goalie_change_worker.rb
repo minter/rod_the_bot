@@ -29,7 +29,7 @@ module RodTheBot
         headshot = get_goalie_headshot(play["details"]["goalieInNetId"])  # Use original integer
         images = headshot ? [headshot] : []
 
-        RodTheBot::Post.perform_async(post, nil, nil, nil, images)
+        RodTheBot::Post.perform_async(post, {"embed_images" => images})
 
         Rails.logger.info "GoalieChangeWorker: Posted goalie change for team #{defending_team_id}, #{result.previous_goalie_id} → #{goalie_id} (#{new_goalie.name_with_number})"
       end

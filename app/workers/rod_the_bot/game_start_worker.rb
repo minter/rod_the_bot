@@ -37,8 +37,15 @@ module RodTheBot
       # Add timestamp to keys to ensure uniqueness
       current_date = Time.now.strftime("%Y%m%d")
       main_post_key = "game_start_#{game_id}:#{current_date}"
-      RodTheBot::Post.perform_async(main_post, main_post_key, nil, nil, goalie_images)
-      RodTheBot::Post.perform_in(1.minute, reply_post, "game_start_reply_#{game_id}:#{current_date}", main_post_key)
+      RodTheBot::Post.perform_async(
+        main_post,
+        {"key" => main_post_key, "embed_images" => goalie_images}
+      )
+      RodTheBot::Post.perform_in(
+        1.minute,
+        reply_post,
+        {"key" => "game_start_reply_#{game_id}:#{current_date}", "parent_key" => main_post_key}
+      )
 
       # Store pre-game career stats for milestone detection (skip in preseason)
       RodTheBot::PregameStatsWorker.perform_async(game_id) unless Nhl::SeasonCalendar.preseason?

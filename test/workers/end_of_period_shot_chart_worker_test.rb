@@ -23,8 +23,7 @@ class RodTheBot::EndOfPeriodShotChartWorkerTest < ActiveSupport::TestCase
       EDM: 21 SOG
     POST
     assert_equal expected_text, args[0]
-    # Post.perform args: post, key, parent_key, embed_url, embed_images, video_file_path, root_key
-    assert_equal fake_path.to_s, args[5]
+    assert_equal fake_path.to_s, args[1]["video_file_path"]
   end
 
   def test_no_op_when_service_returns_nil

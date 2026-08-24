@@ -31,7 +31,7 @@ module RodTheBot
 
       # Format and post
       post_text = format_workload_spotlight(selected_player, distance_data, season: season_for(game_id))
-      RodTheBot::Post.perform_async(post_text, nil, nil, nil, [player_headshot]) if post_text
+      RodTheBot::Post.perform_async(post_text, {"embed_images" => [player_headshot]}) if post_text
     rescue => e
       retry_job(e, game_id: game_id, operation: "edge_player_workload")
     end

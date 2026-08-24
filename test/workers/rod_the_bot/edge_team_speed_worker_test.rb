@@ -69,7 +69,7 @@ class RodTheBot::EdgeTeamSpeedWorkerTest < ActiveSupport::TestCase
 
       assert_equal 1, RodTheBot::Post.jobs.size
       # Check that images array is passed (5th argument)
-      images = RodTheBot::Post.jobs.first["args"][4]
+      images = RodTheBot::Post.jobs.first["args"][1]["embed_images"]
       assert_kind_of Array, images
       # Should have up to 2 images (fastest player from each team)
       assert_operator images.compact.length, :<=, 2

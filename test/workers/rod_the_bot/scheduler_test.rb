@@ -71,11 +71,11 @@ class RodTheBot::SchedulerTest < ActiveSupport::TestCase
 
         details = RodTheBot::Post.jobs.second["args"]
         assert_equal "🎧 Listen live · 🎟️ Tickets\n", details[0]
-        assert_equal "gameday_2023020360", details[2]
+        assert_equal "gameday_2023020360", details[1]["parent_key"]
         assert_equal [
           {"text" => "Listen live", "url" => "https://d2igy0yla8zi0u.cloudfront.net/CAR/20232024/CAR-radio.m3u8"},
           {"text" => "Tickets", "url" => "https://www.ticketmaster.com/event/2D005EF4A06143A9?brand=carolinahurricanes&artistid=805908&wt.mc_id=NHL_TEAM_CAR_SCHEDULE_GM11&utm_source=nhl.com&utm_medium=client&utm_campaign=NHL_TEAM_CAR&utm_content=SCHEDULE_GM11"}
-        ], details[7]
+        ], details[1]["links"]
       end
     end
   end
@@ -209,7 +209,7 @@ class RodTheBot::SchedulerTest < ActiveSupport::TestCase
     assert_includes post, "Carolina Hurricanes\n(15-5-1, 31 points)\n1st in the Metropolitan\n\nat\n\nSeattle Kraken"
     assert_includes post, "⏰ 12:00 PM EST"
     assert_includes post, "🌐 7:00 PM EET local time"
-    assert_equal ["https://assets.nhle.com/global-series.svg"], post_job["args"][4]
+    assert_equal ["https://assets.nhle.com/global-series.svg"], post_job["args"][1]["embed_images"]
     assert_operator "#{post}\n#{ENV["TEAM_HASHTAGS"]}".length, :<=, 300
 
     expected_stream_start = Time.iso8601("2026-11-12T16:45:00Z").to_f

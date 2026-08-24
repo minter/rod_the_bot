@@ -2,6 +2,8 @@ module RodTheBot
   class GameStream
     include Sidekiq::Worker
 
+    FINAL_FOLLOWUP_TTL = 2.days.to_i
+
     attr_reader :feed, :game_id
 
     def perform(game_id)
@@ -18,10 +20,7 @@ module RodTheBot
       end
 
       if game_final
-        RodTheBot::FinalScoreWorker.perform_in(60, game_id)
-        RodTheBot::ThreeStarsWorker.perform_in(90, game_id)
-        RodTheBot::GameVideoWorker.perform_in(10.minutes, game_id, "threeMinRecap")
-        RodTheBot::GameVideoWorker.perform_in(10.minutes, game_id, "condensedGame")
+        schedule_final_followups
       else
         RodTheBot::GameStream.perform_in(30, game_id)
       end
@@ -34,6 +33,28 @@ module RodTheBot
     end
 
     private
+
+    def schedule_final_followups
+      schedule_final_followup("final_score") { RodTheBot::FinalScoreWorker.perform_in(60, game_id) }
+      schedule_final_followup("three_stars") { RodTheBot::ThreeStarsWorker.perform_in(90, game_id) }
+      schedule_final_followup("three_minute_recap") do
+        RodTheBot::GameVideoWorker.perform_in(10.minutes, game_id, "threeMinRecap")
+      end
+      schedule_final_followup("condensed_game") do
+        RodTheBot::GameVideoWorker.perform_in(10.minutes, game_id, "condensedGame")
+      end
+    end
+
+    def schedule_final_followup(name)
+      claim_key = "#{game_id}:final_followup:#{name}"
+      claimed = REDIS.set(claim_key, "true", nx: true, ex: FINAL_FOLLOWUP_TTL)
+      return unless claimed
+
+      yield
+    rescue
+      REDIS.del(claim_key) if claimed
+      raise
+    end
 
     def process_play(play)
       worker_class, delay = worker_mapping[play["typeDescKey"]]

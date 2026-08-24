@@ -36,7 +36,15 @@ module RodTheBot
       post = formatter.correction(play: @play, scoring_team: scoring_team, players: players)
 
       # Post as reply - Post worker will update last_reply_key after successful post
-      RodTheBot::Post.perform_async(post, scoring_key, parent_key, nil, ScoringChange::Images.for(@play), nil, redis_key)
+      RodTheBot::Post.perform_async(
+        post,
+        {
+          "key" => scoring_key,
+          "parent_key" => parent_key,
+          "embed_images" => ScoringChange::Images.for(@play),
+          "root_key" => redis_key
+        }
+      )
     rescue Nhl::RequestError => e
       retry_job(e, game_id: game_id, play_id: play_id, operation: "fetch_scoring_change")
     rescue => e
@@ -75,7 +83,10 @@ module RodTheBot
       overturn_key = "#{redis_key}:overturn:#{Time.now.to_i}"
 
       # Post as reply - Post worker will update last_reply_key after successful post
-      RodTheBot::Post.perform_async(post, overturn_key, parent_key, nil, nil, nil, redis_key)
+      RodTheBot::Post.perform_async(
+        post,
+        {"key" => overturn_key, "parent_key" => parent_key, "root_key" => redis_key}
+      )
 
       Rails.logger.info "ScoringChangeWorker: Posted goal overturn for game #{game_id}, play #{play_id}, replying to: #{parent_key}"
     end

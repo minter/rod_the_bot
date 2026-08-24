@@ -41,7 +41,7 @@ class RodTheBot::GoalieChangeWorkerTest < ActiveSupport::TestCase
         assert_match(/Now in goal for the Panthers, #31 Cooper Black/, post_content)
 
         # Verify headshot image is included
-        post_images = RodTheBot::Post.jobs.last["args"][4]
+        post_images = RodTheBot::Post.jobs.last["args"][1]["embed_images"]
         assert_not_nil post_images
         assert post_images.is_a?(Array)
         assert_match(/8484900\.png/, post_images.first) if post_images.any?

@@ -25,7 +25,7 @@ module RodTheBot
       current_date = Time.now.strftime("%Y%m%d")
       post_key = "edge_goalie_#{game_id}:#{current_date}"
 
-      RodTheBot::Post.perform_async(post_text, post_key, nil, nil, [goalie_headshot])
+      RodTheBot::Post.perform_async(post_text, {"key" => post_key, "embed_images" => [goalie_headshot]})
     rescue => e
       retry_job(e, game_id: game_id, player_id: goalie_player_id, operation: "edge_goalie")
     end

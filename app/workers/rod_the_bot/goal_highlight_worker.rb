@@ -27,7 +27,9 @@ module RodTheBot
       return if @landing_play.blank?
 
       if @landing_play["highlightClipSharingUrl"].present?
-        output_path = download_highlight(@landing_play["highlightClipSharingUrl"])
+        media = download_highlight(@landing_play["highlightClipSharingUrl"])
+        return unless media
+
         post = format_post(@landing_play)
 
         # Determine parent_key: Use most recent reply if it exists, otherwise use goal post (root)
@@ -46,10 +48,26 @@ module RodTheBot
         end
 
         # Post as reply - Post worker will update last_reply_key after successful post
-        if output_path.include?("http")
-          RodTheBot::Post.perform_async(post, highlight_key, parent_key, output_path, [], nil, redis_key)
+        if media.fallback_url
+          RodTheBot::Post.perform_async(
+            post,
+            {
+              "key" => highlight_key,
+              "parent_key" => parent_key,
+              "embed_url" => media.fallback_url,
+              "root_key" => redis_key
+            }
+          )
         else
-          RodTheBot::Post.perform_async(post, highlight_key, parent_key, nil, [], output_path, redis_key)
+          RodTheBot::Post.perform_async(
+            post,
+            {
+              "key" => highlight_key,
+              "parent_key" => parent_key,
+              "video_file_path" => media.attachment_path,
+              "root_key" => redis_key
+            }
+          )
         end
       else
         # Pass redis_key (goal post key) when rescheduling

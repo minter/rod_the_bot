@@ -26,7 +26,7 @@ module RodTheBot
       headshots = fetch_player_headshots(player_ids)
 
       post_text = format_team_shot_speed_post(shot_data, opponent_shot_data, our_team_abbrev, opponent_team_abbrev)
-      RodTheBot::Post.perform_async(post_text, nil, nil, nil, headshots) if post_text
+      RodTheBot::Post.perform_async(post_text, {"embed_images" => headshots}) if post_text
     rescue => e
       retry_job(e, game_id: game_id, operation: "edge_team_shot_speed")
     end

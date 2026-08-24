@@ -117,7 +117,7 @@ class RodTheBot::ScoringChangeWorkerTest < ActiveSupport::TestCase
 
     VCR.use_cassette("nhl_game_#{overturned_game_id}_overturned_goal", record: :new_episodes) do
       # Mock the Post.perform_async call to verify it gets called with overturn message
-      RodTheBot::Post.expects(:perform_async).once.with do |post, scoring_key, parent_key, _third_param, _fourth_param|
+      RodTheBot::Post.expects(:perform_async).once.with do |post, options|
         # Verify the post content
         assert_match(/❌ Goal Overturned/, post)
         assert_match(/Carolina goal by Bradly Nadeau/, post)
@@ -125,8 +125,9 @@ class RodTheBot::ScoringChangeWorkerTest < ActiveSupport::TestCase
         assert_match(/offside challenge by Florida/, post)
 
         # Verify the key structure
-        assert_match(/#{Regexp.escape(redis_key)}:overturn:\d+/, scoring_key)
-        assert_equal redis_key, parent_key
+        assert_match(/#{Regexp.escape(redis_key)}:overturn:\d+/, options["key"])
+        assert_equal redis_key, options["parent_key"]
+        assert_equal redis_key, options["root_key"]
 
         true
       end

@@ -65,13 +65,28 @@ class RodTheBot::GameStreamTest < ActiveSupport::TestCase
     assert_equal expected_mapping, @game_stream.send(:worker_mapping)
   end
 
-  test "final games schedule both recap video types" do
+  test "final games schedule each follow-up once across duplicate deliveries" do
     Nhl::GameClient.stubs(:play_by_play).returns("gameState" => "OFF", "plays" => [])
 
-    @game_stream.perform(@game_id)
+    2.times { @game_stream.perform(@game_id) }
 
+    assert_equal 1, RodTheBot::FinalScoreWorker.jobs.size
+    assert_equal 1, RodTheBot::ThreeStarsWorker.jobs.size
     assert_equal 2, RodTheBot::GameVideoWorker.jobs.size
     assert_equal [@game_id, "threeMinRecap"], RodTheBot::GameVideoWorker.jobs[0]["args"]
     assert_equal [@game_id, "condensedGame"], RodTheBot::GameVideoWorker.jobs[1]["args"]
+  end
+
+  test "releases a final follow-up claim when enqueueing fails" do
+    @game_stream.instance_variable_set(:@game_id, @game_id)
+
+    assert_raises RuntimeError do
+      @game_stream.send(:schedule_final_followup, "final_score") { raise "Redis unavailable" }
+    end
+
+    scheduled = false
+    @game_stream.send(:schedule_final_followup, "final_score") { scheduled = true }
+
+    assert scheduled
   end
 end

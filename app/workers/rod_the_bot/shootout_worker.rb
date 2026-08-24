@@ -104,10 +104,10 @@ module RodTheBot
       key = "shootout:#{game_id}:round:#{round_num}"
 
       if round_num == 1
-        RodTheBot::Post.perform_async(post, key)
+        RodTheBot::Post.perform_async(post, {"key" => key})
       else
         parent_key = "shootout:#{game_id}:round:#{round_num - 1}"
-        RodTheBot::Post.perform_async(post, key, parent_key)
+        RodTheBot::Post.perform_async(post, {"key" => key, "parent_key" => parent_key})
       end
     end
 

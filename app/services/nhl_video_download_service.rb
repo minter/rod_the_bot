@@ -3,9 +3,20 @@ class NhlVideoDownloadService
   require "uri"
   require "open3"
   require "securerandom"
+  require "timeout"
 
   MAX_DURATION_SECONDS = 10.minutes.to_i
   MAX_VIDEO_BYTES = 290_000_000
+  DOWNLOAD_TIMEOUT = 15.minutes
+  PROCESS_TERM_GRACE = 5.seconds
+
+  class Error < StandardError; end
+
+  Result = Data.define(:attachment_path, :fallback_url) do
+    def attachment?
+      attachment_path.present?
+    end
+  end
 
   def initialize(nhl_url, output_path = nil)
     @nhl_url = nhl_url
@@ -13,21 +24,26 @@ class NhlVideoDownloadService
   end
 
   def call
-    return mock_video_path if Rails.env.test?
+    return Result.new(attachment_path: mock_video_path, fallback_url: nil) if Rails.env.test?
 
     m3u8_url = get_m3u8_url
-    raise "Could not discover an NHL media stream for #{nhl_url}" if m3u8_url.blank?
+    raise Error, "Could not discover an NHL media stream for #{nhl_url}" if m3u8_url.blank?
 
     downloaded_file_path = download_video(m3u8_url)
     video = FFMPEG::Movie.new(downloaded_file_path)
-    return downloaded_file_path if uploadable?(video)
+    if uploadable?(video)
+      return Result.new(attachment_path: downloaded_file_path, fallback_url: nil)
+    end
 
     Rails.logger.warn(
       "NhlVideoDownloadService: Falling back to NHL link for #{nhl_url}; " \
       "duration=#{video.duration.round(2)} size=#{video.size}"
     )
-    File.unlink(downloaded_file_path) if File.exist?(downloaded_file_path)
-    nhl_url
+    remove_file(downloaded_file_path)
+    Result.new(attachment_path: nil, fallback_url: nhl_url)
+  rescue
+    remove_file(downloaded_file_path)
+    raise
   end
 
   private
@@ -36,6 +52,12 @@ class NhlVideoDownloadService
 
   def uploadable?(video)
     video.duration <= MAX_DURATION_SECONDS && video.size <= MAX_VIDEO_BYTES
+  end
+
+  def remove_file(path)
+    File.unlink(path) if path && File.exist?(path)
+  rescue => e
+    Rails.logger.warn "NhlVideoDownloadService: Failed to remove #{path}: #{e.message}"
   end
 
   def mock_video_path
@@ -69,7 +91,7 @@ class NhlVideoDownloadService
         sleep(2**retries) # Exponential backoff
         retry
       else
-        raise e
+        raise
       end
     end
   end
@@ -126,17 +148,9 @@ class NhlVideoDownloadService
       metrics_url
     rescue => e
       Rails.logger.error "Browser operation failed: #{e.message}"
-      raise e
+      raise
     ensure
-      if browser
-        begin
-          Rails.logger.info "Closing browser..."
-          browser.close
-        rescue => e
-          Rails.logger.error "Error closing browser: #{e.message}"
-          cleanup_zombie_processes
-        end
-      end
+      close_browser(browser) if browser
     end
   end
 
@@ -156,14 +170,13 @@ class NhlVideoDownloadService
     nil
   end
 
-  def cleanup_zombie_processes
-    chrome_pids = `pgrep -f "chrome.*--headless"`.split("\n")
-    chrome_pids.each do |pid|
-      Process.kill("SIGKILL", pid.to_i)
-      Rails.logger.info "Killed zombie Chrome process: #{pid}"
-    rescue Errno::ESRCH
-      # Process already gone
-    end
+  def close_browser(browser)
+    Rails.logger.info "Closing browser..."
+    browser.close
+  rescue => e
+    # Selenium's Driver#quit stops its own service process in an ensure block.
+    # Avoid process-name sweeps, which can terminate browsers owned by other jobs.
+    Rails.logger.error "Error closing browser: #{e.message}"
   end
 
   def download_video(m3u8_url)
@@ -179,14 +192,37 @@ class NhlVideoDownloadService
 
     # Pass arguments directly so remote URLs and local paths are never interpreted
     # by a shell.
-    output, status = Open3.capture2e(*command)
+    output, status = capture_ffmpeg(command)
 
     if status.success?
       Rails.logger.info "Video downloaded successfully to #{output_path}"
       output_path
     else
       Rails.logger.error "ffmpeg output: #{output}"
-      raise "ffmpeg failed with status #{status.exitstatus}"
+      raise Error, "ffmpeg failed for #{nhl_url} with status #{status.exitstatus}"
     end
+  rescue
+    remove_file(output_path)
+    raise
+  end
+
+  def capture_ffmpeg(command)
+    Open3.popen2e(*command, pgroup: true) do |_stdin, output, wait_thread|
+      log = Timeout.timeout(DOWNLOAD_TIMEOUT) { output.read }
+      [log, wait_thread.value]
+    rescue Timeout::Error
+      terminate_process_group(wait_thread)
+      raise Error, "ffmpeg timed out after #{DOWNLOAD_TIMEOUT.inspect} for #{nhl_url}"
+    end
+  end
+
+  def terminate_process_group(wait_thread)
+    Process.kill("TERM", -wait_thread.pid)
+    return if wait_thread.join(PROCESS_TERM_GRACE)
+
+    Process.kill("KILL", -wait_thread.pid)
+    wait_thread.join
+  rescue Errno::ESRCH, Errno::ECHILD
+    nil
   end
 end

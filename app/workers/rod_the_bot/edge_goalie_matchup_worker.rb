@@ -28,7 +28,10 @@ module RodTheBot
       parent_key = "edge_goalie_#{game_id}:#{current_date}"
       post_key = "edge_goalie_matchup_#{game_id}:#{current_date}"
 
-      RodTheBot::Post.perform_async(post_text, post_key, parent_key, nil, goalie_images)
+      RodTheBot::Post.perform_async(
+        post_text,
+        {"key" => post_key, "parent_key" => parent_key, "embed_images" => goalie_images}
+      )
     rescue => e
       retry_job(e, game_id: game_id, player_id: our_goalie_id, opponent_player_id: opponent_goalie_id, operation: "edge_goalie_matchup")
     end

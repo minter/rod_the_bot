@@ -65,7 +65,10 @@ module RodTheBot
 
         gameday_key = "gameday_#{game_id}"
         RodTheBot::GameStream.perform_at(time - 15.minutes, game_id)
-        RodTheBot::Post.perform_async(gameday_post, gameday_key, nil, nil, gameday_images)
+        RodTheBot::Post.perform_async(
+          gameday_post,
+          {"key" => gameday_key, "embed_images" => gameday_images}
+        )
         schedule_gameday_details(game_id, gameday_key, media, preseason: preseason, game_type: @game["gameType"])
         RodTheBot::PlayerStreaksWorker.perform_in(3.minutes)
         RodTheBot::SeasonStatsWorker.perform_in(5.minutes, your_standings[:team_name])
@@ -118,13 +121,11 @@ module RodTheBot
       RodTheBot::Post.perform_in(
         1.minute,
         details[:text],
-        "gameday_details_#{game_id}",
-        gameday_key,
-        nil,
-        [],
-        nil,
-        nil,
-        details[:links]
+        {
+          "key" => "gameday_details_#{game_id}",
+          "parent_key" => gameday_key,
+          "links" => details[:links]
+        }
       )
     end
 

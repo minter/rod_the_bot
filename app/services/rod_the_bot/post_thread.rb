@@ -9,10 +9,14 @@ module RodTheBot
       return Post.perform_async(chunks.first) if chunks.one?
 
       first_key = "#{key}:1"
-      Post.perform_async(chunks.first, first_key)
+      Post.perform_async(chunks.first, {"key" => first_key})
       chunks.drop(1).each_with_index do |chunk, index|
         number = index + 2
-        Post.perform_in(index.next * delay, chunk, "#{key}:#{number}", "#{key}:#{number - 1}")
+        Post.perform_in(
+          index.next * delay,
+          chunk,
+          {"key" => "#{key}:#{number}", "parent_key" => "#{key}:#{number - 1}"}
+        )
       end
     end
 

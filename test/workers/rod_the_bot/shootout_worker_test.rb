@@ -21,24 +21,24 @@ class RodTheBot::ShootoutWorkerTest < ActiveSupport::TestCase
     assert_match(/Shootout - Round 1/, round1_job["args"][0])
     assert_match(/PIT: A. Mantha ❌/, round1_job["args"][0])
     assert_match(/NYR: V. Trocheck ✅/, round1_job["args"][0])
-    assert_equal "shootout:#{@game_id}:round:1", round1_job["args"][1]
-    assert_nil round1_job["args"][2] # no parent_key
+    assert_equal "shootout:#{@game_id}:round:1", round1_job["args"][1]["key"]
+    assert_nil round1_job["args"][1]["parent_key"]
 
     # Round 2: reply to round 1
     round2_job = RodTheBot::Post.jobs[1]
     assert_match(/Shootout - Round 2/, round2_job["args"][0])
     assert_match(/PIT: E. Chinakhov ❌/, round2_job["args"][0])
     assert_match(/NYR: J.T. Miller ❌/, round2_job["args"][0])
-    assert_equal "shootout:#{@game_id}:round:2", round2_job["args"][1]
-    assert_equal "shootout:#{@game_id}:round:1", round2_job["args"][2]
+    assert_equal "shootout:#{@game_id}:round:2", round2_job["args"][1]["key"]
+    assert_equal "shootout:#{@game_id}:round:1", round2_job["args"][1]["parent_key"]
 
     # Round 3: final round with winner, reply to round 2
     round3_job = RodTheBot::Post.jobs[2]
     assert_match(/Shootout - Round 3/, round3_job["args"][0])
     assert_match(/PIT: T. Novak ❌/, round3_job["args"][0])
     assert_match(/NYR wins the shootout 1-0!/, round3_job["args"][0])
-    assert_equal "shootout:#{@game_id}:round:3", round3_job["args"][1]
-    assert_equal "shootout:#{@game_id}:round:2", round3_job["args"][2]
+    assert_equal "shootout:#{@game_id}:round:3", round3_job["args"][1]["key"]
+    assert_equal "shootout:#{@game_id}:round:2", round3_job["args"][1]["parent_key"]
   end
 
   test "perform skips already-posted rounds" do

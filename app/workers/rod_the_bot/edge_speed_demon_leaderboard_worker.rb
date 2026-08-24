@@ -23,7 +23,7 @@ module RodTheBot
 
       if post_text
         headshots = fetch_player_headshots(player_ids)
-        RodTheBot::Post.perform_async(post_text, nil, nil, nil, headshots)
+        RodTheBot::Post.perform_async(post_text, {"embed_images" => headshots})
       end
     rescue => e
       retry_job(e, game_id: game_id, operation: "edge_speed_leaderboard")

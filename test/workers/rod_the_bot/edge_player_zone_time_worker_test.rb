@@ -85,7 +85,7 @@ class RodTheBot::EdgePlayerZoneTimeWorkerTest < ActiveSupport::TestCase
 
       assert_equal 1, RodTheBot::Post.jobs.size
       # Check that images array is passed (5th argument)
-      images = RodTheBot::Post.jobs.first["args"][4]
+      images = RodTheBot::Post.jobs.first["args"][1]["embed_images"]
       assert_kind_of Array, images
       # Should have at most 1 image (player headshot)
       assert_operator images.compact.length, :<=, 1

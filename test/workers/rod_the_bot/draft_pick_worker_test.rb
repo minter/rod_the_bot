@@ -79,8 +79,8 @@ class RodTheBot::DraftPickWorkerTest < ActiveSupport::TestCase
 
     first_args = RodTheBot::Post.jobs.first["args"]
     second_args = RodTheBot::Post.jobs.second["args"]
-    assert_equal "draft_pick:2026:31:post:1", first_args.second
-    assert_equal "draft_pick:2026:31:post:1", second_args.third
+    assert_equal "draft_pick:2026:31:post:1", first_args.second["key"]
+    assert_equal "draft_pick:2026:31:post:1", second_args.second["parent_key"]
   end
 
   def test_explicit_completed_draft_replay_processes_without_requeueing

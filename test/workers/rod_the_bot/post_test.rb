@@ -60,8 +60,8 @@ class RodTheBot::PostTest < ActiveSupport::TestCase
     ).returns({"uri" => "test_uri"})
 
     @post.perform(
-      "🎧 Listen live", nil, nil, nil, [], nil, nil,
-      [{"text" => "Listen live", "url" => "https://media.example/radio.m3u8"}]
+      "🎧 Listen live",
+      {"links" => [{"text" => "Listen live", "url" => "https://media.example/radio.m3u8"}]}
     )
   end
 
@@ -72,7 +72,7 @@ class RodTheBot::PostTest < ActiveSupport::TestCase
     @bsky.expects(:create_post).raises(StandardError, "temporary outage")
 
     error = assert_raises(StandardError) do
-      @post.perform("test post", nil, nil, nil, [], video.path)
+      @post.perform("test post", {"video_file_path" => video.path})
     end
 
     assert_equal "temporary outage", error.message

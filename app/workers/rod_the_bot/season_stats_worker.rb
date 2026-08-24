@@ -41,8 +41,12 @@ module RodTheBot
       RodTheBot::Post.perform_in(61.minutes, goal_leader_post)
       RodTheBot::Post.perform_in(62.minutes, assist_leader_post)
 
-      RodTheBot::Post.perform_in(75.minutes, team_season_stats_post_1, stats_post_1_key)
-      RodTheBot::Post.perform_in(76.minutes, team_season_stats_post_2, stats_post_2_key, stats_post_1_key)
+      RodTheBot::Post.perform_in(75.minutes, team_season_stats_post_1, {"key" => stats_post_1_key})
+      RodTheBot::Post.perform_in(
+        76.minutes,
+        team_season_stats_post_2,
+        {"key" => stats_post_2_key, "parent_key" => stats_post_1_key}
+      )
     end
 
     def collect_roster_stats(season: Nhl::SeasonCalendar.current_season, game_type: 2)
