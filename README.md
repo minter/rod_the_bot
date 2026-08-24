@@ -152,7 +152,7 @@ If this is set, the value provided will be put at the top of your final score po
 
 The scheduler will run at 10am in your time zone every day. It will post some scores/standings information at that time. If there is no game for your team that day, it will then silently exit. 
 
-If there is a game, it will post some team preview information (scoring, goaltending, etc) over the next 90 minutes. It will also enqueue the game feed job to start checking the data feed approximately 15 minutes before the game start time, and will run every 30 seconds until the game is marked as a final. Once the game is final, it will enqueue the post-game jobs (final score, three stars) to run once and quit until tomorrow.
+If there is a game, it will post some team preview information (scoring, goaltending, season-series context, official radio, ticketing, etc.) over the next 90 minutes. It will also enqueue the game feed job to start checking the data feed approximately 15 minutes before the game start time, and will run every 30 seconds until the game is marked as a final. Once the game is final, it will enqueue the post-game jobs (final score, three stars, game recap, and condensed game) to run once and quit until tomorrow. Recap videos that fit Bluesky's ten-minute and upload-size limits are attached directly; videos outside those limits fall back to the official NHL link.
 
 ### Checking the logs
 
@@ -184,7 +184,7 @@ Key system components and dependencies:
 * Sidekiq 8: Background job processing
 * Redis 5 (client) / Redis 7+ (server): State maintenance
 * HTTParty: NHL API client
-* Watir + Chromium: Browser automation for NHL Edge stats
+* Watir + Chromium/ChromeDriver: Browser automation for NHL media discovery
 * FFmpeg: Video processing for highlights and replays
 * ImageMagick + librsvg: Image processing
 

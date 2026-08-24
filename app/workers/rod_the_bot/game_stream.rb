@@ -20,7 +20,8 @@ module RodTheBot
       if game_final
         RodTheBot::FinalScoreWorker.perform_in(60, game_id)
         RodTheBot::ThreeStarsWorker.perform_in(90, game_id)
-        RodTheBot::ThreeMinuteRecapWorker.perform_in(600, game_id)
+        RodTheBot::GameVideoWorker.perform_in(10.minutes, game_id, "threeMinRecap")
+        RodTheBot::GameVideoWorker.perform_in(10.minutes, game_id, "condensedGame")
       else
         RodTheBot::GameStream.perform_in(30, game_id)
       end

@@ -45,6 +45,26 @@ class RodTheBot::PostTest < ActiveSupport::TestCase
     end
   end
 
+  def test_perform_builds_manual_link_facets_after_appending_hashtags
+    ENV["BLUESKY_ENABLED"] = "true"
+    ENV["TEAM_HASHTAGS"] = "#team"
+    text = "🎧 Listen live\n#team"
+    facet = {"index" => {"byteStart" => 5, "byteEnd" => 16}, "features" => []}
+    @bsky.expects(:create_link_facet).with(text, "Listen live", "https://media.example/radio.m3u8").returns(facet)
+    @bsky.expects(:create_post).with(
+      text,
+      embed_url: nil,
+      embed_images: [],
+      embed_video: nil,
+      facets: [facet]
+    ).returns({"uri" => "test_uri"})
+
+    @post.perform(
+      "🎧 Listen live", nil, nil, nil, [], nil, nil,
+      [{"text" => "Listen live", "url" => "https://media.example/radio.m3u8"}]
+    )
+  end
+
   def test_perform_reraises_posting_failures_and_preserves_video_for_retry
     ENV["BLUESKY_ENABLED"] = "true"
     video = Tempfile.new(["post-retry", ".mp4"])

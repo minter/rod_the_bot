@@ -4,6 +4,9 @@ class NhlVideoDownloadService
   require "open3"
   require "securerandom"
 
+  MAX_DURATION_SECONDS = 10.minutes.to_i
+  MAX_VIDEO_BYTES = 290_000_000
+
   def initialize(nhl_url, output_path = nil)
     @nhl_url = nhl_url
     @output_path = output_path || generate_output_path
@@ -13,18 +16,27 @@ class NhlVideoDownloadService
     return mock_video_path if Rails.env.test?
 
     m3u8_url = get_m3u8_url
+    raise "Could not discover an NHL media stream for #{nhl_url}" if m3u8_url.blank?
+
     downloaded_file_path = download_video(m3u8_url)
     video = FFMPEG::Movie.new(downloaded_file_path)
-    if video.duration > 60.0 || video.size > 50.megabytes
-      nhl_url
-    else
-      downloaded_file_path
-    end
+    return downloaded_file_path if uploadable?(video)
+
+    Rails.logger.warn(
+      "NhlVideoDownloadService: Falling back to NHL link for #{nhl_url}; " \
+      "duration=#{video.duration.round(2)} size=#{video.size}"
+    )
+    File.unlink(downloaded_file_path) if File.exist?(downloaded_file_path)
+    nhl_url
   end
 
   private
 
   attr_reader :nhl_url, :output_path
+
+  def uploadable?(video)
+    video.duration <= MAX_DURATION_SECONDS && video.size <= MAX_VIDEO_BYTES
+  end
 
   def mock_video_path
     "spec/fixtures/test_video.mp4"

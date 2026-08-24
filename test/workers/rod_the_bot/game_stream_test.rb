@@ -64,4 +64,14 @@ class RodTheBot::GameStreamTest < ActiveSupport::TestCase
 
     assert_equal expected_mapping, @game_stream.send(:worker_mapping)
   end
+
+  test "final games schedule both recap video types" do
+    Nhl::GameClient.stubs(:play_by_play).returns("gameState" => "OFF", "plays" => [])
+
+    @game_stream.perform(@game_id)
+
+    assert_equal 2, RodTheBot::GameVideoWorker.jobs.size
+    assert_equal [@game_id, "threeMinRecap"], RodTheBot::GameVideoWorker.jobs[0]["args"]
+    assert_equal [@game_id, "condensedGame"], RodTheBot::GameVideoWorker.jobs[1]["args"]
+  end
 end

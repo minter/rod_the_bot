@@ -29,6 +29,7 @@ RUN apt-get update -qq && \
     pkg-config \
     curl \
     chromium \
+    chromium-driver \
     chromium-sandbox \
     ffmpeg \
     imagemagick \
@@ -78,6 +79,7 @@ FROM base
 RUN apt-get update -qq && \
     apt-get install --no-install-recommends -y \
     chromium \
+    chromium-driver \
     chromium-sandbox \
     ffmpeg \
     imagemagick \

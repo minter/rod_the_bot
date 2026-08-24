@@ -25,7 +25,6 @@ module RodTheBot
 
       Time.zone = TZInfo::Timezone.get(ENV["TIME_ZONE"])
       time = Time.zone.parse(@game["startTimeUTC"])
-      time_string = time.strftime("%l:%M %p").strip + " " + Time.zone.tzinfo.abbreviation
       home = @game["homeTeam"]
       away = @game["awayTeam"]
       your_team = (home["id"].to_i == ENV["NHL_TEAM_ID"].to_i) ? home : away
@@ -36,8 +35,6 @@ module RodTheBot
 
       away_standings = standings_for(away)
       home_standings = standings_for(home)
-      away_logo_url = @game["awayTeam"]["logo"]
-      home_logo_url = @game["homeTeam"]["logo"]
       media = media(your_team)
       tv = media[:broadcast].empty? ? "None" : media[:broadcast].join(", ")
 
@@ -57,7 +54,8 @@ module RodTheBot
           away: away_standings.merge(abbrev: away["abbrev"]),
           home: home_standings.merge(abbrev: home["abbrev"]),
           tracked: your_standings,
-          time: time_string,
+          starts_at: time,
+          time_zone: ENV.fetch("TIME_ZONE"),
           television: tv,
           preseason: preseason,
           postseason: postseason,
@@ -65,8 +63,10 @@ module RodTheBot
           series_status: series
         )
 
+        gameday_key = "gameday_#{game_id}"
         RodTheBot::GameStream.perform_at(time - 15.minutes, game_id)
-        RodTheBot::Post.perform_async(gameday_post, nil, nil, nil, [away_logo_url, home_logo_url])
+        RodTheBot::Post.perform_async(gameday_post, gameday_key, nil, nil, gameday_images)
+        schedule_gameday_details(game_id, gameday_key, media, preseason: preseason, game_type: @game["gameType"])
         RodTheBot::PlayerStreaksWorker.perform_in(3.minutes)
         RodTheBot::SeasonStatsWorker.perform_in(5.minutes, your_standings[:team_name])
         RodTheBot::UpcomingMilestonesWorker.perform_in(10.minutes)
@@ -105,6 +105,44 @@ module RodTheBot
     end
 
     private
+
+    def schedule_gameday_details(game_id, gameday_key, media, preseason:, game_type:)
+      series = season_series(game_id, preseason: preseason, game_type: game_type)
+      details = Scheduling::GamedayDetailsPost.new.build(
+        series: series,
+        radio_url: media[:radio],
+        tickets_url: media[:tickets]
+      )
+      return unless details
+
+      RodTheBot::Post.perform_in(
+        1.minute,
+        details[:text],
+        "gameday_details_#{game_id}",
+        gameday_key,
+        nil,
+        [],
+        nil,
+        nil,
+        details[:links]
+      )
+    end
+
+    def season_series(game_id, preseason:, game_type:)
+      return if preseason || game_type.to_i != 2
+
+      Nhl::GameInfo.season_series(game_id)
+    rescue Nhl::RequestError => e
+      Rails.logger.warn "Scheduler: Season-series data unavailable for game #{game_id}: #{e.message}"
+      nil
+    end
+
+    def gameday_images
+      special_event_logo = @game.dig("specialEvent", "lightLogoUrl", "default")
+      return [special_event_logo] if special_event_logo.present?
+
+      [@game.dig("awayTeam", "logo"), @game.dig("homeTeam", "logo")].compact
+    end
 
     def standings_for(team)
       standings = if @game["season"]

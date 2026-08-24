@@ -45,7 +45,62 @@ module Nhl
         (home_id.to_i == team_id) ? away_id.to_i : home_id.to_i
       end
 
+      def season_series(game_id, team_id: ENV.fetch("NHL_TEAM_ID").to_i)
+        games = Array(GameClient.right_rail(game_id)["seasonSeries"])
+        completed = games.select { |game| completed_series_game?(game) }
+        return if completed.empty?
+
+        tracked_abbrev = games.filter_map { |game| team_for(game, team_id)&.dig("abbrev") }.first
+        opponent_abbrev = games.filter_map { |game| opponent_for(game, team_id)&.dig("abbrev") }.first
+        return unless tracked_abbrev && opponent_abbrev
+
+        wins = completed.each_with_object({tracked: 0, opponent: 0}) do |game, totals|
+          tracked_score = team_for(game, team_id).to_h["score"].to_i
+          opponent_score = opponent_for(game, team_id).to_h["score"].to_i
+          totals[:tracked] += 1 if tracked_score > opponent_score
+          totals[:opponent] += 1 if opponent_score > tracked_score
+        end
+
+        {
+          tracked_abbrev: tracked_abbrev,
+          opponent_abbrev: opponent_abbrev,
+          tracked_wins: wins[:tracked],
+          opponent_wins: wins[:opponent],
+          completed_meetings: completed.size,
+          total_meetings: games.size,
+          last_meeting: normalize_series_game(completed.max_by { |game| game["gameDate"].to_s })
+        }
+      end
+
       private
+
+      def completed_series_game?(game)
+        game.dig("awayTeam", "score").present? && game.dig("homeTeam", "score").present?
+      end
+
+      def team_for(game, team_id)
+        %w[awayTeam homeTeam].filter_map { |side| game[side] }.find do |team|
+          team["id"].to_i == team_id.to_i
+        end
+      end
+
+      def opponent_for(game, team_id)
+        %w[awayTeam homeTeam].filter_map { |side| game[side] }.find do |team|
+          team["id"].to_i != team_id.to_i
+        end
+      end
+
+      def normalize_series_game(game)
+        {
+          date: game["gameDate"],
+          away_abbrev: game.dig("awayTeam", "abbrev"),
+          away_score: game.dig("awayTeam", "score"),
+          home_abbrev: game.dig("homeTeam", "abbrev"),
+          home_score: game.dig("homeTeam", "score"),
+          last_period_type: game.dig("gameOutcome", "lastPeriodType"),
+          overtime_periods: game.dig("gameOutcome", "otPeriods")
+        }
+      end
 
       def abbreviated_name(player)
         first = player.dig("firstName", "default")

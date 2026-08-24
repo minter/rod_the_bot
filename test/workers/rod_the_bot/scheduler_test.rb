@@ -10,6 +10,7 @@ class RodTheBot::SchedulerTest < ActiveSupport::TestCase
 
     # Stub the current_season method
     Nhl::SeasonCalendar.stubs(:current_season).returns("20232024")
+    Nhl::GameInfo.stubs(:season_series).returns(nil)
   end
 
   def test_perform_offseason_enqueues_draft_worker
@@ -63,10 +64,18 @@ class RodTheBot::SchedulerTest < ActiveSupport::TestCase
           📺 BSSO
         POST
 
-        assert_equal 1, RodTheBot::Post.jobs.size
+        assert_equal 2, RodTheBot::Post.jobs.size
         assert_equal 1, RodTheBot::YesterdaysScoresWorker.jobs.size
         assert_equal 1, RodTheBot::DivisionStandingsWorker.jobs.size
         assert_equal expected_output, RodTheBot::Post.jobs.first["args"].first
+
+        details = RodTheBot::Post.jobs.second["args"]
+        assert_equal "🎧 Listen live · 🎟️ Tickets\n", details[0]
+        assert_equal "gameday_2023020360", details[2]
+        assert_equal [
+          {"text" => "Listen live", "url" => "https://d2igy0yla8zi0u.cloudfront.net/CAR/20232024/CAR-radio.m3u8"},
+          {"text" => "Tickets", "url" => "https://www.ticketmaster.com/event/2D005EF4A06143A9?brand=carolinahurricanes&artistid=805908&wt.mc_id=NHL_TEAM_CAR_SCHEDULE_GM11&utm_source=nhl.com&utm_medium=client&utm_campaign=NHL_TEAM_CAR&utm_content=SCHEDULE_GM11"}
+        ], details[7]
       end
     end
   end
@@ -149,6 +158,62 @@ class RodTheBot::SchedulerTest < ActiveSupport::TestCase
     refute_includes post, "53-22-7"
     refute_match(/\(\d+-\d+-\d+,/, post)
     assert_equal "Carolina Hurricanes", RodTheBot::SeasonStatsWorker.jobs.first["args"].first
+  end
+
+  def test_perform_global_series_gameday_uses_event_details_and_utc_start
+    game = {
+      "id" => 2026020309,
+      "season" => 20262027,
+      "gameType" => 2,
+      "gameDate" => "2026-11-12",
+      "gameScheduleState" => "OK",
+      "startTimeUTC" => "2026-11-12T17:00:00Z",
+      "venue" => {"default" => "Veikkaus Arena"},
+      "venueTimezone" => "Europe/Helsinki",
+      "neutralSite" => true,
+      "specialEvent" => {
+        "name" => {"default" => "2026 NHL Global Series"},
+        "lightLogoUrl" => {"default" => "https://assets.nhle.com/global-series.svg"}
+      },
+      "homeTeam" => {
+        "id" => 55, "abbrev" => "SEA", "logo" => "sea.svg", "radioLink" => "sea-radio"
+      },
+      "awayTeam" => {
+        "id" => 12, "abbrev" => "CAR", "logo" => "car.svg", "radioLink" => "car-radio"
+      },
+      "tvBroadcasts" => [{"countryCode" => "US", "market" => "N", "network" => "ESPN"}]
+    }
+    car = {
+      team_name: "Carolina Hurricanes", wins: 15, losses: 5, ot: 1, points: 31,
+      division_rank: 1, division_name: "Metropolitan"
+    }
+    sea = {
+      team_name: "Seattle Kraken", wins: 10, losses: 9, ot: 2, points: 22,
+      division_rank: 5, division_name: "Pacific"
+    }
+
+    Nhl::SeasonCalendar.stubs(:offseason?).returns(false)
+    Nhl::SeasonCalendar.stubs(:preseason?).returns(false)
+    Nhl::SeasonCalendar.stubs(:postseason?).returns(false)
+    Nhl::ScheduleClient.stubs(:todays_game).returns(game)
+    Nhl::StandingsClient.expects(:team).with("CAR", season: 20262027).returns(car)
+    Nhl::StandingsClient.expects(:team).with("SEA", season: 20262027).returns(sea)
+
+    Timecop.freeze(Time.zone.local(2026, 11, 12, 10)) do
+      @worker.perform
+    end
+
+    post_job = RodTheBot::Post.jobs.first
+    post = post_job["args"].first
+    assert_includes post, "🌍 2026 NHL Global Series"
+    assert_includes post, "Carolina Hurricanes\n(15-5-1, 31 points)\n1st in the Metropolitan\n\nat\n\nSeattle Kraken"
+    assert_includes post, "⏰ 12:00 PM EST"
+    assert_includes post, "🌐 7:00 PM EET local time"
+    assert_equal ["https://assets.nhle.com/global-series.svg"], post_job["args"][4]
+    assert_operator "#{post}\n#{ENV["TEAM_HASHTAGS"]}".length, :<=, 300
+
+    expected_stream_start = Time.iso8601("2026-11-12T16:45:00Z").to_f
+    assert_in_delta expected_stream_start, RodTheBot::GameStream.jobs.first["at"], 1
   end
 
   def test_playoff_series_state_tied

@@ -4,7 +4,7 @@ module RodTheBot
 
     attr_writer :bsky
 
-    def perform(post, key = nil, parent_key = nil, embed_url = nil, embed_images = [], video_file_path = nil, root_key = nil)
+    def perform(post, key = nil, parent_key = nil, embed_url = nil, embed_images = [], video_file_path = nil, root_key = nil, link_facets = [])
       completed = false
       post = append_team_hashtags(post)
       new_post = nil
@@ -13,15 +13,16 @@ module RodTheBot
         create_session
         return if @bsky.nil?
 
+        facets = build_link_facets(post, link_facets)
         parent_uri = REDIS.get(parent_key) if parent_key
         reply_uri = REDIS.get(key) if key && !parent_key
         new_post = if parent_uri
-          create_reply(parent_uri, post, embed_url: embed_url, embed_images: embed_images, embed_video: video_file_path)
+          create_reply(parent_uri, post, embed_url: embed_url, embed_images: embed_images, embed_video: video_file_path, facets: facets)
         elsif reply_uri
-          create_reply(reply_uri, post, embed_url: embed_url, embed_images: embed_images, embed_video: video_file_path)
+          create_reply(reply_uri, post, embed_url: embed_url, embed_images: embed_images, embed_video: video_file_path, facets: facets)
         else
           Rails.logger.info "No parent post found. Creating new post."
-          create_post(post, embed_url: embed_url, embed_images: embed_images, embed_video: video_file_path)
+          create_post(post, embed_url: embed_url, embed_images: embed_images, embed_video: video_file_path, facets: facets)
         end
       end
 
@@ -99,23 +100,37 @@ module RodTheBot
       post
     end
 
-    def create_post(post, embed_url: nil, embed_images: [], embed_video: nil)
+    def create_post(post, embed_url: nil, embed_images: [], embed_video: nil, facets: [])
       return unless ENV["BLUESKY_ENABLED"] == "true"
 
       # Filter out nil values from embed_images - Bsky client expects String (URL) or File objects only
       embed_images = Array(embed_images).compact
 
-      @bsky.create_post(post, embed_url: embed_url, embed_images: embed_images, embed_video: embed_video)
+      options = {embed_url: embed_url, embed_images: embed_images, embed_video: embed_video}
+      options[:facets] = facets if facets.any?
+      @bsky.create_post(post, **options)
     end
 
-    def create_reply(reply_uri, post, embed_url: nil, embed_images: [], embed_video: nil)
+    def create_reply(reply_uri, post, embed_url: nil, embed_images: [], embed_video: nil, facets: [])
       return unless ENV["BLUESKY_ENABLED"] == "true"
 
       # Filter out nil values from embed_images - Bsky client expects String (URL) or File objects only
       embed_images = Array(embed_images).compact
 
       Rails.logger.info "Creating reply to #{reply_uri} with post #{post} and embed_url #{embed_url}"
-      @bsky.create_reply(reply_uri, post, embed_url: embed_url, embed_images: embed_images, embed_video: embed_video)
+      options = {embed_url: embed_url, embed_images: embed_images, embed_video: embed_video}
+      options[:facets] = facets if facets.any?
+      @bsky.create_reply(reply_uri, post, **options)
+    end
+
+    def build_link_facets(post, links)
+      Array(links).filter_map do |link|
+        text = link["text"] || link[:text]
+        url = link["url"] || link[:url]
+        next if text.blank? || url.blank?
+
+        @bsky.create_link_facet(post, text, url)
+      end
     end
 
     def log_post(post)
