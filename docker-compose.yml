@@ -9,7 +9,12 @@ services:
   sidekiq:
     depends_on:
       - "redis"
-    build: .
+    build:
+      context: .
+      args:
+        # Set APP_UID/APP_GID in .env to run as a specific host account (default 1000)
+        APP_UID: ${APP_UID:-1000}
+        APP_GID: ${APP_GID:-1000}
     env_file: .env
     command: bundle exec sidekiq
     environment:
@@ -18,8 +23,6 @@ services:
       RUBY_YJIT_ENABLE: 1
       # Fewer glibc malloc arenas: cuts memory growth in threaded Ruby processes
       MALLOC_ARENA_MAX: 2
-    volumes:
-      - ./:/app
     restart: unless-stopped  # Add restart policy
     # Safety net: this container also launches headless Chromium and ffmpeg, which count
     # against the limit. A runaway job restarts only this container instead of the kernel
