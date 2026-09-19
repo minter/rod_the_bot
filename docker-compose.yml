@@ -16,9 +16,15 @@ services:
       REDIS_URL: redis://redis:6379/0
       RAILS_ENV: production
       RUBY_YJIT_ENABLE: 1
+      # Fewer glibc malloc arenas: cuts memory growth in threaded Ruby processes
+      MALLOC_ARENA_MAX: 2
     volumes:
       - ./:/app
     restart: unless-stopped  # Add restart policy
+    # Safety net: this container also launches headless Chromium and ffmpeg, which count
+    # against the limit. A runaway job restarts only this container instead of the kernel
+    # OOM-killing something else on the host.
+    mem_limit: 2g
 
 volumes:
   redis:
