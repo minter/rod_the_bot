@@ -121,7 +121,12 @@ COPY . .
 RUN bundle exec bootsnap precompile app/ lib/
 
 # Run and own only the runtime files as a non-root user for security
-RUN useradd rails --create-home --shell /bin/bash && \
+# The uid/gid are build args so a host can match them to the account that owns its checkout
+# and env files (default 1000, the usual first user).
+ARG APP_UID=1000
+ARG APP_GID=1000
+RUN groupadd --gid ${APP_GID} rails && \
+    useradd rails --uid ${APP_UID} --gid ${APP_GID} --create-home --shell /bin/bash && \
     chown -R rails:rails log tmp
 USER rails:rails
 
