@@ -3,11 +3,20 @@ module RodTheBot
     include Sidekiq::Worker
 
     def perform
-      standings = Nhl::StandingsClient.standings["standings"]
       return if Nhl::SeasonCalendar.preseason?
 
-      my_division = Nhl::StandingsClient.team(ENV["NHL_TEAM_ABBREVIATION"])[:division_name]
+      standings = Nhl::StandingsClient.current_standings
+      return if standings.empty?
+
+      my_division = Nhl::StandingsClient.team(ENV["NHL_TEAM_ABBREVIATION"])&.dig(:division_name)
+      unless my_division
+        Rails.logger.warn "DivisionStandingsWorker: No division for #{ENV["NHL_TEAM_ABBREVIATION"]} in current standings. Skipping."
+        return
+      end
+
       division_teams = sort_teams_in_division(standings, my_division)
+      return if division_teams.empty?
+
       post = format_standings(my_division, division_teams)
       RodTheBot::Post.perform_async(post)
     end
