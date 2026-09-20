@@ -17,6 +17,24 @@ module Nhl
         end.compact
       end
 
+      # Standings entries, but only when they belong to the season in progress.
+      #
+      # `/standings/now` resolves to the most recent date that has standings
+      # data, which during the offseason and preseason is the *previous*
+      # season's final day. Publishing those as "current" would post last
+      # season's results, so require a positive season match.
+      def current_standings
+        entries = standings.fetch("standings", [])
+        return [] if entries.empty?
+
+        season = SeasonCalendar.current_season
+        season_ids = entries.filter_map { |entry| entry["seasonId"] }.uniq
+        return entries if season_ids.any? { |id| id.to_s == season.to_s }
+
+        Rails.logger.warn "StandingsClient: standings are for season #{season_ids.presence&.join(", ") || "unknown"}, expected #{season}. Treating as unavailable."
+        []
+      end
+
       def team(team_abbreviation, season: nil)
         entry = standings.fetch("standings", []).find { |candidate| candidate.dig("teamAbbrev", "default") == team_abbreviation }
         return unless entry

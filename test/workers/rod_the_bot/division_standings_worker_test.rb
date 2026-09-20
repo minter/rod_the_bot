@@ -10,6 +10,7 @@ class RodTheBot::DivisionStandingsWorkerTest < ActiveSupport::TestCase
   def test_perform
     VCR.use_cassette("nhl_standings_now", allow_playback_repeats: true) do
       Nhl::SeasonCalendar.stubs(:preseason?).returns(false)
+      Nhl::SeasonCalendar.stubs(:current_season).returns("20232024")
       @worker.perform
       assert_equal 1, RodTheBot::Post.jobs.size
 
@@ -64,5 +65,35 @@ class RodTheBot::DivisionStandingsWorkerTest < ActiveSupport::TestCase
 
       assert_equal expected_output, post
     end
+  end
+
+  def test_perform_skips_when_standings_are_from_another_season
+    Nhl::SeasonCalendar.stubs(:preseason?).returns(false)
+    Nhl::StandingsClient.stubs(:current_standings).returns([])
+
+    @worker.perform
+
+    assert_equal 0, RodTheBot::Post.jobs.size
+  end
+
+  def test_perform_skips_when_tracked_team_has_no_division
+    Nhl::SeasonCalendar.stubs(:preseason?).returns(false)
+    Nhl::StandingsClient.stubs(:current_standings).returns([{"teamAbbrev" => {"default" => "CAR"}}])
+    # Mirrors a season-mismatch response, which omits division_name.
+    Nhl::StandingsClient.stubs(:team).returns({team_name: "Carolina Hurricanes", season_id: 20252026})
+
+    @worker.perform
+
+    assert_equal 0, RodTheBot::Post.jobs.size
+  end
+
+  def test_perform_skips_when_tracked_team_is_absent_from_standings
+    Nhl::SeasonCalendar.stubs(:preseason?).returns(false)
+    Nhl::StandingsClient.stubs(:current_standings).returns([{"teamAbbrev" => {"default" => "NYR"}}])
+    Nhl::StandingsClient.stubs(:team).returns(nil)
+
+    @worker.perform
+
+    assert_equal 0, RodTheBot::Post.jobs.size
   end
 end
