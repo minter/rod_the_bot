@@ -12,6 +12,17 @@ The configured Ruby version is defined in `mise.toml`. Use the project runtime r
 mise exec -- bundle exec rails test
 ```
 
+## Production access
+
+Production runs under Docker Compose. To reach it:
+
+```sh
+ssh rails@rails.lunenburg.org
+cd ~/rod_the_bot
+```
+
+From there, use `docker compose` commands to access the running system, for example `docker compose exec sidekiq rails console`. Anything run there can post publicly to Bluesky, so confirm before enqueuing posts.
+
 ## Architectural boundaries
 
 Keep the dependency direction:
