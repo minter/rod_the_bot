@@ -16,6 +16,7 @@ jobs:
           bundler-cache: true
       - name: Install PostgreSQL dependencies
         run: |
+          sudo apt-get -qq update
           sudo apt-get -yqq install libpq-dev
 
       - name: Run Standard
