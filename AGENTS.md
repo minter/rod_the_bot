@@ -23,6 +23,15 @@ cd ~/rod_the_bot
 
 From there, use `docker compose` commands to access the running system, for example `docker compose exec sidekiq rails console`. Anything run there can post publicly to Bluesky, so confirm before enqueuing posts.
 
+The sidekiq image is built from the checkout, and the application code is not mounted into the container. To deploy, pull and rebuild:
+
+```sh
+git pull
+docker compose up -d --build sidekiq
+```
+
+`docker compose restart` reuses the existing image and does not pick up new code. After deploying, confirm the running code with `docker compose exec sidekiq grep ...` or check `docker compose images sidekiq` for a fresh creation time.
+
 ## Architectural boundaries
 
 Keep the dependency direction:
