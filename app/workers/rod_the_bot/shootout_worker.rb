@@ -13,7 +13,7 @@ module RodTheBot
       events = shootout["events"]
       away_abbrev = feed["awayTeam"]["abbrev"]
       home_abbrev = feed["homeTeam"]["abbrev"]
-      game_over = feed["gameState"] == "OFF"
+      game_over = %w[FINAL OFF].include?(feed["gameState"])
 
       rounds = group_into_rounds(events)
       rounds_posted = REDIS.get("shootout:#{game_id}:rounds_posted").to_i

@@ -115,6 +115,21 @@ class RodTheBot::ShootoutWorkerTest < ActiveSupport::TestCase
     assert_equal 1, RodTheBot::ShootoutWorker.jobs.size
   end
 
+  test "perform posts decided final round once game is FINAL, before OFF" do
+    feed = mock_live_feed(events: default_shootout_events, game_state: "FINAL")
+    Nhl::GameClient.stubs(:landing).returns(feed)
+    REDIS.set("shootout:#{@game_id}:rounds_posted", "2")
+
+    @worker.perform(@game_id)
+
+    assert_equal 1, RodTheBot::Post.jobs.size
+    final_post = RodTheBot::Post.jobs.first["args"][0]
+    assert_match(/Shootout - Round 3/, final_post)
+    assert_match(/PIT: T. Novak ❌/, final_post)
+    assert_match(/NYR wins the shootout 1-0!/, final_post)
+    assert_equal 0, RodTheBot::ShootoutWorker.jobs.size
+  end
+
   test "perform handles API error gracefully" do
     Nhl::GameClient.stubs(:landing).raises(Nhl::RequestError.new("timeout"))
 
@@ -126,7 +141,7 @@ class RodTheBot::ShootoutWorkerTest < ActiveSupport::TestCase
 
   private
 
-  def mock_live_feed(events:, no_shootout: false)
+  def mock_live_feed(events:, no_shootout: false, game_state: "LIVE")
     shootout = if no_shootout
       nil
     else
@@ -137,7 +152,7 @@ class RodTheBot::ShootoutWorkerTest < ActiveSupport::TestCase
     end
 
     {
-      "gameState" => "LIVE",
+      "gameState" => game_state,
       "awayTeam" => {"abbrev" => "PIT"},
       "homeTeam" => {"abbrev" => "NYR"},
       "summary" => {"shootout" => shootout}
