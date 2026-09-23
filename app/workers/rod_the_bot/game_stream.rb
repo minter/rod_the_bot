@@ -57,6 +57,8 @@ module RodTheBot
     end
 
     def process_play(play)
+      schedule_goalie_check(play)
+
       worker_class, delay = worker_mapping[play["typeDescKey"]]
 
       return unless worker_class
@@ -91,6 +93,17 @@ module RodTheBot
       schedule_milestone_check(play) unless Nhl::SeasonCalendar.preseason?
     end
 
+    # Goals, missed shots, and shots on goal all report the goalie in net, and a new
+    # goalie's first appearance can be any of them. The claim key predates goals and
+    # missed shots being checked; keeping it stops a mid-game deploy from replaying
+    # shot-on-goal checks that already ran.
+    def schedule_goalie_check(play)
+      return unless play.dig("details", "goalieInNetId")
+      return unless REDIS.set("#{game_id}:#{play["eventId"]}", "true", nx: true, ex: 172800)
+
+      RodTheBot::GoalieChangeWorker.perform_in(5, game_id, play)
+    end
+
     def schedule_milestone_check(play)
       # Schedule milestone check immediately since we calculate from pre-game stats
       # Use atomic SET NX to prevent duplicate milestone checks
@@ -106,7 +119,6 @@ module RodTheBot
       {
         "goal" => [RodTheBot::GoalWorker, 90],
         "penalty" => [RodTheBot::PenaltyWorker, 30],
-        "shot-on-goal" => [RodTheBot::GoalieChangeWorker, 5],
         "period-start" => [RodTheBot::PeriodStartWorker, 1],
         "period-end" => [RodTheBot::EndOfPeriodWorker, 180]
       }

@@ -19,8 +19,10 @@ module RodTheBot
       defending_team_id = (event_team == home["id"]) ? away["id"] : home["id"]
       defending_team = (defending_team_id == home["id"]) ? home : away
 
-      result = detector.detect(game_id: game_id, team_id: defending_team_id, goalie_id: goalie_id, event_id: play["eventId"], plays: @feed["plays"])
-      if result.status == :changed
+      result = detector.detect(game_id: game_id, team_id: defending_team_id, goalie_id: goalie_id, sort_order: play["sortOrder"], plays: @feed["plays"])
+      if result.status == :stale_cache
+        Rails.logger.warn "GoalieChangeWorker: Replaced stale goalie state without posting game_id=#{game_id} team_id=#{defending_team_id} event_id=#{play["eventId"]} #{result.previous_goalie_id} → #{goalie_id}"
+      elsif result.status == :changed
         new_goalie = player_directory(game_id).fetch(play["details"]["goalieInNetId"])
         return if new_goalie.nil?
         detector.commit(game_id: game_id, team_id: defending_team_id, goalie_id: goalie_id)

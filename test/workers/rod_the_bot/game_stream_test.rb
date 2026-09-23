@@ -53,11 +53,42 @@ class RodTheBot::GameStreamTest < ActiveSupport::TestCase
     assert_equal play, job["args"][1]
   end
 
+  test "schedules a goalie check for every play type that reports the goalie in net" do
+    REDIS.stubs(:get).returns(nil)
+    REDIS.stubs(:set).returns(true)
+    @game_stream.instance_variable_set(:@game_id, @game_id)
+
+    %w[goal missed-shot shot-on-goal].each_with_index do |type, index|
+      @game_stream.send(:process_play, {"typeDescKey" => type, "eventId" => index, "details" => {"goalieInNetId" => 8481033}})
+    end
+
+    assert_equal 3, RodTheBot::GoalieChangeWorker.jobs.size
+    assert_equal %w[goal missed-shot shot-on-goal], RodTheBot::GoalieChangeWorker.jobs.map { |job| job["args"][1]["typeDescKey"] }
+    assert_equal 1, RodTheBot::GoalWorker.jobs.size
+  end
+
+  test "claims each goalie check once" do
+    play = {"typeDescKey" => "missed-shot", "eventId" => 724, "details" => {"goalieInNetId" => 8481033}}
+    REDIS.expects(:set).with("#{@game_id}:724", "true", nx: true, ex: 172800).returns(true).then.returns(false).twice
+    @game_stream.instance_variable_set(:@game_id, @game_id)
+
+    2.times { @game_stream.send(:process_play, play) }
+
+    assert_equal 1, RodTheBot::GoalieChangeWorker.jobs.size
+  end
+
+  test "does not schedule a goalie check for an empty-net play" do
+    @game_stream.instance_variable_set(:@game_id, @game_id)
+
+    @game_stream.send(:process_play, {"typeDescKey" => "missed-shot", "eventId" => 725, "details" => {"reason" => "wide-left"}})
+
+    assert_empty RodTheBot::GoalieChangeWorker.jobs
+  end
+
   test "worker_mapping returns correct mapping" do
     expected_mapping = {
       "goal" => [RodTheBot::GoalWorker, 90],
       "penalty" => [RodTheBot::PenaltyWorker, 30],
-      "shot-on-goal" => [RodTheBot::GoalieChangeWorker, 5],
       "period-start" => [RodTheBot::PeriodStartWorker, 1],
       "period-end" => [RodTheBot::EndOfPeriodWorker, 180]
     }
