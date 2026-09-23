@@ -6,8 +6,8 @@ module Nhl
         return {referees: [], linesmen: []} unless info
 
         {
-          referees: info.fetch("referees", []).pluck("default"),
-          linesmen: info.fetch("linesmen", []).pluck("default")
+          referees: official_names(info["referees"]),
+          linesmen: official_names(info["linesmen"])
         }
       end
 
@@ -100,6 +100,10 @@ module Nhl
           last_period_type: game.dig("gameOutcome", "lastPeriodType"),
           overtime_periods: game.dig("gameOutcome", "otPeriods")
         }
+      end
+
+      def official_names(officials)
+        Array(officials).filter_map { |official| official.dig("fullName", "default").presence }
       end
 
       def abbreviated_name(player)

@@ -127,9 +127,8 @@ class Nhl::IntegrationTest < ActiveSupport::TestCase
   test "officials" do
     VCR.use_cassette("nhl_game_#{@game_id}_right_rail") do
       officials = Nhl::GameInfo.officials(@game_id)
-      assert_kind_of Hash, officials
-      assert_includes officials.keys, :referees
-      assert_includes officials.keys, :linesmen
+      assert_equal ["Brian Pochmara", "Jake Brenk"], officials[:referees]
+      assert_equal ["Tyson Baker", "Ben O'Quinn"], officials[:linesmen]
     end
   end
 
