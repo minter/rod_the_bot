@@ -32,7 +32,33 @@ class Nhl::GameInfoTest < ActiveSupport::TestCase
     assert_nil Nhl::GameInfo.season_series(2026020001, team_id: 12)
   end
 
+  test "reads official names from the nested fullName field" do
+    Nhl::GameClient.stubs(:right_rail).with(2026010004).returns(
+      "gameInfo" => {
+        "referees" => [official("Wes McCauley", 4), official("Brandon Blandina", 39)],
+        "linesmen" => [official("Brandon Grillo", 75), official("Ryan Jackson", 84)]
+      }
+    )
+
+    assert_equal(
+      {referees: ["Wes McCauley", "Brandon Blandina"], linesmen: ["Brandon Grillo", "Ryan Jackson"]},
+      Nhl::GameInfo.officials(2026010004)
+    )
+  end
+
+  test "skips officials without a name and tolerates missing groups" do
+    Nhl::GameClient.stubs(:right_rail).returns(
+      "gameInfo" => {"referees" => [official("Jake Brenk", 26), {"sweaterNumber" => 99}]}
+    )
+
+    assert_equal({referees: ["Jake Brenk"], linesmen: []}, Nhl::GameInfo.officials(2026010008))
+  end
+
   private
+
+  def official(name, number)
+    {"fullName" => {"default" => name}, "sweaterNumber" => number}
+  end
 
   def series_game(id, date, away:, home:, outcome: "REG")
     {
