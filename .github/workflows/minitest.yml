@@ -16,7 +16,9 @@ jobs:
         with:
           bundler-cache: true
       - name: Install ImageMagick + librsvg
-        run: sudo apt-get -yqq install imagemagick librsvg2-bin
+        run: |
+          sudo apt-get -qq update
+          sudo apt-get -yqq install imagemagick librsvg2-bin
       - name: Run tests
         env: 
           RAILS_ENV: test
