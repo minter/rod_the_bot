@@ -7,7 +7,7 @@ module RodTheBot
         @redis = redis
       end
 
-      def detect(game_id:, team_id:, goalie_id:, event_id:, plays:)
+      def detect(game_id:, team_id:, goalie_id:, sort_order:, plays:)
         goalie_id = goalie_id.to_s
         state_key = "game:#{game_id}:current_goalie:#{team_id}"
         current = @redis.get(state_key)
@@ -17,7 +17,8 @@ module RodTheBot
         end
         return Result.new(status: :unchanged, goalie_id: goalie_id, previous_goalie_id: current) if current == goalie_id
 
-        recent = plays.count { |play| play.dig("details", "goalieInNetId").to_s == goalie_id && play["eventId"] < event_id }
+        # eventId is not chronological; sortOrder is the feed's timeline position.
+        recent = plays.count { |play| play.dig("details", "goalieInNetId").to_s == goalie_id && play["sortOrder"].to_i < sort_order.to_i }
         if recent >= 3
           @redis.set(state_key, goalie_id, ex: 28800)
           return Result.new(status: :stale_cache, goalie_id: goalie_id, previous_goalie_id: current)

@@ -52,6 +52,42 @@ class RodTheBot::GoalieChangeWorkerTest < ActiveSupport::TestCase
     end
   end
 
+  test "posts a goalie change revealed by a goal against" do
+    game_id = "2025010061"
+    REDIS.set("game:#{game_id}:current_goalie:13", "8475683", ex: 28800)
+
+    VCR.use_cassette("nhl_game_#{game_id}_gamecenter_pbp", allow_playback_repeats: true) do
+      goal_play = Nhl::GameClient.play_by_play(game_id)["plays"].find { |play| play["eventId"] == 856 }
+      assert_equal "goal", goal_play["typeDescKey"]
+
+      VCR.use_cassette("nhl_api/player_8484900_landing", allow_playback_repeats: true) do
+        assert_difference -> { RodTheBot::Post.jobs.size }, 1 do
+          @worker.perform(game_id, goal_play)
+        end
+      end
+
+      assert_match(/Now in goal for the Panthers, #31 Cooper Black/, RodTheBot::Post.jobs.last["args"].first)
+      assert_equal "8484900", REDIS.get("game:#{game_id}:current_goalie:13")
+    end
+  end
+
+  test "warns instead of posting when the new goalie already has three earlier appearances" do
+    game_id = "2025010061"
+    REDIS.set("game:#{game_id}:current_goalie:13", "8475683", ex: 28800)
+
+    VCR.use_cassette("nhl_game_#{game_id}_gamecenter_pbp", allow_playback_repeats: true) do
+      # Event 406 follows events 809, 814, and 856 in sortOrder despite its lower eventId.
+      late_play = Nhl::GameClient.play_by_play(game_id)["plays"].find { |play| play["eventId"] == 406 }
+      Rails.logger.expects(:warn).with(regexp_matches(/stale goalie state.*game_id=#{game_id}.*event_id=406.*8475683 → 8484900/))
+
+      assert_no_difference -> { RodTheBot::Post.jobs.size } do
+        @worker.perform(game_id, late_play)
+      end
+
+      assert_equal "8484900", REDIS.get("game:#{game_id}:current_goalie:13")
+    end
+  end
+
   test "does not post when goalie has not changed" do
     game_id = "2025010061"
 
