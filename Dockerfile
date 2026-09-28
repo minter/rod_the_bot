@@ -1,7 +1,7 @@
 # syntax = docker/dockerfile:1
 
-# Make sure RUBY_VERSION matches the Ruby version in .ruby-version and Gemfile
-ARG RUBY_VERSION=4.0.6
+# Make sure RUBY_VERSION matches the Ruby version in mise.toml and Gemfile
+ARG RUBY_VERSION=4.0.7
 FROM registry.docker.com/library/ruby:$RUBY_VERSION-slim AS base
 
 # Rails app lives here
@@ -61,14 +61,9 @@ RUN apt-get update -qq && \
     rm -rf /var/lib/apt/lists/* && \
     rm -rf /var/cache/apt/archives/*
 
-# Install specific version of bundler
-ARG BUNDLER_VERSION=4.0.18
-RUN gem install bundler --no-document -v "${BUNDLER_VERSION}"
-
 # Install application gems
 COPY Gemfile Gemfile.lock ./
-RUN bundle config set --local frozen 'false' && \
-    bundle install && \
+RUN bundle install && \
     bundle exec bootsnap precompile --gemfile && \
     rm -rf ~/.bundle/ "${BUNDLE_PATH}"/ruby/*/cache "${BUNDLE_PATH}"/ruby/*/bundler/gems/*/.git
 
