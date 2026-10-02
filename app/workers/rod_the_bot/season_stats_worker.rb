@@ -35,11 +35,12 @@ module RodTheBot
 
       # Schedule the posts with delays and keys
       RodTheBot::Post.perform_in(30.minutes, goalie_post)
-      RodTheBot::Post.perform_in(45.minutes, time_on_ice_leader_post)
-      RodTheBot::Post.perform_in(46.minutes, pim_leader_post)
-      RodTheBot::Post.perform_in(60.minutes, skater_points_leader_post)
-      RodTheBot::Post.perform_in(61.minutes, goal_leader_post)
-      RodTheBot::Post.perform_in(62.minutes, assist_leader_post)
+      # A leaderboard is nil when no skater has a non-zero value, as in the first days of a season.
+      RodTheBot::Post.perform_in(45.minutes, time_on_ice_leader_post) if time_on_ice_leader_post
+      RodTheBot::Post.perform_in(46.minutes, pim_leader_post) if pim_leader_post
+      RodTheBot::Post.perform_in(60.minutes, skater_points_leader_post) if skater_points_leader_post
+      RodTheBot::Post.perform_in(61.minutes, goal_leader_post) if goal_leader_post
+      RodTheBot::Post.perform_in(62.minutes, assist_leader_post) if assist_leader_post
 
       RodTheBot::Post.perform_in(75.minutes, team_season_stats_post_1, {"key" => stats_post_1_key})
       RodTheBot::Post.perform_in(
@@ -75,7 +76,7 @@ module RodTheBot
 
       roster.fetch("skaters", []).each do |player|
         skater_stats[player["playerId"]] = {
-          name: Nhl::PlayerIdentity.from_landing(player, player_id: player["playerId"]).name_with_number,
+          name: display_name(player),
           games: player["gamesPlayed"],
           goals: player["goals"],
           assists: player["assists"],
@@ -88,7 +89,7 @@ module RodTheBot
 
       roster.fetch("goalies", []).each do |player|
         goalie_stats[player["playerId"]] = {
-          name: Nhl::PlayerIdentity.from_landing(player, player_id: player["playerId"]).name_with_number,
+          name: display_name(player),
           games: player["gamesPlayed"],
           wins: player["wins"],
           losses: player["losses"],
@@ -98,6 +99,17 @@ module RodTheBot
         }
       end
       [skater_stats, goalie_stats]
+    end
+
+    # club-stats has no sweater number, so it comes from the current roster.
+    # Players who have left the roster keep their stat line without a number.
+    def display_name(player)
+      player_directory.fetch(player["playerId"])&.name_with_number ||
+        Nhl::PlayerIdentity.from_landing(player, player_id: player["playerId"]).full_name
+    end
+
+    def player_directory
+      @player_directory ||= Nhl::PlayerDirectory.for_team(ENV["NHL_TEAM_ABBREVIATION"])
     end
 
     def top_skaters(skater_stats, stat_key, limit: 5)

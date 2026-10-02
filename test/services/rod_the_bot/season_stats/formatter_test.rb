@@ -17,6 +17,12 @@ class RodTheBot::SeasonStats::FormatterTest < ActiveSupport::TestCase
     assert_includes post, "#20 Sebastian Aho: 30 goals"
   end
 
+  test "returns no skater leaderboard when nobody qualifies" do
+    post = @formatter.skaters([], :assists, icon: "🏒", title: "assist leaders") { |player| player[:name] }
+
+    assert_nil post
+  end
+
   test "formats the first team ranking page" do
     rankings = %i[average_goals_scored average_goals_allowed power_play_percentage penalty_kill_percentage].to_h { |key| [key, {value: "3.2", rank: "5th"}] }
 
