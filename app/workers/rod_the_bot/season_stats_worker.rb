@@ -35,11 +35,12 @@ module RodTheBot
 
       # Schedule the posts with delays and keys
       RodTheBot::Post.perform_in(30.minutes, goalie_post)
-      RodTheBot::Post.perform_in(45.minutes, time_on_ice_leader_post)
-      RodTheBot::Post.perform_in(46.minutes, pim_leader_post)
-      RodTheBot::Post.perform_in(60.minutes, skater_points_leader_post)
-      RodTheBot::Post.perform_in(61.minutes, goal_leader_post)
-      RodTheBot::Post.perform_in(62.minutes, assist_leader_post)
+      # A leaderboard is nil when no skater has a non-zero value, as in the first days of a season.
+      RodTheBot::Post.perform_in(45.minutes, time_on_ice_leader_post) if time_on_ice_leader_post
+      RodTheBot::Post.perform_in(46.minutes, pim_leader_post) if pim_leader_post
+      RodTheBot::Post.perform_in(60.minutes, skater_points_leader_post) if skater_points_leader_post
+      RodTheBot::Post.perform_in(61.minutes, goal_leader_post) if goal_leader_post
+      RodTheBot::Post.perform_in(62.minutes, assist_leader_post) if assist_leader_post
 
       RodTheBot::Post.perform_in(75.minutes, team_season_stats_post_1, {"key" => stats_post_1_key})
       RodTheBot::Post.perform_in(

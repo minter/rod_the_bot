@@ -99,6 +99,24 @@ class RodTheBot::SeasonStatsWorkerTest < ActiveSupport::TestCase
     assert_empty RodTheBot::Post.jobs
   end
 
+  test "perform skips leaderboards that have no qualifying skaters" do
+    Nhl::SeasonCalendar.stubs(:preseason?).returns(false)
+    Nhl::SeasonCalendar.stubs(:current_season).returns("20262027")
+    Nhl::SeasonCalendar.stubs(:postseason?).returns(false)
+    Nhl::PlayerClient.stubs(:club_stats).returns(club_stats_response)
+    Nhl::PlayerDirectory.stubs(:for_team).returns(Nhl::PlayerDirectory.new([]))
+    team_summary = Hash.new(0.5).merge("teamId" => ENV["NHL_TEAM_ID"].to_i)
+    Nhl::StatsClient.stubs(:team_summary).returns([team_summary])
+
+    @worker.perform("Carolina Hurricanes")
+
+    posts = RodTheBot::Post.jobs.map { |job| job["args"].first }
+    assert_equal 5, posts.length
+    assert posts.any? { |post| post.include?("penalty minute leaders") }
+    assert posts.any? { |post| post.include?("time on ice leaders") }
+    assert posts.none? { |post| post.match?(/points leaders|goal scoring leaders|assist leaders/) }
+  end
+
   private
 
   def club_stats_response

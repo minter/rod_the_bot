@@ -13,6 +13,8 @@ module RodTheBot
       end
 
       def skaters(players, stat, icon:, title:)
+        return if players.empty?
+
         body = players.map { |_, p| yield(p) }.join("\n")
         "#{icon} #{@season_type} #{title} for the #{@team_name}\n\n#{body}\n"
       end
