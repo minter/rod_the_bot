@@ -21,7 +21,7 @@ ssh rails@rails.lunenburg.org
 cd ~/rod_the_bot
 ```
 
-From there, use `docker compose` commands to access the running system, for example `docker compose exec sidekiq rails console`. Anything run there can post publicly to Bluesky, so confirm before enqueuing posts.
+From there, use `docker compose` commands to access the running system, for example `docker compose exec sidekiq bin/rails console`. Use `bin/rails`; a bare `rails` is not on the container's `PATH`. Anything run there can post publicly to Bluesky, so confirm before enqueuing posts.
 
 The sidekiq image is built from the checkout, and the application code is not mounted into the container. To deploy, pull and rebuild:
 
