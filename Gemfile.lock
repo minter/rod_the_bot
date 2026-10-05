@@ -1,6 +1,6 @@
 GIT
   remote: https://github.com/minter/bskyrb.git
-  revision: 3b0f07d375d8e60f2374072f7f29c27178dca8d6
+  revision: bdc9bd65d7af68bb23640375b2d394511036f788
   branch: main
   specs:
     bskyrb (0.5.3)
@@ -131,7 +131,7 @@ GEM
     globalid (1.4.0)
       activesupport (>= 6.1)
     hashdiff (1.2.1)
-    httparty (0.24.2)
+    httparty (0.24.3)
       csv
       mini_mime (>= 1.0.0)
       multi_xml (>= 0.5.2)
@@ -179,7 +179,7 @@ GEM
       net-protocol
     net-protocol (0.4.0)
       timeout
-    net-smtp (0.5.1)
+    net-smtp (0.5.2)
       net-protocol
     nio4r (2.7.5)
     nokogiri (1.19.4-aarch64-linux-gnu)
@@ -376,7 +376,7 @@ DEPENDENCIES
   minitest (~> 6.0)
   mocha
   mock_redis
-  net-smtp (~> 0.5.1)
+  net-smtp (~> 0.5.2)
   nokogiri
   ostruct
   pry-rails
