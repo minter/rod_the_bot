@@ -44,30 +44,41 @@ class RodTheBot::SeasonStatsWorkerTest < ActiveSupport::TestCase
     assert_equal ["P10", "P9", "P8", "P7", "P6"], leaders.map { |_, v| v[:name] }
   end
 
-  # club-stats carries no sweaterNumber, so numbers must come from the team roster.
-  test "collect_roster_stats takes sweater numbers from the team directory" do
-    Nhl::PlayerClient.stubs(:club_stats).returns(club_stats_response)
-    Nhl::PlayerDirectory.expects(:for_team).with("CAR").returns(
-      Nhl::PlayerDirectory.new([
-        Nhl::PlayerIdentity.new(id: 8475235, first_name: "Nicolas", last_name: "Deslauriers", sweater_number: 44),
-        Nhl::PlayerIdentity.new(id: 8479496, first_name: "Pyotr", last_name: "Kochetkov", sweater_number: 52)
-      ])
-    )
+  # club-stats carries no sweaterNumber, so numbers come from the team roster.
+  test "with_display_names takes sweater numbers from the team directory" do
+    stub_team_directory(Nhl::PlayerIdentity.new(id: 8475235, first_name: "Nicolas", last_name: "Deslauriers", sweater_number: 44, team_abbreviation: "CAR"))
+    Nhl::PlayerClient.expects(:landing).never
 
-    skaters, goalies = @worker.collect_roster_stats(season: "20262027", game_type: 2)
+    named = @worker.with_display_names([[8475235, {name: "Nicolas Deslauriers", pim: 5}]])
 
-    assert_equal "#44 Nicolas Deslauriers", skaters[8475235][:name]
-    assert_equal "#52 Pyotr Kochetkov", goalies[8479496][:name]
+    assert_equal [[8475235, {name: "#44 Nicolas Deslauriers", pim: 5}]], named
   end
 
-  test "collect_roster_stats omits the number for players no longer on the roster" do
-    Nhl::PlayerClient.stubs(:club_stats).returns(club_stats_response)
-    Nhl::PlayerDirectory.stubs(:for_team).returns(Nhl::PlayerDirectory.new([]))
+  test "with_display_names uses the landing number for a player assigned to the minors" do
+    stub_team_directory
+    Nhl::PlayerClient.stubs(:landing).with(8484428).returns(landing(8484428, "Charles Alexis", "Legault", 62, "CAR"))
 
-    skaters, goalies = @worker.collect_roster_stats(season: "20262027", game_type: 2)
+    named = @worker.with_display_names([[8484428, {name: "Charles Alexis Legault", pim: 12}]])
 
-    assert_equal "Nicolas Deslauriers", skaters[8475235][:name]
-    assert_equal "Pyotr Kochetkov", goalies[8479496][:name]
+    assert_equal "#62 Charles Alexis Legault", named.first.last[:name]
+  end
+
+  test "with_display_names omits the number for a player now with another team" do
+    stub_team_directory
+    Nhl::PlayerClient.stubs(:landing).with(8475235).returns(landing(8475235, "Nicolas", "Deslauriers", 20, "PHI"))
+
+    named = @worker.with_display_names([[8475235, {name: "Nicolas Deslauriers", pim: 5}]])
+
+    assert_equal "Nicolas Deslauriers", named.first.last[:name]
+  end
+
+  test "with_display_names omits the number when the landing cannot be fetched" do
+    stub_team_directory
+    Nhl::PlayerClient.stubs(:landing).raises(Nhl::RequestError, "timeout")
+
+    named = @worker.with_display_names([[8475235, {name: "Nicolas Deslauriers", pim: 5}]])
+
+    assert_equal "Nicolas Deslauriers", named.first.last[:name]
   end
 
   test "perform does not fetch stats during preseason" do
@@ -104,7 +115,10 @@ class RodTheBot::SeasonStatsWorkerTest < ActiveSupport::TestCase
     Nhl::SeasonCalendar.stubs(:current_season).returns("20262027")
     Nhl::SeasonCalendar.stubs(:postseason?).returns(false)
     Nhl::PlayerClient.stubs(:club_stats).returns(club_stats_response)
-    Nhl::PlayerDirectory.stubs(:for_team).returns(Nhl::PlayerDirectory.new([]))
+    stub_team_directory(
+      Nhl::PlayerIdentity.new(id: 8475235, first_name: "Nicolas", last_name: "Deslauriers", sweater_number: 44, team_abbreviation: "CAR"),
+      Nhl::PlayerIdentity.new(id: 8479496, first_name: "Pyotr", last_name: "Kochetkov", sweater_number: 52, team_abbreviation: "CAR")
+    )
     team_summary = Hash.new(0.5).merge("teamId" => ENV["NHL_TEAM_ID"].to_i)
     Nhl::StatsClient.stubs(:team_summary).returns([team_summary])
 
@@ -112,12 +126,27 @@ class RodTheBot::SeasonStatsWorkerTest < ActiveSupport::TestCase
 
     posts = RodTheBot::Post.jobs.map { |job| job["args"].first }
     assert_equal 5, posts.length
-    assert posts.any? { |post| post.include?("penalty minute leaders") }
+    assert posts.any? { |post| post.include?("penalty minute leaders") && post.include?("#44 Nicolas Deslauriers: 5 mins") }
+    assert posts.any? { |post| post.include?("goaltending stats") && post.include?("#52 Pyotr Kochetkov") }
     assert posts.any? { |post| post.include?("time on ice leaders") }
     assert posts.none? { |post| post.match?(/points leaders|goal scoring leaders|assist leaders/) }
   end
 
   private
+
+  def stub_team_directory(*identities)
+    Nhl::PlayerDirectory.stubs(:for_team).with("CAR").returns(Nhl::PlayerDirectory.new(identities))
+  end
+
+  def landing(player_id, first_name, last_name, sweater_number, team_abbreviation)
+    {
+      "playerId" => player_id,
+      "firstName" => {"default" => first_name},
+      "lastName" => {"default" => last_name},
+      "sweaterNumber" => sweater_number,
+      "currentTeamAbbrev" => team_abbreviation
+    }
+  end
 
   def club_stats_response
     {

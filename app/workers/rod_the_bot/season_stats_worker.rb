@@ -16,9 +16,9 @@ module RodTheBot
       return if skater_stats.empty? || goalie_stats.empty?
 
       presentation = SeasonStats::Formatter.new(season_type: @season_type, team_name: your_team)
-      leaders = ->(stat) { top_skaters(skater_stats, stat) }
+      leaders = ->(stat) { with_display_names(top_skaters(skater_stats, stat)) }
 
-      goalie_post = presentation.goalie(goalie_stats)
+      goalie_post = presentation.goalie(with_display_names(goalie_stats))
       skater_points_leader_post = presentation.skaters(leaders.call(:points), :points, icon: "📈", title: "points leaders") { |p| "#{p[:name]}: #{p[:points]} #{"point".pluralize(p[:points])}, (#{p[:goals]} G, #{p[:assists]} A)" }
       time_on_ice_leader_post = presentation.skaters(leaders.call(:time_on_ice), :time_on_ice, icon: "⏱️", title: "time on ice leaders") { |p| "#{p[:name]}: #{Time.at(p[:time_on_ice]).strftime("%M:%S")}" }
       goal_leader_post = presentation.skaters(leaders.call(:goals), :goals, icon: "🚨", title: "goal scoring leaders") { |p| "#{p[:name]}: #{p[:goals]} #{"goal".pluralize(p[:goals])}" }
@@ -76,7 +76,7 @@ module RodTheBot
 
       roster.fetch("skaters", []).each do |player|
         skater_stats[player["playerId"]] = {
-          name: display_name(player),
+          name: club_stats_name(player),
           games: player["gamesPlayed"],
           goals: player["goals"],
           assists: player["assists"],
@@ -89,7 +89,7 @@ module RodTheBot
 
       roster.fetch("goalies", []).each do |player|
         goalie_stats[player["playerId"]] = {
-          name: display_name(player),
+          name: club_stats_name(player),
           games: player["gamesPlayed"],
           wins: player["wins"],
           losses: player["losses"],
@@ -101,11 +101,26 @@ module RodTheBot
       [skater_stats, goalie_stats]
     end
 
-    # club-stats has no sweater number, so it comes from the current roster.
-    # Players who have left the roster keep their stat line without a number.
-    def display_name(player)
-      player_directory.fetch(player["playerId"])&.name_with_number ||
-        Nhl::PlayerIdentity.from_landing(player, player_id: player["playerId"]).full_name
+    def club_stats_name(player)
+      Nhl::PlayerIdentity.from_landing(player, player_id: player["playerId"]).full_name
+    end
+
+    def with_display_names(players)
+      players.map { |id, stats| [id, stats.merge(name: display_name(id, stats[:name]))] }
+    end
+
+    # club-stats has no sweater number. The current roster supplies it, and a
+    # player landing covers someone still with the organization but off the NHL
+    # roster, such as a player assigned to the AHL. A traded player's landing
+    # shows the new team's number, so that player keeps the plain club-stats name.
+    def display_name(player_id, fallback)
+      identity = player_directory.resolve(player_id)
+      return fallback unless identity.team_abbreviation == ENV["NHL_TEAM_ABBREVIATION"] && identity.sweater_number.present?
+
+      identity.name_with_number
+    rescue Nhl::RequestError => e
+      Rails.logger.warn "SeasonStatsWorker: Could not resolve sweater number for player_id=#{player_id}: #{e.message}"
+      fallback
     end
 
     def player_directory
