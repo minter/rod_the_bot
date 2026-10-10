@@ -12,18 +12,6 @@ module Nhl
         end
       end
 
-      def skater_milestones
-        cached("skater_milestones_#{Date.current}", 24.hours) { get_json("/milestones/skaters") }
-      rescue RequestError
-        {}
-      end
-
-      def goalie_milestones
-        cached("goalie_milestones_#{Date.current}", 24.hours) { get_json("/milestones/goalies") }
-      rescue RequestError
-        {}
-      end
-
       def team_summary(season:, game_type:, sort:)
         query = URI.encode_www_form(
           sort: sort,

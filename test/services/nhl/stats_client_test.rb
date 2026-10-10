@@ -9,12 +9,6 @@ class Nhl::StatsClientTest < ActiveSupport::TestCase
     assert_equal "Carolina Hurricanes", Nhl::StatsClient.teams.dig(12, :fullName)
   end
 
-  test "returns empty milestone data when the API is unavailable" do
-    Nhl::StatsClient.stubs(:get_json).raises(Nhl::RequestError, "unavailable")
-
-    assert_equal({}, Nhl::StatsClient.skater_milestones)
-  end
-
   test "returns normalized team summary rows" do
     Nhl::StatsClient.expects(:get_json).with do |path|
       path.start_with?("/team/summary?") &&
