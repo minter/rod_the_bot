@@ -48,6 +48,42 @@ class RodTheBot::EdgePlayerHotZonesWorkerTest < ActiveSupport::TestCase
     end
   end
 
+  test "perform omits zones where the player has not scored" do
+    @worker.stubs(:select_eligible_players).returns([{id: 8478427, name: "#20 Sebastian Aho"}])
+    @worker.stubs(:fetch_player_headshot).returns(nil)
+    Nhl::PlayerClient.stubs(:landing).with(8478427).returns({"sweaterNumber" => 20})
+    Nhl::EdgeClient.stubs(:fetch_skater_shot_location_detail).returns({
+      "shotLocationDetails" => [
+        {"area" => "High Slot", "goals" => 3, "goalsPercentile" => 1.0},
+        {"area" => "L Net Side", "goals" => 1, "goalsPercentile" => 1.0},
+        {"area" => "R Corner", "goals" => 0, "goalsPercentile" => 1.0}
+      ]
+    })
+
+    @worker.perform(2025020660)
+
+    post = RodTheBot::Post.jobs.first["args"].first
+    assert_includes post, "• High Slot: 3G (100th percentile)"
+    assert_includes post, "• L Net Side: 1G (100th percentile)"
+    refute_includes post, "R Corner"
+  end
+
+  test "perform does not post when fewer than two elite zones have goals" do
+    @worker.stubs(:select_eligible_players).returns([{id: 8478427, name: "#20 Sebastian Aho"}])
+    @worker.stubs(:fetch_player_headshot).returns(nil)
+    Nhl::EdgeClient.stubs(:fetch_skater_shot_location_detail).returns({
+      "shotLocationDetails" => [
+        {"area" => "High Slot", "goals" => 3, "goalsPercentile" => 1.0},
+        {"area" => "R Corner", "goals" => 0, "goalsPercentile" => 1.0},
+        {"area" => "L Corner", "goals" => 0, "goalsPercentile" => 1.0}
+      ]
+    })
+
+    @worker.perform(2025020660)
+
+    assert_equal 0, RodTheBot::Post.jobs.size
+  end
+
   test "perform returns early if preseason" do
     Nhl::SeasonCalendar.unstub(:preseason?)
     Nhl::SeasonCalendar.stubs(:preseason?).returns(true)

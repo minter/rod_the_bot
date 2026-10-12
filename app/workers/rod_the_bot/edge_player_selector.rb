@@ -117,11 +117,7 @@ module RodTheBot
         shot_location_data = Nhl::EdgeClient.fetch_skater_shot_location_detail(player_id, game_id: game_id)
         return false unless shot_location_data && shot_location_data["shotLocationDetails"]
 
-        elite_zones = shot_location_data["shotLocationDetails"].select do |zone|
-          (zone["goalsPercentile"] || 0) >= 0.80
-        end
-
-        elite_zones.count >= 2
+        RodTheBot::EdgeHotZones.elite(shot_location_data["shotLocationDetails"]).count >= 2
 
       when :high_workload
         return false if stats[:points] < 5
