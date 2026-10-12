@@ -38,10 +38,7 @@ module RodTheBot
     private
 
     def format_hot_zones_spotlight(player, shot_data)
-      # Find zones where player is elite (80th+ percentile in goals)
-      elite_zones = shot_data["shotLocationDetails"].select do |zone|
-        (zone["goalsPercentile"] || 0) >= 0.80
-      end.sort_by { |z| -(z["goalsPercentile"] || 0) }
+      elite_zones = RodTheBot::EdgeHotZones.elite(shot_data["shotLocationDetails"])
 
       return nil if elite_zones.length < 2
 
