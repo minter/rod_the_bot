@@ -40,7 +40,6 @@ module RodTheBot
     private
 
     def get_recent_game_ids(last_n)
-      ENV["NHL_TEAM_ABBREVIATION"]
       recent_games = []
       days_back = 0
 
@@ -57,7 +56,11 @@ module RodTheBot
         days_back += 7
       end
 
-      recent_games.uniq { |g| g["id"] }.last(last_n).map { |g| g["id"] }
+      # Weeks are collected newest first, so order by start time before taking the latest.
+      recent_games.uniq { |g| g["id"] }
+        .sort_by { |g| g["startTimeUTC"].to_s }
+        .last(last_n)
+        .map { |g| g["id"] }
     end
 
     # Recent games are counted back from the configured time zone's date, not the host's.
