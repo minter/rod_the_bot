@@ -3,7 +3,7 @@ module RodTheBot
     include Sidekiq::Worker
 
     def perform
-      date = Date.today.strftime("%Y-%m-%d")
+      date = local_today.strftime("%Y-%m-%d")
       schedule = Nhl::ScheduleClient.league_schedule(date: date)
       games = format_schedule(schedule, date)
       time_zone_abbr = Time.zone.tzinfo.abbreviation
@@ -36,6 +36,11 @@ module RodTheBot
     end
 
     private
+
+    # The league day follows the configured time zone, not the host's.
+    def local_today
+      Time.use_zone(ENV.fetch("TIME_ZONE")) { Time.zone.today }
+    end
 
     def format_schedule(schedule, date)
       Time.zone = TZInfo::Timezone.get(ENV["TIME_ZONE"])

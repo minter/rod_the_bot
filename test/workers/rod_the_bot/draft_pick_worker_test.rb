@@ -18,7 +18,7 @@ class RodTheBot::DraftPickWorkerTest < ActiveSupport::TestCase
   def test_posts_selected_team_pick_on_inferred_draft_day
     dedupe_value = nil
 
-    Timecop.freeze(Date.new(2026, 6, 26)) do
+    Timecop.freeze(Time.zone.local(2026, 6, 26, 12)) do
       Nhl::DraftClient.expects(:picks).with(2026).returns(draft_data)
       Nhl::DraftClient.expects(:rankings).with(2026).returns(rankings)
 
@@ -37,7 +37,7 @@ class RodTheBot::DraftPickWorkerTest < ActiveSupport::TestCase
   end
 
   def test_requeues_on_draft_day_before_draft_starts
-    Timecop.freeze(Date.new(2026, 6, 26)) do
+    Timecop.freeze(Time.zone.local(2026, 6, 26, 12)) do
       Nhl::DraftClient.expects(:picks).with(2026).returns(draft_data(state: "fut"))
       Nhl::DraftClient.expects(:rankings).never
 
@@ -49,7 +49,7 @@ class RodTheBot::DraftPickWorkerTest < ActiveSupport::TestCase
   end
 
   def test_skips_before_inferred_draft_day
-    Timecop.freeze(Date.new(2026, 6, 19)) do
+    Timecop.freeze(Time.zone.local(2026, 6, 19, 12)) do
       Nhl::DraftClient.expects(:picks).with(2026).returns(draft_data(state: "fut"))
       Nhl::DraftClient.expects(:rankings).never
 
@@ -65,7 +65,7 @@ class RodTheBot::DraftPickWorkerTest < ActiveSupport::TestCase
     long_club_name = Array.new(60, "Long Club Name").join(" ")
     pick = car_pick.merge("amateurClubName" => long_club_name)
 
-    Timecop.freeze(Date.new(2026, 6, 26)) do
+    Timecop.freeze(Time.zone.local(2026, 6, 26, 12)) do
       Nhl::DraftClient.expects(:picks).with(2026).returns(draft_data(picks: [pick]))
       Nhl::DraftClient.expects(:rankings).with(2026).returns(rankings)
 
@@ -95,7 +95,7 @@ class RodTheBot::DraftPickWorkerTest < ActiveSupport::TestCase
   end
 
   def test_completed_draft_does_not_process_without_explicit_replay_flag
-    Timecop.freeze(Date.new(2025, 6, 29)) do
+    Timecop.freeze(Time.zone.local(2025, 6, 29, 12)) do
       Nhl::DraftClient.expects(:picks).with(2025).returns(draft_data(year: 2025, state: "over"))
       Nhl::DraftClient.expects(:rankings).never
 

@@ -11,7 +11,7 @@ module RodTheBot
 
     def perform(year = nil, process_completed = false)
       manual_run = year.present?
-      year ||= Date.today.year
+      year ||= local_today.year
 
       data = Nhl::DraftClient.picks(year)
 
@@ -22,7 +22,7 @@ module RodTheBot
 
       draft_year = data["draftYear"] || year
       unless manual_run || draft_day?(data, draft_year)
-        Sidekiq.logger.info "Not a draft day (#{Date.today.strftime("%Y-%m-%d")}), skipping."
+        Sidekiq.logger.info "Not a draft day (#{local_today.strftime("%Y-%m-%d")}), skipping."
         return
       end
 
@@ -69,10 +69,15 @@ module RodTheBot
     private
 
     def draft_day?(data, draft_year)
-      today = Date.today.strftime("%Y-%m-%d")
+      today = local_today.strftime("%Y-%m-%d")
       active_dates = inferred_active_dates(data)
 
-      active_dates.include?(today) || (data["state"].present? && data["state"] != "fut" && draft_year.to_i == Date.today.year)
+      active_dates.include?(today) || (data["state"].present? && data["state"] != "fut" && draft_year.to_i == local_today.year)
+    end
+
+    # Draft day follows the configured time zone, not the host's.
+    def local_today
+      Time.use_zone(ENV.fetch("TIME_ZONE")) { Time.zone.today }
     end
 
     def inferred_active_dates(data)
