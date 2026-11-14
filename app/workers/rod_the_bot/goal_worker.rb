@@ -3,6 +3,9 @@ module RodTheBot
     include Sidekiq::Worker
     include WorkerErrorHandling
 
+    # Long enough for the goal post to exist so the record threads beneath it.
+    FIRST_GOAL_RECORD_DELAY = 20.seconds
+
     def perform(game_id, play)
       @game_id = game_id
       @feed = Nhl::GameClient.play_by_play(game_id)
@@ -90,6 +93,7 @@ module RodTheBot
         presentation.post,
         {"key" => redis_key, "embed_images" => Goal::Images.for(@play)}
       )
+      enqueue_first_goal_record(redis_key, scoring_team)
       RodTheBot::ScoringChangeWorker.perform_in(600, game_id, play["eventId"], original_play, redis_key)
       RodTheBot::GoalHighlightWorker.perform_in(10, game_id, play["eventId"], redis_key) if scoring_team == @your_team
       # Generate and post EDGE replay visualization (delay 1 minute to allow EDGE data to be available)
@@ -101,6 +105,26 @@ module RodTheBot
       retry_job(e, game_id: @game_id, play_id: play["eventId"], operation: "fetch_goal")
     rescue => e
       retry_job(e, game_id: @game_id, play_id: play["eventId"], operation: "process_goal")
+    end
+
+    # Replies to the game's first goal with the team's record in that situation. This is an
+    # optional enhancement; the goal post stands without it.
+    def enqueue_first_goal_record(redis_key, scoring_team)
+      details = @play["details"]
+      return unless details["homeScore"].to_i + details["awayScore"].to_i == 1
+
+      line = RodTheBot::SituationalRecord
+        .for_game(@game_id, team_name: @your_team.dig("commonName", "default"))
+        .first_goal(scored_by_team: scoring_team == @your_team)
+      return unless line
+
+      RodTheBot::Post.perform_in(
+        FIRST_GOAL_RECORD_DELAY,
+        line,
+        {"key" => "#{redis_key}:first_goal_record", "parent_key" => redis_key, "root_key" => redis_key}
+      )
+    rescue Nhl::RequestError => e
+      Rails.logger.warn "GoalWorker: situational record unavailable for game #{@game_id}: #{e.message}"
     end
 
     def post_builder
