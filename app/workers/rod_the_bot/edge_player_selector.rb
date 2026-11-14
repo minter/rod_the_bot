@@ -46,7 +46,7 @@ module RodTheBot
 
       # Walk backwards through schedule to find completed games
       while recent_games.length < last_n && days_back < 30
-        date = (Date.today - days_back.days).strftime("%Y-%m-%d")
+        date = (local_today - days_back.days).strftime("%Y-%m-%d")
         schedule = Nhl::ScheduleClient.team_schedule(date: date)
 
         if schedule && schedule["games"]
@@ -58,6 +58,11 @@ module RodTheBot
       end
 
       recent_games.uniq { |g| g["id"] }.last(last_n).map { |g| g["id"] }
+    end
+
+    # Recent games are counted back from the configured time zone's date, not the host's.
+    def local_today
+      Time.use_zone(ENV.fetch("TIME_ZONE")) { Time.zone.today }
     end
 
     def collect_player_stats(game_ids, team_id, roster_player_ids)
