@@ -11,10 +11,10 @@ module RodTheBot
     private
 
     def format_scores(yesterday_scores)
-      return "🙌 Final scores from last night's games:\n\nNo games scheduled\n" if yesterday_scores.empty?
+      return "🙌 Final scores from yesterday's games:\n\nNo games scheduled\n" if yesterday_scores.empty?
 
       scores = yesterday_scores.map { |game| format_game_score(game) }
-      "🙌 Final scores from last night's games:\n\n#{scores.join("\n")}\n"
+      "🙌 Final scores from yesterday's games:\n\n#{scores.join("\n")}\n"
     end
 
     def format_game_score(game)

@@ -14,7 +14,7 @@ class RodTheBot::YesterdaysScoresWorkerTest < ActiveSupport::TestCase
         @worker.perform
         assert_equal 1, RodTheBot::Post.jobs.size
         expected_output = <<~POST
-          🙌 Final scores from last night's games:
+          🙌 Final scores from yesterday's games:
 
           NYI 4 : 5 NJD
           FLA 1 : 2 TOR (SO)
@@ -38,7 +38,7 @@ class RodTheBot::YesterdaysScoresWorkerTest < ActiveSupport::TestCase
         scores = Nhl::ScheduleClient.scores
         post = @worker.send(:format_scores, scores)
         expected_post = <<~POST
-          🙌 Final scores from last night's games:
+          🙌 Final scores from yesterday's games:
 
           No games scheduled
         POST
@@ -55,7 +55,7 @@ class RodTheBot::YesterdaysScoresWorkerTest < ActiveSupport::TestCase
         @worker.perform
         assert_equal 1, RodTheBot::Post.jobs.size
         expected_output = <<~POST
-          🙌 Final scores from last night's games:
+          🙌 Final scores from yesterday's games:
 
           LAK 1 : 2 BOS (OT)
           FLA 2 : 5 BUF
