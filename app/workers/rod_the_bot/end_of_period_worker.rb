@@ -18,6 +18,8 @@ module RodTheBot
       period_descriptor = play.fetch("periodDescriptor", {})
 
       end_of_period_post = format_post(home, away, period_descriptor)
+      record_line = situational_record_line(game_id, home, away, period_descriptor)
+      end_of_period_post = "#{end_of_period_post}\n#{record_line}\n" if record_line
 
       RodTheBot::Post.perform_async(end_of_period_post)
       RodTheBot::EndOfPeriodStatsWorker.perform_in(60, game_id, period_descriptor.fetch("number", 1))
@@ -29,6 +31,17 @@ module RodTheBot
     end
 
     private
+
+    # The record line is an optional enhancement; the period summary posts without it.
+    def situational_record_line(game_id, home, away, period_descriptor)
+      team, opponent = (home["id"].to_i == ENV["NHL_TEAM_ID"].to_i) ? [home, away] : [away, home]
+      RodTheBot::SituationalRecord
+        .for_game(game_id, team_name: team.dig("commonName", "default"))
+        .after_period(period_descriptor["number"], team_score: team.fetch("score", 0), opponent_score: opponent.fetch("score", 0))
+    rescue Nhl::RequestError => e
+      Rails.logger.warn "EndOfPeriodWorker: situational record unavailable for game #{game_id}: #{e.message}"
+      nil
+    end
 
     def format_post(home, away, period_descriptor)
       period_number = period_descriptor.fetch("number", 1)

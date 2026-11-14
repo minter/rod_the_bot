@@ -5,6 +5,59 @@ class RodTheBot::GoalWorkerTest < ActiveSupport::TestCase
     Sidekiq::Worker.clear_all
     @goal_worker = RodTheBot::GoalWorker.new
     ENV["NHL_TEAM_ID"] = "12"
+    Nhl::StatsClient.stubs(:team_situational_records).returns({})
+  end
+
+  def test_first_goal_gets_a_situational_record_reply
+    @game_id = "2023020702"
+    @play_id = "157"
+    Nhl::StatsClient.stubs(:team_situational_records)
+      .with(team_id: 12, season: "20232024", game_type: 2)
+      .returns(trailing_first: {wins: 3, losses: 2, ot_losses: 2})
+    VCR.use_cassette("nhl_game_#{@game_id}_goal_play_#{@play_id}", allow_playback_repeats: true) do
+      feed = Nhl::GameClient.play_by_play(@game_id)
+      play = feed["plays"].find { |play| play["eventId"].to_i == @play_id.to_i }
+
+      @goal_worker.perform(@game_id, play)
+
+      goal_key = "game:#{@game_id}:goal:#{@play_id}"
+      reply = RodTheBot::Post.jobs.last["args"]
+      assert_equal 2, RodTheBot::Post.jobs.size
+      assert_equal "The Hurricanes are 3-2-2 when allowing the first goal this season.", reply.first
+      assert_equal(
+        {"key" => "#{goal_key}:first_goal_record", "parent_key" => goal_key, "root_key" => goal_key},
+        reply.last
+      )
+    end
+  end
+
+  def test_later_goals_get_no_situational_record_reply
+    @game_id = "2023020702"
+    @play_id = "159"
+    Nhl::StatsClient.stubs(:team_situational_records).returns(scoring_first: {wins: 12, losses: 1, ot_losses: 0})
+    VCR.use_cassette("nhl_game_#{@game_id}_goal_play_#{@play_id}", allow_playback_repeats: true) do
+      feed = Nhl::GameClient.play_by_play(@game_id)
+      play = feed["plays"].find { |play| play["eventId"].to_i == @play_id.to_i }
+
+      @goal_worker.perform(@game_id, play)
+
+      assert_equal 1, RodTheBot::Post.jobs.size
+    end
+  end
+
+  def test_goal_still_posts_when_situational_records_fail
+    @game_id = "2023020702"
+    @play_id = "157"
+    Nhl::StatsClient.stubs(:team_situational_records).raises(Nhl::RequestError, "HTTP 500")
+    VCR.use_cassette("nhl_game_#{@game_id}_goal_play_#{@play_id}", allow_playback_repeats: true) do
+      feed = Nhl::GameClient.play_by_play(@game_id)
+      play = feed["plays"].find { |play| play["eventId"].to_i == @play_id.to_i }
+
+      @goal_worker.perform(@game_id, play)
+
+      assert_equal 1, RodTheBot::Post.jobs.size
+      assert_equal 1, RodTheBot::ScoringChangeWorker.jobs.size
+    end
   end
 
   def test_discards_goal_with_missing_details

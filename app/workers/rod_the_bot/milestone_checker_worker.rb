@@ -2,6 +2,8 @@ module RodTheBot
   class MilestoneCheckerWorker
     include Sidekiq::Worker
 
+    REGULAR_SEASON = 2
+
     def perform(game_id, play)
       @game_id = game_id
 
@@ -24,12 +26,14 @@ module RodTheBot
 
       scorer_id = details["scoringPlayerId"]
       enqueue_events(get_player_name(scorer_id), evaluator.scorer(scorer_id))
+      enqueue_franchise_rank_events(scorer_id, %w[goals points])
 
       %w[assist1PlayerId assist2PlayerId].each do |key|
         player_id = details[key]
         next unless player_id.present? && player_on_tracked_team?(player_id)
 
         enqueue_events(get_player_name(player_id), evaluator.assister(player_id))
+        enqueue_franchise_rank_events(player_id, %w[assists points])
       end
     end
 
@@ -73,6 +77,35 @@ module RodTheBot
 
     def enqueue_events(player_name, events)
       events.each { |event| RodTheBot::Post.perform_async(formatter.format(player_name, event)) }
+    end
+
+    # Franchise lists are regular-season totals. They are an optional addition to the career
+    # milestones above, so a records-site failure must not retry (and repost) those.
+    def enqueue_franchise_rank_events(player_id, stats)
+      return unless Nhl::GameId.new(@game_id).game_type == REGULAR_SEASON
+      return unless franchise_id
+
+      stats.each do |stat|
+        event = franchise_rank.event(player_id, stat)
+        RodTheBot::Post.perform_async(franchise_rank_formatter.format(get_player_name(player_id), event)) if event
+      end
+    rescue Nhl::RequestError => e
+      Rails.logger.warn "MilestoneCheckerWorker: franchise totals unavailable for game #{@game_id}, player #{player_id}: #{e.message}"
+    end
+
+    def franchise_rank
+      @franchise_rank ||= Milestones::FranchiseRank.new(
+        totals: Nhl::RecordsClient.franchise_skater_totals(franchise_id),
+        in_game: career_total.method(:in_game)
+      )
+    end
+
+    def franchise_id
+      @franchise_id ||= Nhl::StatsClient.teams.dig(tracked_team_id, :franchiseId)
+    end
+
+    def franchise_rank_formatter
+      @franchise_rank_formatter ||= Milestones::FranchiseRankFormatter.new
     end
 
     def tracked_team_id

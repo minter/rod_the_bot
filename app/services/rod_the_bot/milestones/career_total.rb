@@ -16,10 +16,6 @@ module RodTheBot
         career_stats.call(player_id).fetch(stat, 0).to_i
       end
 
-      private
-
-      attr_reader :game_id, :feed, :redis, :career_stats
-
       def in_game(player_id, stat)
         plays = feed.call&.fetch("plays", []) || []
         player_id = player_id.to_i
@@ -30,6 +26,10 @@ module RodTheBot
 
         {"goals" => goals, "assists" => assists, "points" => goals + assists}.fetch(stat, 0)
       end
+
+      private
+
+      attr_reader :game_id, :feed, :redis, :career_stats
     end
   end
 end
