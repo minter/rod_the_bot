@@ -11,6 +11,7 @@ module RodTheBot
       end
 
       RodTheBot::YesterdaysScoresWorker.perform_in(5.minutes)
+      RodTheBot::EdgeGameRecapWorker.perform_in(7.minutes)
       RodTheBot::TodaysScheduleWorker.perform_in(10.minutes)
 
       if Nhl::SeasonCalendar.postseason?
