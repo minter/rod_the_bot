@@ -20,6 +20,7 @@ class RodTheBot::SchedulerTest < ActiveSupport::TestCase
 
     assert_equal 1, RodTheBot::DraftPickWorker.jobs.size
     assert_equal 0, RodTheBot::YesterdaysScoresWorker.jobs.size
+    assert_equal 0, RodTheBot::EdgeGameRecapWorker.jobs.size
     assert_equal 0, RodTheBot::TodaysScheduleWorker.jobs.size
   end
 
@@ -33,6 +34,7 @@ class RodTheBot::SchedulerTest < ActiveSupport::TestCase
 
         assert_equal 0, RodTheBot::Post.jobs.size
         assert_equal 1, RodTheBot::YesterdaysScoresWorker.jobs.size
+        assert_equal 1, RodTheBot::EdgeGameRecapWorker.jobs.size
         assert_equal 1, RodTheBot::DivisionStandingsWorker.jobs.size
       end
     end

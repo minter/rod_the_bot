@@ -30,4 +30,30 @@ class Nhl::EdgeClientTest < ActiveSupport::TestCase
 
     assert_nil Nhl::EdgeClient.fetch_team_skating_speed_detail(12, game_id: 2026020018)
   end
+
+  test "fetches team skating distance detail" do
+    Nhl::EdgeClient.expects(:get_json).with("/edge/team-skating-distance-detail/12/20262027/2").returns({"skatingDistanceLast10" => []})
+
+    assert_equal({"skatingDistanceLast10" => []}, Nhl::EdgeClient.fetch_team_skating_distance_detail(12, game_id: 2026020321))
+  end
+
+  test "fresh bypasses a cached response and replaces it" do
+    Nhl::EdgeClient.expects(:get_json).twice.returns({"v" => 1}, {"v" => 2})
+    Rails.stubs(:cache).returns(ActiveSupport::Cache::MemoryStore.new)
+
+    Nhl::EdgeClient.fetch_team_skating_distance_detail(12)
+
+    assert_equal({"v" => 2}, Nhl::EdgeClient.fetch_team_skating_distance_detail(12, fresh: true))
+    assert_equal({"v" => 2}, Nhl::EdgeClient.fetch_team_skating_distance_detail(12))
+  end
+
+  test "team skating distance detail lists recent games with splits" do
+    VCR.use_cassette("edge_team_skating_distance_detail_12") do
+      game = Nhl::EdgeClient.fetch_team_skating_distance_detail(12, season: 20262027, game_type: 2)["skatingDistanceLast10"].first
+
+      assert_match %r{/\d{10}\z}, game["gameCenterLink"]
+      assert game.dig("distanceSkatedAll", "imperial").positive?
+      assert game.key?("toiEven")
+    end
+  end
 end
