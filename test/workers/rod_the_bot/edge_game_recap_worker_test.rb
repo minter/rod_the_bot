@@ -16,7 +16,7 @@ class RodTheBot::EdgeGameRecapWorkerTest < ActiveSupport::TestCase
     Nhl::GameClient.stubs(:boxscore).with(GAME).returns(boxscore)
     Nhl::PlayerDirectory.stubs(:for_game).with(GAME).returns(directory)
 
-    Nhl::EdgeClient.stubs(:fetch_team_skating_distance_detail).with(12, game_id: GAME, fresh: true).returns(distance(45.2762))
+    Nhl::EdgeClient.stubs(:fetch_team_skating_distance_detail).with(12, game_id: GAME, fresh: true).returns(team_distance)
     Nhl::EdgeClient.stubs(:fetch_team_skating_distance_detail).with(55, game_id: GAME, fresh: true).returns(distance(44.9257))
     Nhl::EdgeClient.stubs(:fetch_team_shot_speed_detail).with(12, game_id: GAME, fresh: true)
       .returns({"hardestShots" => [{"gameCenterLink" => link, "player" => {"id" => 4}, "shotSpeed" => {"imperial" => 91.98}}]})
@@ -35,7 +35,7 @@ class RodTheBot::EdgeGameRecapWorkerTest < ActiveSupport::TestCase
 
     posts = RodTheBot::Post.jobs
     assert_equal 3, posts.size
-    assert posts[0]["args"][0].start_with?("⛸️ EDGE recap: Hurricanes vs. Kraken\n\nHurricanes skated 45.28 mi\nKraken: 44.93 mi")
+    assert posts[0]["args"][0].start_with?("⛸️ EDGE recap: Hurricanes vs. Kraken\n\nHurricanes skated 45.28 mi (fewest in their last 6 games)\nKraken: 44.93 mi")
     assert_equal "edge_recap_#{GAME}:1", posts[0]["args"][1]["key"]
     assert_includes posts[1]["args"][0], "#19 K'Andre Miller: 3.08 mi in 20:00"
     assert_equal "edge_recap_#{GAME}:1", posts[1]["args"][1]["parent_key"]
@@ -95,7 +95,7 @@ class RodTheBot::EdgeGameRecapWorkerTest < ActiveSupport::TestCase
 
   test "gives up after the last attempt" do
     Nhl::EdgeClient.stubs(:fetch_team_skating_distance_detail).with(12, game_id: GAME, fresh: true).returns(nil)
-    Rails.logger.expects(:warn).with(regexp_matches(/#{GAME}/))
+    Rails.logger.expects(:warn).with(regexp_matches(/#{GAME}/o))
 
     @worker.perform(6)
 
@@ -164,6 +164,11 @@ class RodTheBot::EdgeGameRecapWorkerTest < ActiveSupport::TestCase
 
   def distance(miles, seconds: 17_800, game_id: GAME)
     {"skatingDistanceLast10" => [{"gameCenterLink" => link(game_id), "distanceSkatedAll" => {"imperial" => miles}, "toiAll" => seconds}]}
+  end
+
+  def team_distance
+    earlier = (1..5).map { |n| distance(46.0, game_id: GAME - n)["skatingDistanceLast10"].first }
+    {"skatingDistanceLast10" => distance(45.2762)["skatingDistanceLast10"] + earlier}
   end
 
   def scheduled_game

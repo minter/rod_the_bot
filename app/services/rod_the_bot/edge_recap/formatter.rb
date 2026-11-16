@@ -4,6 +4,8 @@ module RodTheBot
       SKATER_COUNT = 3
       # A rank among fewer games than this says nothing worth posting.
       MINIMUM_RANKED_GAMES = 3
+      # Early in a season (or a playoff run) nearly every shot makes the season top 10.
+      MINIMUM_GAMES_FOR_MARKS = 5
 
       def initialize(result:, names:, team_name:, opponent_name:, home:, limit: PostThread.content_limit)
         @result = result
@@ -53,6 +55,8 @@ module RodTheBot
       end
 
       def marks_post
+        return if @result.games < MINIMUM_GAMES_FOR_MARKS
+
         header = "📈 New on the #{possessive(@team_name)} season top 10:\n\n"
         lines = @result.marks.filter_map { |mark| mark_line(mark) }
         lines.pop while lines.any? && (header + lines.join("\n")).length > @limit

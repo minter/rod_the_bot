@@ -85,6 +85,11 @@ class RodTheBot::EdgeRecap::FormatterTest < ActiveSupport::TestCase
     assert_equal 2, posts(result: result(marks: [])).size
   end
 
+  test "no season-marks post while the season lists are still filling" do
+    assert_equal 2, posts(result: result(rank: 2, games: 4)).size
+    assert_equal 3, posts(result: result(rank: 2, games: 5)).size
+  end
+
   test "skips a mark whose player has no name" do
     assert_equal 2, posts(names: NAMES.except(26)).last.lines.grep(/mph/).size
   end
@@ -108,10 +113,8 @@ class RodTheBot::EdgeRecap::FormatterTest < ActiveSupport::TestCase
   private
 
   def result(**overrides)
-    GameData::Result.new(**{
-      distance: 45.2762, even: 39.58, power_play: 3.4776, penalty_kill: 2.2186, rank: 7, games: 10,
-      opponent_distance: 44.9257, skaters: SKATERS, marks: MARKS
-    }.merge(overrides))
+    GameData::Result.new(distance: 45.2762, even: 39.58, power_play: 3.4776, penalty_kill: 2.2186, rank: 7, games: 10,
+      opponent_distance: 44.9257, skaters: SKATERS, marks: MARKS, **overrides)
   end
 
   def posts(result: self.result, names: NAMES, home: true, limit: 280)
