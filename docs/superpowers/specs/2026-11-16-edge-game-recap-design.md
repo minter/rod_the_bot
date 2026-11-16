@@ -87,7 +87,7 @@ Rules:
 - **Domain service.** `RodTheBot::EdgeRecap::GameData` takes the raw payloads (team distance, opponent distance, team shot speed, team skating speed, and a player-ID-to-payload hash of skater distance) plus the game ID, and returns a normalized result: team distance with splits, rank and list size, opponent distance, skaters ordered by distance (player ID, distance, ice time), and season marks (kind, player ID, speed, season rank). Returns nil when the team list does not contain the game. Pure; no network.
 - **Formatter.** `RodTheBot::EdgeRecap::Formatter` takes that result, a player-ID-to-display-name lookup, team names, and home/away, and returns the array of post texts, applying the rules above.
 - **Worker.** `RodTheBot::EdgeGameRecapWorker#perform(attempt = 0)`:
-  - Finds yesterday's tracked-team game via `Nhl::ScheduleClient.todays_game(date: yesterday)` using the configured time zone. Returns if there is none, it is preseason, or the game was not played to a final.
+  - Finds yesterday's tracked-team game via `Nhl::ScheduleClient.todays_game(date: yesterday)` using the configured time zone. Returns if there is none, it is preseason, or the game was not played to a final. The final state is read from the boxscore, which is not cached, because the schedule may have been cached while the game was live.
   - Gets the skaters who played from `Nhl::GameClient.boxscore`, and identities from `Nhl::PlayerDirectory.for_game(game_id)` using `name_with_number`.
   - Fetches the team payloads, the opponent distance payload, and one distance payload per skater. This loop is explicit and bounded by the dressed skaters.
   - Enqueues through `RodTheBot::PostThread.enqueue` with key `edge_recap_<game_id>`.
@@ -99,7 +99,8 @@ Rules:
 - **Double runs.** A `SET NX` claim per game with a TTL is taken just before enqueuing the thread, so a rerun or overlapping chain cannot post twice. The claim is released if enqueuing raises.
 - **A skater request fails or lacks the game.** Skip that skater. If no skater has data, the skater post is skipped.
 - **Opponent request fails.** Warn and omit the opponent line.
-- **Team distance request fails.** `retry_job` with `game_id` and `operation: "edge_game_recap"`.
+- **Team distance request fails.** `retry_job` with `game_id` and `operation: "edge_game_recap"`. Sidekiq retries are limited to three, because each run recaps "yesterday" and a retry days later would describe a different game.
+- **Game entry without a distance.** Treated as not yet published.
 - **Shot or speed request fails.** Warn and skip the season-marks post.
 
 ## Testing

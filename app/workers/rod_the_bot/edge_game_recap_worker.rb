@@ -5,6 +5,9 @@ module RodTheBot
     include Sidekiq::Worker
     include WorkerErrorHandling
 
+    # Each run recaps "yesterday", so a retry that fires days later would describe a different game.
+    sidekiq_options retry: 3
+
     RETRY_DELAY = 30.minutes
     MAX_ATTEMPTS = 6
     CLAIM_TTL = 2.days.to_i
@@ -20,6 +23,9 @@ module RodTheBot
       game_id = game["id"]
       team_id = ENV.fetch("NHL_TEAM_ID").to_i
       boxscore = Nhl::GameClient.boxscore(game_id)
+      # The schedule may have been cached while the game was live; the boxscore is fetched fresh.
+      return unless PLAYED_STATES.include?(boxscore["gameState"])
+
       side, opponent_side = (boxscore.dig("homeTeam", "id").to_i == team_id) ? %w[homeTeam awayTeam] : %w[awayTeam homeTeam]
 
       result = EdgeRecap::GameData.build(
@@ -52,9 +58,7 @@ module RodTheBot
     def yesterdays_game
       yesterday = Time.use_zone(ENV.fetch("TIME_ZONE")) { Time.zone.today } - 1
       game = Nhl::ScheduleClient.todays_game(date: yesterday)
-      return unless game && game["gameType"] != PRESEASON && game["gameScheduleState"] == "OK"
-
-      game if PLAYED_STATES.include?(game["gameState"])
+      game if game && game["gameType"] != PRESEASON && game["gameScheduleState"] == "OK"
     end
 
     # One request per dressed skater: EDGE has no per-game listing for a whole team.

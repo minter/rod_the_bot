@@ -9,6 +9,12 @@ class RodTheBot::EdgeRecap::GameDataTest < ActiveSupport::TestCase
     assert_nil build(team: nil)
   end
 
+  test "returns nil when the game entry has no distance" do
+    entry = game(GAME, 45.0).merge("distanceSkatedAll" => nil)
+
+    assert_nil build(team: distance_payload(entry))
+  end
+
   test "ranks the game among recent games" do
     result = build(team: distance_payload(game(GAME, 45.0), game(OTHER, 47.0), game(2026020271, 44.0)))
 

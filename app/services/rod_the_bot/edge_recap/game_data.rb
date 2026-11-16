@@ -18,9 +18,9 @@ module RodTheBot
       def build(team:, opponent:, shots:, speeds:, skaters:)
         recent = recent_games(team)
         entry = game_entry(team)
-        return unless entry
+        distance = entry && miles(entry, "All")
+        return unless distance
 
-        distance = miles(entry, "All")
         Result.new(
           distance: distance,
           even: split(entry, "Even"),

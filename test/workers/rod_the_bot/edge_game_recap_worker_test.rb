@@ -67,13 +67,33 @@ class RodTheBot::EdgeGameRecapWorkerTest < ActiveSupport::TestCase
   end
 
   test "does nothing when the game was not played to a final" do
-    [{"gameState" => "FUT"}, {"gameScheduleState" => "PPD"}, {"gameType" => 1}].each do |change|
+    [{"gameScheduleState" => "PPD"}, {"gameType" => 1}].each do |change|
       Nhl::ScheduleClient.stubs(:todays_game).returns(scheduled_game.merge(change))
 
       @worker.perform
 
       assert_nothing_enqueued
     end
+  end
+
+  test "does nothing when the boxscore says the game is not final" do
+    Nhl::GameClient.stubs(:boxscore).with(GAME).returns(boxscore.merge("gameState" => "FUT"))
+
+    @worker.perform
+
+    assert_nothing_enqueued
+  end
+
+  test "trusts the boxscore over a schedule cached while the game was live" do
+    Nhl::ScheduleClient.stubs(:todays_game).returns(scheduled_game.merge("gameState" => "LIVE"))
+
+    @worker.perform
+
+    assert_equal 3, RodTheBot::Post.jobs.size
+  end
+
+  test "limits Sidekiq retries so a stale run does not recap a later day" do
+    assert_equal 3, RodTheBot::EdgeGameRecapWorker.sidekiq_options["retry"]
   end
 
   test "reschedules when EDGE has not published the game" do
@@ -178,6 +198,7 @@ class RodTheBot::EdgeGameRecapWorkerTest < ActiveSupport::TestCase
   def boxscore(tracked_side: "homeTeam")
     other_side = (tracked_side == "homeTeam") ? "awayTeam" : "homeTeam"
     {
+      "gameState" => "OFF",
       tracked_side => {"id" => 12, "commonName" => {"default" => "Hurricanes"}},
       other_side => {"id" => 55, "commonName" => {"default" => "Kraken"}},
       "playerByGameStats" => {
