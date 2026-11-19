@@ -25,11 +25,10 @@ module RodTheBot
       attr_reader :game_log, :season, :game_type, :minimum_length
 
       def recent_games(player_id)
-        games = game_log.call(player_id, 20)
-        if games.first&.key?("seasonId") || games.first&.key?("gameTypeId")
-          games = games.select { |game| game["seasonId"].to_s == season && game["gameTypeId"].to_i == game_type }
-        end
-        games.first(10)
+        games = game_log.call(player_id)
+        return games unless games.first&.key?("seasonId") || games.first&.key?("gameTypeId")
+
+        games.select { |game| game["seasonId"].to_s == season && game["gameTypeId"].to_i == game_type }
       end
 
       def skater_streaks(player_id, games)

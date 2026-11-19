@@ -41,7 +41,7 @@ module RodTheBot
 
     def analyzer
       @analyzer ||= PlayerStreaks::Analyzer.new(
-        game_log: ->(player_id, limit) { Nhl::PlayerClient.game_log(player_id, limit: limit) },
+        game_log: ->(player_id) { Nhl::PlayerClient.game_log(player_id) },
         season: Nhl::SeasonCalendar.current_season,
         game_type: Nhl::SeasonCalendar.postseason? ? 3 : 2,
         minimum_length: ENV.fetch("STREAK_MIN_LENGTH", "3")

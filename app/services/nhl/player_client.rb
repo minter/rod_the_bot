@@ -19,11 +19,12 @@ module Nhl
         player
       end
 
-      def game_log(player_id, limit: 10)
-        Rails.cache.fetch("player_game_log_#{player_id}_#{limit}_#{Date.current}", expires_in: 4.hours) do
+      def game_log(player_id, limit: nil)
+        Rails.cache.fetch("player_game_log_#{player_id}_#{limit || "all"}_#{Date.current}", expires_in: 4.hours) do
           season = SeasonCalendar.current_season
           game_type = SeasonCalendar.postseason? ? 3 : 2
-          get_json("/player/#{player_id}/game-log/#{season}/#{game_type}").fetch("gameLog", []).first(limit)
+          games = get_json("/player/#{player_id}/game-log/#{season}/#{game_type}").fetch("gameLog", [])
+          limit ? games.first(limit) : games
         end
       end
 
