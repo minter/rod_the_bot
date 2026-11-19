@@ -36,7 +36,48 @@ class RodTheBot::PlayerStreaks::AnalyzerTest < ActiveSupport::TestCase
     logs = ->(_id) { [{"decision" => "W"}, {"decision" => "O"}, {"decision" => "W"}] }
     analyzer = RodTheBot::PlayerStreaks::Analyzer.new(game_log: logs, season: "20252026", game_type: 2, minimum_length: 1)
 
-    assert_equal [{player_id: "31", streak_type: "Wins", length: 1, total_stats: 1}], analyzer.analyze(player_ids: [31], goalie_ids: [31])
+    wins = analyzer.analyze(player_ids: [31], goalie_ids: [31]).select { |streak| streak[:streak_type] == "Wins" }
+
+    assert_equal [{player_id: "31", streak_type: "Wins", length: 1, total_stats: 1}], wins
+  end
+
+  test "goalie point streak counts overtime losses and stops at a regulation loss" do
+    logs = ->(_id) { [{"decision" => "W"}, {}, {"decision" => "O"}, {"decision" => "W"}, {"decision" => "L"}, {"decision" => "W"}] }
+    analyzer = RodTheBot::PlayerStreaks::Analyzer.new(game_log: logs, season: "20252026", game_type: 2, minimum_length: 3)
+
+    assert_equal [{player_id: "31", streak_type: "Points", length: 3, total_stats: 3, wins: 2, ot_losses: 1}],
+      analyzer.analyze(player_ids: [31], goalie_ids: [31])
+  end
+
+  test "goalie point streak is omitted when it matches the win streak" do
+    logs = ->(_id) { Array.new(4) { {"decision" => "W"} } + [{"decision" => "L"}, {"decision" => "O"}] }
+    analyzer = RodTheBot::PlayerStreaks::Analyzer.new(game_log: logs, season: "20252026", game_type: 2, minimum_length: 3)
+
+    assert_equal ["Wins"], analyzer.analyze(player_ids: [31], goalie_ids: [31]).pluck(:streak_type)
+  end
+
+  test "quality-start streak counts starts that meet either save-percentage threshold" do
+    logs = ->(_id) {
+      [
+        {"gamesStarted" => 1, "decision" => "L", "shotsAgainst" => 36, "goalsAgainst" => 3}, # .917
+        {"gamesStarted" => 0, "shotsAgainst" => 4, "goalsAgainst" => 3},                    # relief, skipped
+        {"gamesStarted" => 1, "decision" => "W", "shotsAgainst" => 20, "goalsAgainst" => 2}, # .900 on 20 shots
+        {"gamesStarted" => 1, "decision" => "W", "shotsAgainst" => 30, "goalsAgainst" => 0}, # 1.000
+        {"gamesStarted" => 1, "decision" => "L", "shotsAgainst" => 21, "goalsAgainst" => 2}, # .905 on 21 shots
+        {"gamesStarted" => 1, "decision" => "W", "shotsAgainst" => 30, "goalsAgainst" => 0}
+      ]
+    }
+    analyzer = RodTheBot::PlayerStreaks::Analyzer.new(game_log: logs, season: "20252026", game_type: 2, minimum_length: 3)
+
+    assert_equal [{player_id: "31", streak_type: "Quality Starts", length: 3, total_stats: 3, saves: 81, shots_against: 86}],
+      analyzer.analyze(player_ids: [31], goalie_ids: [31])
+  end
+
+  test "a start without shots is not a quality start" do
+    logs = ->(_id) { [{"gamesStarted" => 1, "shotsAgainst" => 0, "goalsAgainst" => 0}] + Array.new(3) { {"gamesStarted" => 1, "shotsAgainst" => 30, "goalsAgainst" => 1} } }
+    analyzer = RodTheBot::PlayerStreaks::Analyzer.new(game_log: logs, season: "20252026", game_type: 2, minimum_length: 1)
+
+    assert_empty analyzer.analyze(player_ids: [31], goalie_ids: [31])
   end
 
   test "filters mixed season and game-type data" do

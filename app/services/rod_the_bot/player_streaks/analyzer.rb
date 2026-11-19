@@ -39,8 +39,15 @@ module RodTheBot
       end
 
       def goalie_streaks(player_id, games)
-        result = goalie_win_streak(games)
-        (result[:length] >= minimum_length) ? [streak(player_id, "Wins", result)] : []
+        wins = goalie_win_streak(games)
+        points = goalie_point_streak(games)
+        quality_starts = quality_start_streak(games)
+
+        streaks = []
+        streaks << streak(player_id, "Wins", wins) if wins[:length] >= minimum_length
+        streaks << streak(player_id, "Points", points) if points[:length] >= minimum_length && points[:length] > wins[:length]
+        streaks << streak(player_id, "Quality Starts", quality_starts) if quality_starts[:length] >= minimum_length
+        streaks
       end
 
       def active_streak(games)
@@ -53,16 +60,47 @@ module RodTheBot
         {length: values.length, total_stats: values.sum}
       end
 
-      def goalie_win_streak(games)
-        wins = []
-        games.each do |game|
+      # Games without a decision (relief appearances, pulled starters) neither extend nor break the streak.
+      def goalie_decisions(games)
+        games.filter_map do |game|
           decision = game["decision"].to_s.upcase
-          played = %w[W L O OTL].include?(decision) || %w[wins losses otLosses otl].any? { |key| game[key].to_i.positive? }
-          next unless played
-          break unless decision == "W" || game["wins"].to_i.positive?
-          wins << 1
+          if decision == "W" || game["wins"].to_i.positive?
+            :win
+          elsif %w[O OTL].include?(decision) || game["otLosses"].to_i.positive? || game["otl"].to_i.positive?
+            :ot_loss
+          elsif decision == "L" || game["losses"].to_i.positive?
+            :loss
+          end
         end
-        {length: wins.length, total_stats: wins.sum}
+      end
+
+      def goalie_win_streak(games)
+        length = goalie_decisions(games).take_while { |decision| decision == :win }.length
+        {length: length, total_stats: length}
+      end
+
+      def goalie_point_streak(games)
+        decisions = goalie_decisions(games).take_while { |decision| decision != :loss }
+        wins = decisions.count(:win)
+        {length: decisions.length, total_stats: decisions.length, wins: wins, ot_losses: decisions.length - wins}
+      end
+
+      # Quality start: .917 save percentage, or .885 on 20 shots or fewer, compared at the
+      # three decimals save percentage is published with. Only starts count.
+      def quality_start_streak(games)
+        starts = games.select { |game| game["gamesStarted"].to_i.positive? }
+        streak_games = starts.take_while { |game| quality_start?(game) }
+        shots = streak_games.sum { |game| game["shotsAgainst"].to_i }
+        saves = shots - streak_games.sum { |game| game["goalsAgainst"].to_i }
+        {length: streak_games.length, total_stats: streak_games.length, saves: saves, shots_against: shots}
+      end
+
+      def quality_start?(game)
+        shots = game["shotsAgainst"].to_i
+        return false unless shots.positive?
+
+        save_pct = Rational((shots - game["goalsAgainst"].to_i) * 1000, shots).round
+        save_pct >= 917 || (shots <= 20 && save_pct >= 885)
       end
 
       def streak(player_id, type, result)

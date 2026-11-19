@@ -29,7 +29,7 @@ module RodTheBot
     end
 
     def analyze_player_streaks(current_roster)
-      goalie_ids = roster.filter_map { |id, player| id.to_s if player[:position] == "G" }
+      goalie_ids = roster.filter_map { |id, player| id.to_s if player[:positionCode] == "G" }
       analyzer.analyze(player_ids: current_roster, goalie_ids: goalie_ids).map do |streak|
         streak.merge(player_name: get_player_name_from_id(streak[:player_id])).except(:player_id)
       end
