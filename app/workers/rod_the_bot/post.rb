@@ -22,13 +22,20 @@ module RodTheBot
         facets = build_link_facets(post, options.fetch("links", []))
         parent_uri = REDIS.get(parent_key) if parent_key
         reply_uri = REDIS.get(key) if key && !parent_key
-        new_post = if parent_uri
-          create_reply(parent_uri, post, embed_url: embed_url, embed_images: embed_images, embed_video: video_file_path, facets: facets)
-        elsif reply_uri
-          create_reply(reply_uri, post, embed_url: embed_url, embed_images: embed_images, embed_video: video_file_path, facets: facets)
+        post_images = ->(images) do
+          if parent_uri
+            create_reply(parent_uri, post, embed_url: embed_url, embed_images: images, embed_video: video_file_path, facets: facets)
+          elsif reply_uri
+            create_reply(reply_uri, post, embed_url: embed_url, embed_images: images, embed_video: video_file_path, facets: facets)
+          else
+            Rails.logger.info "No parent post found. Creating new post."
+            create_post(post, embed_url: embed_url, embed_images: images, embed_video: video_file_path, facets: facets)
+          end
+        end
+        new_post = if options["embed_logo_urls"].present?
+          RodTheBot::PostLogos.with_images(options["embed_logo_urls"]) { |images| post_images.call(images) }
         else
-          Rails.logger.info "No parent post found. Creating new post."
-          create_post(post, embed_url: embed_url, embed_images: embed_images, embed_video: video_file_path, facets: facets)
+          post_images.call(embed_images)
         end
       end
 

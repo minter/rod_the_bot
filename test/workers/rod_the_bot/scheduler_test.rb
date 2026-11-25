@@ -211,7 +211,7 @@ class RodTheBot::SchedulerTest < ActiveSupport::TestCase
     assert_includes post, "Carolina Hurricanes\n(15-5-1, 31 points)\n1st in the Metropolitan\n\nat\n\nSeattle Kraken"
     assert_includes post, "⏰ 12:00 PM EST"
     assert_includes post, "🌐 7:00 PM EET local time"
-    assert_equal ["https://assets.nhle.com/global-series.svg"], post_job["args"][1]["embed_images"]
+    assert_equal ["https://assets.nhle.com/global-series.svg"], post_job["args"][1]["embed_logo_urls"]
     assert_operator "#{post}\n#{ENV["TEAM_HASHTAGS"]}".length, :<=, 300
 
     expected_stream_start = Time.iso8601("2026-11-12T16:45:00Z").to_f

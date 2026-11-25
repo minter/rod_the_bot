@@ -34,6 +34,36 @@ class RodTheBot::PostTest < ActiveSupport::TestCase
     end
   end
 
+  def test_posts_prepared_team_logos
+    ENV["BLUESKY_ENABLED"] = "true"
+    svg = '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"><rect width="10" height="10" fill="black"/></svg>'
+    HTTParty.stubs(:get).returns(stub(success?: true, body: svg))
+    path = nil
+    @bsky.expects(:create_post).with do |_text, **options|
+      image = options[:embed_images].first
+      path = image.path
+      assert_equal [255, 255, 255], MiniMagick::Image.open(path).get_pixels[599][599].first(3)
+      true
+    end.returns({"uri" => "test_uri"})
+
+    @post.perform("test", {"embed_logo_urls" => ["https://example.com/team.svg"]})
+    assert_not File.exist?(path)
+  end
+
+  def test_cleans_up_prepared_logos_when_post_fails
+    ENV["BLUESKY_ENABLED"] = "true"
+    svg = '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"/>'
+    HTTParty.stubs(:get).returns(stub(success?: true, body: svg))
+    path = nil
+    @bsky.expects(:create_post).with do |_text, **options|
+      path = options[:embed_images].first.path
+      true
+    end.raises(StandardError, "posting failed")
+
+    assert_raises(StandardError) { @post.perform("test", {"embed_logo_urls" => ["https://example.com/team.svg"]}) }
+    assert_not File.exist?(path)
+  end
+
   def test_perform_bluesky_disabled
     ENV["BLUESKY_ENABLED"] = "false"
     ENV["TEAM_HASHTAGS"] = "#team"

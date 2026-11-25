@@ -68,7 +68,7 @@ module RodTheBot
         RodTheBot::GameStream.perform_at(time - 15.minutes, game_id)
         RodTheBot::Post.perform_async(
           gameday_post,
-          {"key" => gameday_key, "embed_images" => gameday_images}
+          {"key" => gameday_key, "embed_logo_urls" => gameday_images}
         )
         schedule_gameday_details(game_id, gameday_key, media, preseason: preseason, game_type: @game["gameType"])
         RodTheBot::PlayerStreaksWorker.perform_in(3.minutes)
