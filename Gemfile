@@ -42,6 +42,7 @@ group :development, :test do
 end
 
 group :development do
+  gem "brakeman", require: false
   gem "bundler-audit"
   gem "standard"
 end
